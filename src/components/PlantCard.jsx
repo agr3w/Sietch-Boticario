@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Box,
   Button,
   Card,
   CardContent,
@@ -49,8 +50,8 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
   };
 
   return (
-    <Card elevation={3}>
-      <CardContent>
+    <Card elevation={3} sx={plantCardSx.card}>
+      <CardContent sx={plantCardSx.content}>
         <Typography variant="h5" component="div" sx={plantCardSx.title}>
           {planta.nome_apelido}
         </Typography>
@@ -58,7 +59,7 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
           Espécie: {planta.especie} | Local: {planta.localizacao}
         </Typography>
 
-        <Typography variant="body2" sx={{ mb: 1 }}>
+        <Typography variant="body2" sx={plantCardSx.intervalText}>
           <strong>Intervalo de Rega:</strong> a cada {planta.intervalo_rega_dias} dias
         </Typography>
         <Typography variant="body2" sx={plantCardSx.lastWatering}>
@@ -67,14 +68,29 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
         </Typography>
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={plantCardSx.actionRow}>
-          <Button variant="contained" color="info" fullWidth onClick={() => onRegar(planta.id)}>
-            💧 Registrar Rega (Dar Água)
+          <Button
+            variant="contained"
+            color="success"
+            fullWidth
+            sx={plantCardSx.waterButton}
+            onClick={() => onRegar(planta.id)}
+          >
+            <Box component="span" aria-hidden="true" sx={plantCardSx.icon}>
+              💧
+            </Box>
+            &nbsp;Registrar Rega (Dar Água)
           </Button>
           <Button
             variant="outlined"
+            color="secondary"
             fullWidth
+            sx={plantCardSx.adjustButton}
             onClick={abrirDialog}
-            startIcon={<span aria-hidden="true">⚙️</span>}
+            startIcon={
+              <Box component="span" aria-hidden="true" sx={plantCardSx.icon}>
+                ⚙️
+              </Box>
+            }
           >
             Ajustar Tolerância
           </Button>

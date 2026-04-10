@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Button,
+  Divider,
   Dialog,
   DialogActions,
   DialogContent,
@@ -70,7 +71,10 @@ function AddPlantModal({ open, onClose, onAdd }) {
       slotProps={{ paper: { sx: addPlantModalSx.dialogPaper } }}
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle sx={addPlantModalSx.title}>Cadastrar Nova Planta</DialogTitle>
+        <DialogTitle sx={addPlantModalSx.title}>
+          Cadastrar Nova Planta
+        </DialogTitle>
+        <Divider />
         <DialogContent sx={addPlantModalSx.form}>
           <TextField
             label="Nome/Apelido"
@@ -121,10 +125,15 @@ function AddPlantModal({ open, onClose, onAdd }) {
           </TextField>
         </DialogContent>
         <DialogActions sx={addPlantModalSx.actions}>
-          <Button onClick={onClose} disabled={isSaving}>
+          <Button color="secondary" onClick={onClose} disabled={isSaving}>
             Cancelar
           </Button>
-          <Button type="submit" variant="contained" disabled={isSaving}>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={isSaving}
+          >
             {isSaving ? "Salvando..." : "Salvar Planta"}
           </Button>
         </DialogActions>

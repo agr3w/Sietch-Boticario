@@ -15,7 +15,7 @@ import {
 import { db } from "../firebase";
 import PlantCard from "../components/PlantCard";
 import AddPlantModal from "../components/AddPlantModal";
-import { climateSx, layoutSx } from "../theme/styles";
+import { climateSx, feedbackSx, layoutSx } from "../theme/styles";
 
 function Dashboard() {
   const [plantas, setPlantas] = useState([]);
@@ -145,40 +145,49 @@ function Dashboard() {
 
   return (
     <Container maxWidth="md" sx={layoutSx.pageContainer}>
-      <Typography
-        variant="h3"
-        component="h1"
-        gutterBottom
-        align="center"
-        color="primary"
-      >
-        Sietch Boticário 🌿
-      </Typography>
-      <Typography
-        variant="subtitle1"
-        gutterBottom
-        align="center"
-        sx={layoutSx.subtitle}
-      >
-        Gestão de Umidade e Controle Botânico
-      </Typography>
+      <Box sx={layoutSx.hero}>
+        <Box sx={layoutSx.heroContent}>
+          <Typography
+            variant="h3"
+            component="h1"
+            gutterBottom
+            align="center"
+            color="primary"
+          >
+            Sietch Boticário 🌿
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            gutterBottom
+            align="center"
+            sx={layoutSx.subtitle}
+          >
+            Painel Fremen para Gestão de Umidade e Controle Botânico
+          </Typography>
+        </Box>
+      </Box>
 
       <Stack direction="row" justifyContent="center" sx={layoutSx.addButtonRow}>
-        <Button variant="contained" size="large" onClick={() => setIsAddModalOpen(true)}>
+        <Button
+          variant="contained"
+          size="large"
+          sx={layoutSx.addButton}
+          onClick={() => setIsAddModalOpen(true)}
+        >
           Adicionar Planta
         </Button>
       </Stack>
 
       <Card elevation={4} sx={climateSx.card}>
         <CardContent>
-          <Typography variant="h6" sx={{ mb: 2 }}>
+          <Typography variant="h6" sx={climateSx.title}>
             Painel Climático • Curitiba
           </Typography>
 
           {climaErro && <Alert severity="warning">{climaErro}</Alert>}
 
           {!climaErro && !climaAtual && (
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+            <Typography variant="body2" sx={climateSx.loadingText}>
               Carregando dados meteorológicos...
             </Typography>
           )}
@@ -238,7 +247,7 @@ function Dashboard() {
           onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
           severity={snackbar.severity}
           variant="filled"
-          sx={{ width: "100%" }}
+          sx={feedbackSx.snackbarAlert}
         >
           {snackbar.message}
         </Alert>
