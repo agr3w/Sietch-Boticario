@@ -1,0 +1,330 @@
+{
+  "name": "Sietch_Boticário",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=-25.4284&longitude=-49.2733&current=temperature_2m,relative_humidity_2m",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1040,
+        -192
+      ],
+      "id": "705ddbfb-6e84-42ef-bc36-b7ef11666dd8",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Pega o clima do nó de HTTP (Verifique se o nome do nó está exato)\nconst clima = $('HTTP Request').item.json.current;\nconst plantas = $('Get many documents').all();\nconst resultados = [];\n\n// 3. Fazemos a matemática para CADA planta individualmente\nfor (const item of plantas) {\n  const planta = item.json;\n  \n  const dataUltimaRega = new Date(planta.ultima_rega);\n  const dataHoje = new Date();\n  const diferencaDias = Math.floor((dataHoje.getTime() - dataUltimaRega.getTime()) / (1000 * 3600 * 24));\n  \n  let diasParaRegar = planta.intervalo_rega_dias;\n  \n  // Regra climática Fremen\n  if (clima.relative_humidity_2m < 40 && clima.temperature_2m > 25) {\n    diasParaRegar = diasParaRegar - 1;\n  }\n  \n  // 4. Montamos o pacote com TUDO o que precisamos (O ID VOLTOU!)\n  resultados.push({\n    json: {\n      id: planta._id,               // <--- O salvador da pátria!\n      notificar: planta.notificar, // <--- Necessário para o seu nó IF depois\n      planta: planta.nome_apelido,\n      dias_sem_agua: diferencaDias,\n      tolerancia_atual: diasParaRegar,\n      status_alerta: diferencaDias >= diasParaRegar ? \"PRECISA DE ÁGUA!\" : \"Tudo tranquilo\"\n    }\n  });\n}\n\n// Passa a lista completa adiante\nreturn resultados;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -48
+      ],
+      "id": "c1debdb6-5037-410d-a4c8-789630d31d45",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f89ccde7-0f2b-4faa-9152-253652e61d1b",
+              "leftValue": "status_alerta",
+              "rightValue": "PRECISA DE ÁGUA!",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1328,
+        144
+      ],
+      "id": "a3253605-da00-4465-bbf5-13c7f84a173e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "https://api.callmebot.com/whatsapp.php?phone=554195424186&text=Aviso:+{{ $json.planta }}+precisa+de+agua!+Para+registrar+a+rega,+clique+aqui:%20http://localhost:5678/webhook-test/regar?id={{ $json.id }}&apikey=7449584",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1456,
+        -48
+      ],
+      "id": "e091337f-19d3-4e35-aacc-34ce4846bd82",
+      "name": "HTTP WhatsApp"
+    },
+    {
+      "parameters": {
+        "path": "=regar",
+        "options": {
+          "responseData": "Disciplina da água mantida! Firebase atualizado."
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        352
+      ],
+      "id": "ecb603fb-4de9-494c-bfdd-1b07ea6a5965",
+      "name": "Webhook",
+      "webhookId": "a74fa1b5-7006-4005-999e-cc18c43b8a70"
+    },
+    {
+      "parameters": {
+        "jsCode": "// O n8n passa os dados em uma lista (mesmo que seja só 1 planta agora). \n// Esse 'for' passa por todas as plantas que chegarem nesse nó.\nfor (const item of $input.all()) {\n  \n  // 1. Pegamos a data da última rega que veio do Firebase\n  const dataUltimaRega = new Date(item.json.ultima_rega);\n  \n  // 2. Pegamos a data e hora de exato momento (Agora)\n  const dataHoje = new Date();\n  \n  // 3. A matemática: subtraímos as datas (o JS calcula em milissegundos)\n  const diferencaTempo = dataHoje.getTime() - dataUltimaRega.getTime();\n  \n  // 4. Convertemos os milissegundos para Dias corridos\n  const diferencaDias = Math.floor(diferencaTempo / (1000 * 3600 * 24));\n  \n  // 5. Criamos dois campos novos no resultado para nos ajudar nos próximos passos!\n  item.json.dias_sem_agua = diferencaDias;\n  \n  // Aqui ele cria um Verdadeiro (true) ou Falso (false)\n  item.json.precisa_regar = diferencaDias >= item.json.intervalo_rega_dias; \n}\n\n// Passamos a bola para o próximo nó\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -192
+      ],
+      "id": "4e7d1e4f-293a-424f-b834-156a2ee80461",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "upsert",
+        "projectId": "sietch-boticario",
+        "collection": "plantas",
+        "updateKey": "=_id",
+        "columns": "ultima_rega"
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        352
+      ],
+      "id": "89d9746a-8d88-42ea-ad23-93ee397d1059",
+      "name": "Create or update a document",
+      "credentials": {
+        "googleApi": {
+          "id": "n3xCXuatVWdIpLAg",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "regar",
+        "options": {
+          "responseData": "Disciplina da água mantida! Firebase atualizado."
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        -48
+      ],
+      "id": "c28409d4-c703-47e2-b36d-b6a5799d195a",
+      "name": "Webhook1",
+      "webhookId": "a74fa1b5-7006-4005-999e-cc18c43b8a70"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fb98f57a-4cf7-4c91-a5d3-c22634285456",
+              "name": "_id",
+              "value": "={{ $json.query.id }}",
+              "type": "string"
+            },
+            {
+              "id": "9f31bc37-0455-439a-bc6b-faba95cba737",
+              "name": "ultima_rega",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        352
+      ],
+      "id": "f75645d3-112b-4368-919f-a933f3da381b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "content": "## 2° Gatilho\nAtualiza o documento no firebase",
+        "height": 96,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        400,
+        224
+      ],
+      "id": "0eff75bd-26b2-4103-8e93-84e8b2d33897",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 1° Gatilho\nValidação para ver se a planta precisa de água",
+        "height": 96
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -192
+      ],
+      "id": "ac64fb15-d9a5-4f06-8ab3-7231d3b22f51",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "getAll",
+        "projectId": "sietch-boticario",
+        "collection": "plantas",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        -48
+      ],
+      "id": "7aa7f73b-9df4-4019-8c66-bbc6654a5b35",
+      "name": "Get many documents",
+      "credentials": {
+        "googleApi": {
+          "id": "n3xCXuatVWdIpLAg",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Get many documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Create or update a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        []
+      ]
+    },
+    "Get many documents": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c1ba41f6-e90c-4e1c-876a-96b80b7653b5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4adaff8c8e08d97f5fbdf25e9e5ca748b5bb7c0bdd005723397b980f492d6ffa"
+  },
+  "id": "TKIa6HfA41OtOQze",
+  "tags": []
+}
