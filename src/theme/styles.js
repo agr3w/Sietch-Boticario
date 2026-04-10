@@ -75,8 +75,41 @@ export const plantCardSx = {
     boxShadow: "0 14px 26px rgba(118, 82, 43, 0.2)",
     border: "1px solid rgba(100,70,40,0.2)",
   },
+  cardNeedWater: {
+    border: "2px solid #D94841",
+    boxShadow: "0 14px 30px rgba(217, 72, 65, 0.25)",
+    background: "linear-gradient(180deg, #F5DFD8 0%, #EFE4D6 100%)",
+  },
+  cardNearWater: {
+    border: "2px solid #D39A2C",
+    boxShadow: "0 14px 30px rgba(211, 154, 44, 0.23)",
+    background: "linear-gradient(180deg, #F5ECCE 0%, #EFE4D6 100%)",
+  },
   content: {
     p: 3,
+  },
+  statusBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    borderRadius: 999,
+    px: 1.2,
+    py: 0.45,
+    mb: 1.2,
+    fontSize: "0.75rem",
+    fontWeight: 800,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    border: "1px solid transparent",
+  },
+  statusBadgeNeedWater: {
+    color: "#7B1E1E",
+    backgroundColor: "rgba(217, 72, 65, 0.16)",
+    borderColor: "rgba(217, 72, 65, 0.45)",
+  },
+  statusBadgeNearWater: {
+    color: "#6B4A00",
+    backgroundColor: "rgba(211, 154, 44, 0.18)",
+    borderColor: "rgba(211, 154, 44, 0.42)",
   },
   actionRow: {
     mt: 2,
@@ -93,6 +126,26 @@ export const plantCardSx = {
   },
   lastWatering: {
     mb: 2.5,
+  },
+  alertText: {
+    mb: 2,
+    px: 1.2,
+    py: 0.7,
+    borderRadius: 1,
+    color: "#7B1E1E",
+    fontWeight: 700,
+    backgroundColor: "rgba(217, 72, 65, 0.14)",
+    border: "1px solid rgba(217, 72, 65, 0.35)",
+  },
+  nearAlertText: {
+    mb: 2,
+    px: 1.2,
+    py: 0.7,
+    borderRadius: 1,
+    color: "#6B4A00",
+    fontWeight: 700,
+    backgroundColor: "rgba(211, 154, 44, 0.16)",
+    border: "1px solid rgba(211, 154, 44, 0.36)",
   },
   waterButton: {
     py: 1.2,

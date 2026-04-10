@@ -14,10 +14,51 @@ import {
 } from '@mui/material';
 import { plantCardSx } from '../theme/styles';
 
+function parseUltimaRegaDate(ultimaRega) {
+  if (!ultimaRega) {
+    return null;
+  }
+
+  if (typeof ultimaRega?.toDate === 'function') {
+    const date = ultimaRega.toDate();
+    return Number.isFinite(date.getTime()) ? date : null;
+  }
+
+  if (typeof ultimaRega === 'string' || typeof ultimaRega === 'number') {
+    const date = new Date(ultimaRega);
+    return Number.isFinite(date.getTime()) ? date : null;
+  }
+
+  if (typeof ultimaRega?.seconds === 'number') {
+    const milliseconds =
+      ultimaRega.seconds * 1000 + Math.floor((ultimaRega.nanoseconds ?? 0) / 1000000);
+    const date = new Date(milliseconds);
+    return Number.isFinite(date.getTime()) ? date : null;
+  }
+
+  return null;
+}
+
 function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
-  const dataRega = new Date(planta.ultima_rega);
+  const dataRega = parseUltimaRegaDate(planta.ultima_rega);
   const dateOptions = { timeZone: 'America/Sao_Paulo' };
   const timeOptions = { timeZone: 'America/Sao_Paulo' };
+  const intervaloRega = Number(planta.intervalo_rega_dias ?? 0);
+  const dataRegaValida = Boolean(dataRega);
+  const diasDesdeRega = dataRegaValida
+    ? Math.floor((Date.now() - dataRega.getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+  const precisaRegar = dataRegaValida && intervaloRega > 0 && diasDesdeRega >= intervaloRega;
+  const faltaUmDiaParaRega =
+    dataRegaValida && intervaloRega > 0 && !precisaRegar && intervaloRega - diasDesdeRega === 1;
+  const diasAtraso = precisaRegar ? diasDesdeRega - intervaloRega : 0;
+  const textoSelo = precisaRegar
+    ? diasAtraso > 0
+      ? `Atrasada ${diasAtraso}d`
+      : 'Regar hoje'
+    : faltaUmDiaParaRega
+      ? 'Regar amanha'
+      : null;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [novoIntervalo, setNovoIntervalo] = useState(planta.intervalo_rega_dias ?? 1);
   const [salvando, setSalvando] = useState(false);
@@ -50,8 +91,27 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
   };
 
   return (
-    <Card elevation={3} sx={plantCardSx.card}>
+    <Card
+      elevation={3}
+      sx={[
+        plantCardSx.card,
+        faltaUmDiaParaRega && plantCardSx.cardNearWater,
+        precisaRegar && plantCardSx.cardNeedWater,
+      ]}
+    >
       <CardContent sx={plantCardSx.content}>
+        {textoSelo && (
+          <Box
+            component="span"
+            sx={[
+              plantCardSx.statusBadge,
+              precisaRegar ? plantCardSx.statusBadgeNeedWater : plantCardSx.statusBadgeNearWater,
+            ]}
+          >
+            {textoSelo}
+          </Box>
+        )}
+
         <Typography variant="h5" component="div" sx={plantCardSx.title}>
           {planta.nome_apelido}
         </Typography>
@@ -63,9 +123,23 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
           <strong>Intervalo de Rega:</strong> a cada {planta.intervalo_rega_dias} dias
         </Typography>
         <Typography variant="body2" sx={plantCardSx.lastWatering}>
-          <strong>Última Rega:</strong> {dataRega.toLocaleDateString('pt-BR', dateOptions)} às{' '}
-          {dataRega.toLocaleTimeString('pt-BR', timeOptions)}
+          <strong>Última Rega:</strong>{' '}
+          {dataRegaValida
+            ? `${dataRega.toLocaleDateString('pt-BR', dateOptions)} às ${dataRega.toLocaleTimeString('pt-BR', timeOptions)}`
+            : 'Sem registro'}
         </Typography>
+
+        {precisaRegar && (
+          <Typography variant="body2" sx={plantCardSx.alertText}>
+            Atenção: precisa de água (atrasada {diasAtraso} {diasAtraso === 1 ? 'dia' : 'dias'}).
+          </Typography>
+        )}
+
+        {faltaUmDiaParaRega && (
+          <Typography variant="body2" sx={plantCardSx.nearAlertText}>
+            Aviso: quase na hora de regar (falta 1 dia).
+          </Typography>
+        )}
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={plantCardSx.actionRow}>
           <Button

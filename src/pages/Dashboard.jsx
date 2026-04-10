@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { addDoc, collection, doc, getDocs, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
 import {
   Alert,
   Box,
@@ -100,7 +107,7 @@ function Dashboard() {
       const plantaRef = doc(db, "plantas", id);
 
       await updateDoc(plantaRef, {
-        ultima_rega: new Date().toISOString(),
+        ultima_rega: serverTimestamp(),
       });
 
       await carregarPlantas();
@@ -130,7 +137,7 @@ function Dashboard() {
     try {
       await addDoc(collection(db, "plantas"), {
         ...dadosPlanta,
-        ultima_rega: new Date().toISOString(),
+        ultima_rega: serverTimestamp(),
         notificar: true,
       });
 
@@ -167,7 +174,13 @@ function Dashboard() {
         </Box>
       </Box>
 
-      <Stack direction="row" justifyContent="center" sx={layoutSx.addButtonRow}>
+      <Stack
+        direction="row"
+        sx={{
+          ...layoutSx.addButtonRow,
+          justifyContent: "center",
+        }}
+      >
         <Button
           variant="contained"
           size="large"
@@ -194,7 +207,7 @@ function Dashboard() {
 
           {!climaErro && climaAtual && (
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Box sx={climateSx.metricBox}>
                   <Typography variant="body2" sx={climateSx.metricLabel}>
                     Temperatura Atual
@@ -204,7 +217,7 @@ function Dashboard() {
                   </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Box sx={climateSx.metricBox}>
                   <Typography variant="body2" sx={climateSx.metricLabel}>
                     Umidade Relativa
@@ -221,7 +234,7 @@ function Dashboard() {
 
       <Grid container spacing={3}>
         {plantas.map((planta) => (
-          <Grid item xs={12} sm={6} key={planta.id}>
+          <Grid size={{ xs: 12, sm: 6 }} key={planta.id}>
             <PlantCard
               planta={planta}
               onRegar={regarPlanta}
