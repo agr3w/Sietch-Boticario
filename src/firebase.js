@@ -1,6 +1,15 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  getFirestore,
+  orderBy,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -21,3 +30,25 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 export { db };
+
+export async function getMensagensNaoLidas() {
+  const mensagensRef = collection(db, "mensagens");
+  const mensagensQuery = query(
+    mensagensRef,
+    where("lida", "==", false),
+    orderBy("data_envio", "desc"),
+  );
+  const querySnapshot = await getDocs(mensagensQuery);
+
+  return querySnapshot.docs.map((mensagemDoc) => ({
+    id: mensagemDoc.id,
+    ...mensagemDoc.data(),
+  }));
+}
+
+export async function marcarMensagemComoLida(mensagemId) {
+  const mensagemRef = doc(db, "mensagens", mensagemId);
+  await updateDoc(mensagemRef, {
+    lida: true,
+  });
+}

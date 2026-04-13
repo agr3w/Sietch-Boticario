@@ -9,17 +9,27 @@ import {
 } from "firebase/firestore";
 import {
   Alert,
+  Badge,
   Box,
   Button,
   Card,
   CardContent,
   Container,
+  Drawer,
   Grid,
+  IconButton,
+  List,
+  ListItem,
   Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
-import { db } from "../firebase";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import {
+  db,
+  getMensagensNaoLidas,
+  marcarMensagemComoLida,
+} from "../firebase";
 import PlantCard from "../components/PlantCard";
 import AddPlantModal from "../components/AddPlantModal";
 import { climateSx, feedbackSx, layoutSx } from "../theme/styles";
@@ -28,6 +38,10 @@ function Dashboard() {
   const [plantas, setPlantas] = useState([]);
   const [climaAtual, setClimaAtual] = useState(null);
   const [climaErro, setClimaErro] = useState("");
+  const [mensagens, setMensagens] = useState([]);
+  const [badgeCount, setBadgeCount] = useState(0);
+  const [drawerNotificacoesAberto, setDrawerNotificacoesAberto] = useState(false);
+  const [marcandoMensagemId, setMarcandoMensagemId] = useState(null);
   const [n8nStatus, setN8nStatus] = useState("nao-validada");
   const [validandoN8n, setValidandoN8n] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -46,6 +60,59 @@ function Dashboard() {
     });
   }, []);
 
+  const formatarDataEnvio = (dataEnvio) => {
+    if (!dataEnvio) {
+      return "Sem data";
+    }
+
+    if (typeof dataEnvio?.toDate === "function") {
+      return dataEnvio.toDate().toLocaleString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+      });
+    }
+
+    if (typeof dataEnvio?.seconds === "number") {
+      return new Date(dataEnvio.seconds * 1000).toLocaleString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+      });
+    }
+
+    const date = new Date(dataEnvio);
+    if (Number.isFinite(date.getTime())) {
+      return date.toLocaleString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+      });
+    }
+
+    return "Sem data";
+  };
+
+  const corNivelAlerta = (nivelAlerta) => {
+    if (Number(nivelAlerta) === 2) {
+      return {
+        borderColor: "error.main",
+        backgroundColor: "rgba(217, 72, 65, 0.12)",
+      };
+    }
+
+    return {
+      borderColor: "warning.main",
+      backgroundColor: "rgba(211, 154, 44, 0.14)",
+    };
+  };
+
+  const carregarMensagensNaoLidas = useCallback(async () => {
+    try {
+      const mensagensNaoLidas = await getMensagensNaoLidas();
+      setMensagens(mensagensNaoLidas);
+      setBadgeCount(mensagensNaoLidas.length);
+    } catch {
+      setMensagens([]);
+      setBadgeCount(0);
+      exibirFeedback("Não foi possível carregar as notificações.", "error");
+    }
+  }, [exibirFeedback]);
+
   const carregarPlantas = async () => {
     const querySnapshot = await getDocs(collection(db, "plantas"));
     const listaPlantas = [];
@@ -62,6 +129,20 @@ function Dashboard() {
       await carregarPlantas();
     })();
   }, []);
+
+  useEffect(() => {
+    void carregarMensagensNaoLidas();
+  }, [carregarMensagensNaoLidas]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      void carregarMensagensNaoLidas();
+    }, 20000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [carregarMensagensNaoLidas]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -150,6 +231,20 @@ function Dashboard() {
     } catch {
       exibirFeedback("Erro ao cadastrar a planta. Tente novamente.", "error");
       throw new Error("Falha ao cadastrar planta");
+    }
+  };
+
+  const handleMarcarComoLida = async (mensagemId) => {
+    try {
+      setMarcandoMensagemId(mensagemId);
+      await marcarMensagemComoLida(mensagemId);
+      setDrawerNotificacoesAberto(false);
+      await carregarMensagensNaoLidas();
+      exibirFeedback("Mensagem marcada como lida.", "success");
+    } catch {
+      exibirFeedback("Falha ao atualizar a mensagem.", "error");
+    } finally {
+      setMarcandoMensagemId(null);
     }
   };
 
@@ -329,6 +424,15 @@ function Dashboard() {
             </Typography>
 
             <Stack direction="row" spacing={1.2} sx={{ flexWrap: "wrap" }}>
+              <IconButton
+                color="primary"
+                onClick={() => setDrawerNotificacoesAberto(true)}
+                aria-label="Abrir notificações"
+              >
+                <Badge badgeContent={badgeCount} color="error">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
               <Button
                 variant="contained"
                 color="success"
@@ -350,6 +454,64 @@ function Dashboard() {
           </Box>
         </CardContent>
       </Card>
+
+      <Drawer
+        anchor="right"
+        open={drawerNotificacoesAberto}
+        onClose={() => setDrawerNotificacoesAberto(false)}
+      >
+        <Box sx={{ width: { xs: 320, sm: 380 }, p: 2 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Notificações não lidas
+          </Typography>
+
+          {mensagens.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              Nenhuma mensagem pendente.
+            </Typography>
+          ) : (
+            <List sx={{ display: "grid", gap: 1.2 }}>
+              {mensagens.map((mensagem) => {
+                const alertaSx = corNivelAlerta(mensagem.nivel_alerta);
+
+                return (
+                  <ListItem
+                    key={mensagem.id}
+                    sx={{
+                      borderLeft: "4px solid",
+                      borderColor: alertaSx.borderColor,
+                      backgroundColor: alertaSx.backgroundColor,
+                      borderRadius: 1.5,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      gap: 1,
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      {mensagem.planta_nome ?? "Planta"}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatarDataEnvio(mensagem.data_envio)}
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="secondary"
+                      onClick={() => void handleMarcarComoLida(mensagem.id)}
+                      disabled={marcandoMensagemId === mensagem.id}
+                    >
+                      {marcandoMensagemId === mensagem.id
+                        ? "Marcando..."
+                        : "Marcar como Lida"}
+                    </Button>
+                  </ListItem>
+                );
+              })}
+            </List>
+          )}
+        </Box>
+      </Drawer>
 
       <Grid container spacing={3}>
         {plantas.map((planta) => (
