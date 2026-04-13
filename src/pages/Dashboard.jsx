@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   addDoc,
   collection,
@@ -28,20 +28,23 @@ function Dashboard() {
   const [plantas, setPlantas] = useState([]);
   const [climaAtual, setClimaAtual] = useState(null);
   const [climaErro, setClimaErro] = useState("");
+  const [n8nStatus, setN8nStatus] = useState("nao-validada");
+  const [validandoN8n, setValidandoN8n] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
   });
+  const n8nHealthcheckUrl = import.meta.env.VITE_N8N_HEALTHCHECK_URL;
 
-  const exibirFeedback = (message, severity = "success") => {
+  const exibirFeedback = useCallback((message, severity = "success") => {
     setSnackbar({
       open: true,
       message,
       severity,
     });
-  };
+  }, []);
 
   const carregarPlantas = async () => {
     const querySnapshot = await getDocs(collection(db, "plantas"));
@@ -150,6 +153,81 @@ function Dashboard() {
     }
   };
 
+  const validarIntegracaoN8n = useCallback(async ({ silencioso = false } = {}) => {
+    if (!n8nHealthcheckUrl) {
+      setN8nStatus("inativa");
+      if (!silencioso) {
+        exibirFeedback(
+          "Configure VITE_N8N_HEALTHCHECK_URL para validar a integração.",
+          "warning",
+        );
+      }
+      return;
+    }
+
+    setValidandoN8n(true);
+    setN8nStatus("verificando");
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(n8nHealthcheckUrl, {
+        method: "GET",
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error("N8N_OFFLINE");
+      }
+
+      setN8nStatus("ativa");
+      if (!silencioso) {
+        exibirFeedback("Integração n8n validada com sucesso.", "success");
+      }
+    } catch {
+      setN8nStatus("inativa");
+      if (!silencioso) {
+        exibirFeedback("Integração n8n indisponível no momento.", "error");
+      }
+    } finally {
+      clearTimeout(timeoutId);
+      setValidandoN8n(false);
+    }
+  }, [exibirFeedback, n8nHealthcheckUrl]);
+
+  useEffect(() => {
+    if (!n8nHealthcheckUrl) {
+      return;
+    }
+
+    const debounceId = setTimeout(() => {
+      void validarIntegracaoN8n({ silencioso: true });
+    }, 900);
+
+    return () => {
+      clearTimeout(debounceId);
+    };
+  }, [n8nHealthcheckUrl, validarIntegracaoN8n]);
+
+  const n8nStatusTexto =
+    n8nStatus === "ativa"
+      ? "Ativa"
+      : n8nStatus === "inativa"
+        ? "Inativa"
+        : n8nStatus === "verificando"
+          ? "Verificando..."
+          : "Não validada";
+
+  const n8nStatusCor =
+    n8nStatus === "ativa"
+      ? "success.main"
+      : n8nStatus === "inativa"
+        ? "error.main"
+        : n8nStatus === "verificando"
+          ? "warning.main"
+          : "text.secondary";
+
   return (
     <Container maxWidth="md" sx={layoutSx.pageContainer}>
       <Box sx={layoutSx.hero}>
@@ -229,6 +307,47 @@ function Dashboard() {
               </Grid>
             </Grid>
           )}
+        </CardContent>
+      </Card>
+
+      <Card elevation={3} sx={{ mb: 4 }}>
+        <CardContent sx={{ py: 1.8, "&:last-child": { pb: 1.8 } }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 2,
+              flexWrap: "wrap",
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              🤖 Integração WhatsApp: {" "}
+              <Box component="span" sx={{ color: n8nStatusCor, fontWeight: 800 }}>
+                {n8nStatusTexto}
+              </Box>
+            </Typography>
+
+            <Stack direction="row" spacing={1.2} sx={{ flexWrap: "wrap" }}>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={validarIntegracaoN8n}
+                disabled={validandoN8n}
+              >
+                {validandoN8n ? "Validando..." : "Validar Integração"}
+              </Button>
+              <Button
+                variant="outlined"
+                color="success"
+                href="https://wa.me/34644462188"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Abrir Chat do Sietch
+              </Button>
+            </Stack>
+          </Box>
         </CardContent>
       </Card>
 
