@@ -17,7 +17,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 1. Pega o clima do nó de HTTP (Verifique se o nome do nó está exato)\nconst clima = $('HTTP Request').item.json.current;\nconst plantas = $('Get many documents').all();\nconst resultados = [];\n\n// 3. Fazemos a matemática para CADA planta individualmente\nfor (const item of plantas) {\n  const planta = item.json;\n  \n  const dataUltimaRega = new Date(planta.ultima_rega);\n  const dataHoje = new Date();\n  const diferencaDias = Math.floor((dataHoje.getTime() - dataUltimaRega.getTime()) / (1000 * 3600 * 24));\n  \n  let diasParaRegar = planta.intervalo_rega_dias;\n  \n  // Regra climática Fremen\n  if (clima.relative_humidity_2m < 40 && clima.temperature_2m > 25) {\n    diasParaRegar = diasParaRegar - 1;\n  }\n  \n  // 4. Montamos o pacote com TUDO o que precisamos (O ID VOLTOU!)\n  resultados.push({\n    json: {\n      id: planta._id,               // <--- O salvador da pátria!\n      notificar: planta.notificar, // <--- Necessário para o seu nó IF depois\n      planta: planta.nome_apelido,\n      dias_sem_agua: diferencaDias,\n      tolerancia_atual: diasParaRegar,\n      status_alerta: diferencaDias >= diasParaRegar ? \"PRECISA DE ÁGUA!\" : \"Tudo tranquilo\"\n    }\n  });\n}\n\n// Passa a lista completa adiante\nreturn resultados;"
+        "jsCode": "// 1. Pega o clima do nó de HTTP\nconst clima = $('HTTP Request').item.json.current;\nconst plantas = $('Get many documents').all();\nconst resultados = [];\n\n// 2. Fazemos a matemática para CADA planta individualmente\nfor (const item of plantas) {\n  const planta = item.json;\n  \n  // FILTRO: Se a notificação estiver desligada no React, ignoramos essa planta\n  if (planta.notificar === false) {\n    continue;\n  }\n  \n  const dataUltimaRega = new Date(planta.ultima_rega);\n  const dataHoje = new Date();\n  const diferencaDias = Math.floor((dataHoje.getTime() - dataUltimaRega.getTime()) / (1000 * 3600 * 24));\n  \n  let diasParaRegar = planta.intervalo_rega_dias;\n  \n  // Regra climática Fremen\n  if (clima.relative_humidity_2m < 40 && clima.temperature_2m > 25) {\n    diasParaRegar = diasParaRegar - 1;\n  }\n  \n  // 3. MATRIZ DE SEVERIDADE\n  let nivelAlerta = 0; // 0 = Tudo bem, hidratada\n  \n  if (diferencaDias === diasParaRegar) {\n    nivelAlerta = 1; // 1 = Hoje é o dia exato\n  } else if (diferencaDias > diasParaRegar) {\n    nivelAlerta = 2; // 2 = Atrasado, emergência\n  }\n  \n  // 4. Só enviamos adiante as plantas que precisam de aviso (Nível > 0)\n  if (nivelAlerta > 0) {\n    resultados.push({\n      json: {\n        id: planta._id,               \n        planta: planta.nome_apelido,\n        dias_sem_agua: diferencaDias,\n        tolerancia_atual: diasParaRegar,\n        nivel_alerta: nivelAlerta // O Switch vai olhar para cá\n      }\n    });\n  }\n}\n\nreturn resultados;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -30,54 +30,6 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "f89ccde7-0f2b-4faa-9152-253652e61d1b",
-              "leftValue": "status_alerta",
-              "rightValue": "PRECISA DE ÁGUA!",
-              "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        1328,
-        144
-      ],
-      "id": "a3253605-da00-4465-bbf5-13c7f84a173e",
-      "name": "If"
-    },
-    {
-      "parameters": {
-        "url": "https://api.callmebot.com/whatsapp.php?phone=554195424186&text=Aviso:+{{ $json.planta }}+precisa+de+agua!+Para+registrar+a+rega,+clique+aqui:%20http://localhost:5678/webhook-test/regar?id={{ $json.id }}&apikey=7449584",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        1456,
-        -48
-      ],
-      "id": "e091337f-19d3-4e35-aacc-34ce4846bd82",
-      "name": "HTTP WhatsApp"
-    },
-    {
-      "parameters": {
         "path": "=regar",
         "options": {
           "responseData": "Disciplina da água mantida! Firebase atualizado."
@@ -87,7 +39,7 @@
       "typeVersion": 2.1,
       "position": [
         416,
-        352
+        368
       ],
       "id": "ecb603fb-4de9-494c-bfdd-1b07ea6a5965",
       "name": "Webhook",
@@ -119,7 +71,7 @@
       "typeVersion": 1.1,
       "position": [
         800,
-        352
+        368
       ],
       "id": "89d9746a-8d88-42ea-ad23-93ee397d1059",
       "name": "Create or update a document",
@@ -171,7 +123,7 @@
       "typeVersion": 3.4,
       "position": [
         608,
-        352
+        368
       ],
       "id": "f75645d3-112b-4368-919f-a933f3da381b",
       "name": "Edit Fields"
@@ -186,7 +138,7 @@
       "typeVersion": 1,
       "position": [
         400,
-        224
+        240
       ],
       "id": "0eff75bd-26b2-4103-8e93-84e8b2d33897",
       "name": "Sticky Note"
@@ -227,6 +179,267 @@
           "name": "Google Firebase Cloud Firestore account"
         }
       }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        96
+      ],
+      "id": "1c7cfe9b-d941-45f8-bb13-37750bd0eaea",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "content": "## 3° Gatilho\nPing de validação de conexão",
+        "height": 96,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        400,
+        560
+      ],
+      "id": "7ec0a13a-1e0a-483d-8d2e-c8d9aaf2787c",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "path": "healthcheck",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        688
+      ],
+      "id": "d7cacbe4-310b-4cd2-be87-a98920d199a1",
+      "name": "Webhook2",
+      "webhookId": "a24102ad-2958-42c0-8607-542ceaf2d770"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"status\": \"online\", \"mensagem\": \"O Cérebro do Sietch está operante!\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        592,
+        688
+      ],
+      "id": "64994fbd-0c4a-4ffc-b009-25ac7241ef2b",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.nivel_alerta }}",
+                    "rightValue": 1,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
+                    "id": "603f51f4-ff81-4699-978c-79d9a7ca28b9"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "508b16e6-75e8-4244-a993-fda93dab97ee",
+                    "leftValue": "={{ $json.nivel_alerta }}",
+                    "rightValue": 2,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1440,
+        -48
+      ],
+      "id": "c68e094a-923b-43fa-b8d5-4318a9795c84",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "15c34dfd-b4f0-4beb-b512-16a13ca815a5",
+              "name": "=_id",
+              "value": "={{ $json.query.id }}",
+              "type": "string"
+            },
+            {
+              "id": "fb98f57a-4cf7-4c91-a5d3-c22634285456",
+              "name": "planta_id",
+              "value": "={{ $('Code in JavaScript1').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "01944cc4-eaad-4acb-9081-0a4e1414c00a",
+              "name": "planta_nome",
+              "value": "={{ $('Code in JavaScript1').item.json.planta }}",
+              "type": "string"
+            },
+            {
+              "id": "a13cfb6a-6f64-47c9-8183-5d95a47f2a4b",
+              "name": "nivel_alerta",
+              "value": "={{ $('Code in JavaScript1').item.json.nivel_alerta }}",
+              "type": "string"
+            },
+            {
+              "id": "563f5aa7-1180-4ac5-ae5d-9754715dda5a",
+              "name": "lida",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "fcfc387f-12dd-4db2-b9e9-c83bbdf9d6f3",
+              "name": "data_envio",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2000,
+        -48
+      ],
+      "id": "5e6135fb-ef7b-48ce-b8f9-013fc435f162",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "url": "https://api.callmebot.com/whatsapp.php?phone=554195424186&text=Lembrete:+Hoje+é+o+dia+de+regar+o+{{$json.planta}},+clique+aqui:%20http://localhost:5678/webhook-test/regar?id={{ $json.id }}&apikey=7449584",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 3000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1696,
+        -192
+      ],
+      "id": "e091337f-19d3-4e35-aacc-34ce4846bd82",
+      "name": "HTTP WhatsApp Nivel 1 (suave)",
+      "retryOnFail": true,
+      "waitBetweenTries": 1000,
+      "notesInFlow": true,
+      "notes": "Erro ao enviar mensagem suave."
+    },
+    {
+      "parameters": {
+        "url": "https://api.callmebot.com/whatsapp.php?phone=554195424186&text=🚨+ALERTA+CRÍTICO:+O+{{$json.planta}}+passou+do+prazo+de+rega!+Clique+aqui:%20http://localhost:5678/webhook-test/regar?id={{ $json.id }}&apikey=7449584",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 3000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1696,
+        96
+      ],
+      "id": "52a07cb3-2a9d-4a96-a7cb-21d7302aca99",
+      "name": "HTTP WhatsApp Nivel 2 (Crítica)",
+      "retryOnFail": true,
+      "waitBetweenTries": 1000,
+      "notesInFlow": true,
+      "notes": "Erro ao enviar mensagem crítica."
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "create",
+        "projectId": "sietch-boticario",
+        "collection": "mensagens",
+        "columns": "planta_id, planta_nome, nivel_alerta, lida, data_envio"
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        2224,
+        -48
+      ],
+      "id": "fadc5d26-c15e-4d73-900a-17ba57c3c4e3",
+      "name": "Create a document (mensagens)",
+      "credentials": {
+        "googleApi": {
+          "id": "n3xCXuatVWdIpLAg",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -246,7 +459,7 @@
       "main": [
         [
           {
-            "node": "HTTP WhatsApp",
+            "node": "Switch",
             "type": "main",
             "index": 0
           }
@@ -297,16 +510,84 @@
         ]
       ]
     },
-    "If": {
-      "main": [
-        []
-      ]
-    },
     "Get many documents": {
       "main": [
         [
           {
             "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "HTTP WhatsApp Nivel 1 (suave)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP WhatsApp Nivel 2 (Crítica)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Create a document (mensagens)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP WhatsApp Nivel 1 (suave)": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP WhatsApp Nivel 2 (Crítica)": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
             "type": "main",
             "index": 0
           }
@@ -320,7 +601,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "c1ba41f6-e90c-4e1c-876a-96b80b7653b5",
+  "versionId": "2e77d861-3d78-402e-b406-effeb9495798",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4adaff8c8e08d97f5fbdf25e9e5ca748b5bb7c0bdd005723397b980f492d6ffa"
