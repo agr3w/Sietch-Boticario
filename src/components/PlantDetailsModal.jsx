@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Box,
+  Chip,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -25,10 +26,18 @@ import {
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
+import { QRCode } from "react-qr-code";
 import { adicionarNotaManual, getHistoricoPlanta } from "../firebase";
 
 const GALERIA_PLACEHOLDER_URL =
   "https://cdn.wallpapersafari.com/65/81/5YrxE9.jpg";
+
+const VITALIDADE_CONFIG = {
+  prosperando: { label: "Prosperando", color: "success" },
+  estavel: { label: "Estavel", color: "primary" },
+  recuperacao: { label: "Em Recuperacao", color: "warning" },
+  critico: { label: "Critico", color: "error" },
+};
 
 function formatarDataBr(dataEnvio) {
   if (!dataEnvio) {
@@ -92,6 +101,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const [substrato, setSubstrato] = useState(
     planta?.tipo_substrato ?? planta?.tipoSubstrato ?? "",
   );
+  const [vitalidade, setVitalidade] = useState(planta?.vitalidade ?? "estavel");
   const [toxica, setToxica] = useState(
     Boolean(planta?.eh_toxica ?? planta?.ehToxica ?? false),
   );
@@ -99,17 +109,20 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const [excluindo, setExcluindo] = useState(false);
   const [notaManual, setNotaManual] = useState("");
   const [salvandoNota, setSalvandoNota] = useState(false);
+  const [statusCopiaQr, setStatusCopiaQr] = useState("idle");
 
   useEffect(() => {
     setNotificarWhatsapp(Boolean(planta?.notificar));
     setIntervaloRega(planta?.intervalo_rega_dias ?? 1);
     setLuz(planta?.necessidade_luz ?? planta?.necessidadeLuz ?? "Meia Sombra");
     setSubstrato(planta?.tipo_substrato ?? planta?.tipoSubstrato ?? "");
+    setVitalidade(planta?.vitalidade ?? "estavel");
     setToxica(Boolean(planta?.eh_toxica ?? planta?.ehToxica ?? false));
     setSalvando(false);
     setExcluindo(false);
     setNotaManual("");
     setSalvandoNota(false);
+    setStatusCopiaQr("idle");
   }, [
     open,
     planta?.id,
@@ -119,9 +132,15 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     planta?.necessidadeLuz,
     planta?.tipo_substrato,
     planta?.tipoSubstrato,
+    planta?.vitalidade,
     planta?.eh_toxica,
     planta?.ehToxica,
   ]);
+
+  const qrCodeValue = useMemo(() => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return `${origin}/planta/${planta?.id ?? ""}`;
+  }, [planta?.id]);
 
   useEffect(() => {
     if (!open || !planta?.id) {
@@ -197,6 +216,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
         intervalo_rega_dias: Number(intervaloRega),
         necessidade_luz: luz,
         tipo_substrato: substrato,
+        vitalidade,
         eh_toxica: toxica,
       });
       onClose?.();
@@ -263,6 +283,38 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     }
   };
 
+  const handleCopiarLinkQr = async () => {
+    if (!planta?.id) {
+      setStatusCopiaQr("error");
+      return;
+    }
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(qrCodeValue);
+      } else {
+        const tempInput = document.createElement("textarea");
+        tempInput.value = qrCodeValue;
+        tempInput.setAttribute("readonly", "");
+        tempInput.style.position = "absolute";
+        tempInput.style.left = "-9999px";
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        const copiou = document.execCommand("copy");
+        document.body.removeChild(tempInput);
+
+        if (!copiou) {
+          throw new Error("Falha ao copiar link do QR");
+        }
+      }
+
+      setStatusCopiaQr("success");
+    } catch (error) {
+      console.error("Erro ao copiar link do QR:", error);
+      setStatusCopiaQr("error");
+    }
+  };
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle
@@ -301,6 +353,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
       >
         <Tab label="Visão Geral" />
         <Tab label="Diário de Bordo" />
+        <Tab label="Identificação" />
         <Tab label="Galeria" />
       </Tabs>
 
@@ -435,6 +488,29 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                 />
               </Grid>
             </Grid>
+
+            <Stack spacing={1}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Indice de vitalidade
+              </Typography>
+              <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+                {Object.entries(VITALIDADE_CONFIG).map(([value, config]) => (
+                  <Chip
+                    key={value}
+                    label={config.label}
+                    color={config.color}
+                    variant={vitalidade === value ? "filled" : "outlined"}
+                    onClick={() => setVitalidade(value)}
+                    sx={{
+                      borderRadius: 1,
+                      fontWeight: 700,
+                      letterSpacing: "0.03em",
+                      textTransform: "uppercase",
+                    }}
+                  />
+                ))}
+              </Stack>
+            </Stack>
 
             <FormControlLabel
               control={
@@ -600,6 +676,70 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
         )}
 
         {abaAtiva === 2 && (
+          <Stack spacing={2} alignItems="center">
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: 360,
+                p: 3,
+                borderRadius: 2,
+                border: "1px solid rgba(0, 0, 0, 0.1)",
+                backgroundColor: "#FFFFFF",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
+                boxShadow: "0 8px 20px rgba(0, 0, 0, 0.08)",
+              }}
+            >
+              <QRCode
+                value={qrCodeValue}
+                size={180}
+                bgColor="#FFFFFF"
+                fgColor="#111111"
+                level="M"
+              />
+              <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase" }}>
+                Codigo de rastreio
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontFamily: '"Share Tech Mono", monospace',
+                  color: "#111111",
+                  letterSpacing: "0.03em",
+                  wordBreak: "break-all",
+                  textAlign: "center",
+                }}
+              >
+                ID: {planta?.id ?? "-"}
+              </Typography>
+
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleCopiarLinkQr}
+                disabled={!planta?.id}
+              >
+                Copiar Link do QR
+              </Button>
+            </Box>
+
+            {statusCopiaQr === "success" && (
+              <Alert severity="success" sx={{ width: "100%", maxWidth: 360 }}>
+                Link copiado. Agora voce pode colar no WhatsApp.
+              </Alert>
+            )}
+
+            {statusCopiaQr === "error" && (
+              <Alert severity="error" sx={{ width: "100%", maxWidth: 360 }}>
+                Nao foi possivel copiar automaticamente. Use o link do QR manualmente.
+              </Alert>
+            )}
+          </Stack>
+        )}
+
+        {abaAtiva === 3 && (
           <Box>
             <Alert severity="info" sx={{ mb: 2 }}>
               Integração com Firebase Storage em breve. Prepare-se para acompanhar o crescimento do seu Sietch!
