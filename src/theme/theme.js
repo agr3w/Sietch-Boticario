@@ -76,8 +76,11 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 0,
-          border: "1px solid rgba(194, 88, 36, 0.3)",
-          boxShadow: "0 14px 30px rgba(103, 71, 38, 0.16)",
+          backgroundColor: "rgba(30, 58, 47, 0.6)",
+          backdropFilter: "blur(10px)",
+          border: "1px solid rgba(211, 84, 0, 0.4)",
+          boxShadow:
+            "inset 0 1px 0 rgba(232, 224, 213, 0.22), inset 0 -1px 0 rgba(211, 84, 0, 0.35), 0 14px 30px rgba(16, 24, 20, 0.24)",
         },
       },
     },

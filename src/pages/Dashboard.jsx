@@ -36,6 +36,10 @@ import AddPlantModal from "../components/AddPlantModal";
 import { climateSx, feedbackSx, globalSx, layoutSx } from "../theme/styles";
 
 function Dashboard() {
+  const mentatNumberSx = {
+    fontFamily: '"Share Tech Mono", monospace',
+    letterSpacing: '0.03em',
+  };
   const [plantas, setPlantas] = useState([]);
   const [climaAtual, setClimaAtual] = useState(null);
   const [climaErro, setClimaErro] = useState("");
@@ -339,7 +343,7 @@ function Dashboard() {
           ? "warning.main"
           : "text.secondary";
 
-    const menuNotificacoesAberto = Boolean(notificacoesAnchorEl);
+  const menuNotificacoesAberto = Boolean(notificacoesAnchorEl);
 
   return (
     <Container maxWidth="md" sx={[layoutSx.pageContainer, globalSx.pageTexture]}>
@@ -404,7 +408,9 @@ function Dashboard() {
                     Temperatura Atual
                   </Typography>
                   <Typography variant="h4" sx={climateSx.metricValue}>
+                    <Box component="span" sx={mentatNumberSx}>
                     {climaAtual.temperatura}°C
+                    </Box>
                   </Typography>
                 </Box>
               </Grid>
@@ -414,7 +420,9 @@ function Dashboard() {
                     Umidade Relativa
                   </Typography>
                   <Typography variant="h4" sx={climateSx.metricValue}>
+                    <Box component="span" sx={mentatNumberSx}>
                     {climaAtual.umidade}%
+                    </Box>
                   </Typography>
                 </Box>
               </Grid>
@@ -504,7 +512,7 @@ function Dashboard() {
               >
                 <ListItemText
                   primary={mensagem.planta_nome ?? "Planta"}
-                  secondary={formatarDataEnvio(mensagem.data_envio)}
+                  secondary={<Box component="span" sx={mentatNumberSx}>{formatarDataEnvio(mensagem.data_envio)}</Box>}
                 />
                 <IconButton
                   size="small"
@@ -519,6 +527,32 @@ function Dashboard() {
           })
         )}
       </Menu>
+
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 1.2,
+          mb: 3.4,
+          color: "secondary.main",
+          opacity: 0.9,
+        }}
+      >
+        {Array.from({ length: 9 }).map((_, index) => (
+          <Box
+            key={index}
+            component="span"
+            sx={{
+              fontFamily: '"Share Tech Mono", monospace',
+              fontSize: index === 4 ? "1.2rem" : "0.95rem",
+              lineHeight: 1,
+            }}
+          >
+            ♦
+          </Box>
+        ))}
+      </Box>
 
       <Grid container spacing={3}>
         {plantas.map((planta) => (

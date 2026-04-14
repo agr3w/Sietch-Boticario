@@ -2,26 +2,27 @@ export const globalSx = {
   pageTexture: {
     position: "relative",
     isolation: "isolate",
+  },
+};
+
+export const layoutSx = {
+  pageContainer: {
+    position: "relative",
+    isolation: "isolate",
+    mt: 4,
+    pb: 6,
+    minHeight: "100vh",
     "&::before": {
       content: '""',
       position: "absolute",
       inset: 0,
       pointerEvents: "none",
       zIndex: -1,
-      opacity: 0.16,
+      opacity: 0.03,
       backgroundImage:
-        "radial-gradient(rgba(42,54,59,0.22) 0.7px, transparent 0.7px), radial-gradient(rgba(211,84,0,0.12) 0.8px, transparent 0.8px)",
-      backgroundPosition: "0 0, 12px 12px",
-      backgroundSize: "18px 18px, 24px 24px",
+        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E\")",
+      backgroundRepeat: "repeat",
     },
-  },
-};
-
-export const layoutSx = {
-  pageContainer: {
-    mt: 4,
-    pb: 6,
-    minHeight: "100vh",
   },
   hero: {
     position: "relative",

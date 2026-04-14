@@ -22,6 +22,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import { adicionarNotaManual, getHistoricoPlanta } from "../firebase";
 
 const GALERIA_PLACEHOLDER_URL =
@@ -232,7 +233,20 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>{planta?.nome_apelido ?? "Prontuário da Planta"}</DialogTitle>
+      <DialogTitle sx={{ position: "relative", overflow: "hidden", pr: 8 }}>
+        {planta?.nome_apelido ?? "Prontuário da Planta"}
+        <WaterDropIcon
+          sx={{
+            position: "absolute",
+            right: -8,
+            top: -10,
+            fontSize: 66,
+            opacity: 0.08,
+            color: "info.main",
+            pointerEvents: "none",
+          }}
+        />
+      </DialogTitle>
 
       <Tabs
         value={abaAtiva}

@@ -43,6 +43,10 @@ function parseUltimaRegaDate(ultimaRega) {
 }
 
 function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
+  const mentatNumberSx = {
+    fontFamily: '"Share Tech Mono", monospace',
+    letterSpacing: '0.03em',
+  };
   const dataRega = parseUltimaRegaDate(planta.ultima_rega);
   const dateOptions = { timeZone: 'America/Sao_Paulo' };
   const timeOptions = { timeZone: 'America/Sao_Paulo' };
@@ -119,23 +123,57 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
       onClick={() => setDetailsOpen(true)}
       sx={[
         {
+          position: 'relative',
+          overflow: 'hidden',
           cursor: 'pointer',
           bgcolor: 'background.paper',
           boxShadow: 'none',
           borderRadius: 0,
+          '@keyframes cardAlertPulse': {
+            '0%': { boxShadow: '0 0 8px rgba(217, 72, 65, 0.4)' },
+            '50%': { boxShadow: '0 0 20px rgba(217, 72, 65, 0.72)' },
+            '100%': { boxShadow: '0 0 8px rgba(217, 72, 65, 0.4)' },
+          },
+          '@keyframes cardCalmGlow': {
+            '0%': { boxShadow: '0 0 7px rgba(27, 128, 196, 0.22)' },
+            '50%': { boxShadow: '0 0 15px rgba(27, 128, 196, 0.45)' },
+            '100%': { boxShadow: '0 0 7px rgba(27, 128, 196, 0.22)' },
+          },
         },
         faltaUmDiaParaRega && { borderLeft: '4px solid', borderLeftColor: 'secondary.main' },
         regaHoje && { borderLeft: '4px solid', borderLeftColor: 'secondary.main' },
-        estaAtrasada && { borderLeft: '4px solid', borderLeftColor: 'error.main' },
+        estaAtrasada && {
+          borderLeft: '4px solid',
+          borderLeftColor: 'error.main',
+          boxShadow: '0 0 15px rgba(217, 72, 65, 0.6)',
+          animation: 'cardAlertPulse 1.1s ease-in-out infinite',
+        },
+        medidorEstado === 'hidratada' && {
+          boxShadow: '0 0 12px rgba(27, 128, 196, 0.34)',
+          animation: 'cardCalmGlow 3.2s ease-in-out infinite',
+        },
       ]}
     >
-      <CardContent sx={plantCardSx.content}>
+      <CardContent sx={[plantCardSx.content, { position: 'relative', overflow: 'hidden' }]}>
+        <WaterDropIcon
+          sx={{
+            position: 'absolute',
+            right: -20,
+            bottom: -24,
+            fontSize: 120,
+            opacity: 0.05,
+            color: 'info.main',
+            pointerEvents: 'none',
+            transform: 'rotate(-16deg)',
+          }}
+        />
         {textoSelo && (
           <Box
             component="span"
             sx={[
               plantCardSx.statusBadge,
               precisaRegar ? plantCardSx.statusBadgeNeedWater : plantCardSx.statusBadgeNearWater,
+              mentatNumberSx,
             ]}
           >
             {textoSelo}
@@ -173,6 +211,14 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
               borderRadius: 0,
               backgroundColor: 'rgba(18, 24, 27, 0.16)',
               border: '1px solid rgba(23, 30, 33, 0.24)',
+              ...(medidorEstado === 'atrasada' && {
+                boxShadow: '0 0 15px rgba(217, 72, 65, 0.6)',
+                animation: 'meterAlertPulse 0.95s ease-in-out infinite',
+              }),
+              ...(medidorEstado === 'hidratada' && {
+                boxShadow: '0 0 11px rgba(27, 128, 196, 0.42)',
+                animation: 'meterCalmPulse 3.2s ease-in-out infinite',
+              }),
               '& .MuiLinearProgress-bar': {
                 backgroundColor: medidorCor,
                 transition: 'transform 280ms linear',
@@ -187,6 +233,16 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
                 '50%': { filter: 'brightness(1.2)' },
                 '100%': { filter: 'brightness(0.85)' },
               },
+              '@keyframes meterAlertPulse': {
+                '0%': { boxShadow: '0 0 8px rgba(217, 72, 65, 0.36)' },
+                '50%': { boxShadow: '0 0 18px rgba(217, 72, 65, 0.7)' },
+                '100%': { boxShadow: '0 0 8px rgba(217, 72, 65, 0.36)' },
+              },
+              '@keyframes meterCalmPulse': {
+                '0%': { boxShadow: '0 0 5px rgba(27, 128, 196, 0.2)' },
+                '50%': { boxShadow: '0 0 13px rgba(27, 128, 196, 0.48)' },
+                '100%': { boxShadow: '0 0 5px rgba(27, 128, 196, 0.2)' },
+              },
             }}
           />
           <Typography variant="caption" sx={{ display: 'block', mt: 0.7, color: 'text.secondary' }}>
@@ -194,10 +250,10 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
           </Typography>
         </Box>
 
-        <Typography variant="body2" sx={plantCardSx.intervalText}>
+        <Typography variant="body2" sx={[plantCardSx.intervalText, mentatNumberSx]}>
           <strong>Intervalo de Rega:</strong> a cada {planta.intervalo_rega_dias} dias
         </Typography>
-        <Typography variant="body2" sx={plantCardSx.lastWatering}>
+        <Typography variant="body2" sx={[plantCardSx.lastWatering, mentatNumberSx]}>
           <strong>Última Rega:</strong>{' '}
           {dataRegaValida
             ? `${dataRega.toLocaleDateString('pt-BR', dateOptions)} às ${dataRega.toLocaleTimeString('pt-BR', timeOptions)}`
@@ -205,13 +261,13 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
         </Typography>
 
         {precisaRegar && (
-          <Typography variant="body2" sx={plantCardSx.alertText}>
+          <Typography variant="body2" sx={[plantCardSx.alertText, mentatNumberSx]}>
             Atenção: precisa de água (atrasada {diasAtraso} {diasAtraso === 1 ? 'dia' : 'dias'}).
           </Typography>
         )}
 
         {faltaUmDiaParaRega && (
-          <Typography variant="body2" sx={plantCardSx.nearAlertText}>
+          <Typography variant="body2" sx={[plantCardSx.nearAlertText, mentatNumberSx]}>
             Aviso: quase na hora de regar (falta 1 dia).
           </Typography>
         )}
