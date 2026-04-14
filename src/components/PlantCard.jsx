@@ -68,23 +68,20 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
       : faltaUmDiaParaRega
         ? 'Regar amanha'
         : null;
-  const nivelHidratacao =
-    dataRegaValida && intervaloRega > 0
-      ? Math.max(0, Math.min(100, 100 - (diasDesdeRega / intervaloRega) * 100))
+  const porcentagemAgua =
+    dataRegaValida && Number.isFinite(intervaloRega) && intervaloRega > 0
+      ? Math.max(0, 100 - (diasDesdeRega / intervaloRega) * 100)
       : 0;
-  const medidorEstado = estaAtrasada ? 'atrasada' : regaHoje ? 'hoje' : 'hidratada';
-  const medidorCor =
-    medidorEstado === 'atrasada'
-      ? 'error.main'
-      : medidorEstado === 'hoje'
-        ? 'secondary.main'
-        : 'info.main';
+  const corMedidor =
+    porcentagemAgua > 25 ? 'info' : porcentagemAgua > 0 && porcentagemAgua <= 25 ? 'secondary' : 'error';
+  const medidorEstado =
+    porcentagemAgua === 0 ? 'atrasada' : porcentagemAgua <= 25 ? 'hoje' : 'hidratada';
   const medidorTexto =
     medidorEstado === 'atrasada'
       ? `Critico: reposicao atrasada em ${diasAtraso} dia${diasAtraso === 1 ? '' : 's'}`
       : medidorEstado === 'hoje'
         ? 'Limite operacional: fornecer agua hoje'
-        : `Reserva hidrica estavel (${Math.ceil(nivelHidratacao)}%)`;
+        : `Reserva hidrica estavel (${Math.ceil(porcentagemAgua)}%)`;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [novoIntervalo, setNovoIntervalo] = useState(planta.intervalo_rega_dias ?? 1);
@@ -205,11 +202,12 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
           </Typography>
           <LinearProgress
             variant="determinate"
-            value={nivelHidratacao}
+            value={porcentagemAgua}
+            color={corMedidor}
             sx={{
-              height: 11,
+              height: 8,
               borderRadius: 0,
-              backgroundColor: 'rgba(18, 24, 27, 0.16)',
+              backgroundColor: 'rgba(0,0,0,0.4)',
               border: '1px solid rgba(23, 30, 33, 0.24)',
               ...(medidorEstado === 'atrasada' && {
                 boxShadow: '0 0 15px rgba(217, 72, 65, 0.6)',
@@ -220,7 +218,6 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
                 animation: 'meterCalmPulse 3.2s ease-in-out infinite',
               }),
               '& .MuiLinearProgress-bar': {
-                backgroundColor: medidorCor,
                 transition: 'transform 280ms linear',
                 ...(medidorEstado === 'atrasada' && {
                   backgroundImage:
