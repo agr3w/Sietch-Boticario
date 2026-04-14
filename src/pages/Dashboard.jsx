@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDocs,
   serverTimestamp,
@@ -206,22 +207,6 @@ function Dashboard() {
     }
   };
 
-  const atualizarIntervaloRega = async (id, novoIntervalo) => {
-    try {
-      const plantaRef = doc(db, "plantas", id);
-
-      await updateDoc(plantaRef, {
-        intervalo_rega_dias: novoIntervalo,
-      });
-
-      await carregarPlantas();
-      exibirFeedback("Intervalo de rega atualizado.", "success");
-    } catch {
-      exibirFeedback("Falha ao atualizar o intervalo de rega.", "error");
-      throw new Error("Falha ao atualizar intervalo");
-    }
-  };
-
   const atualizarDadosPlanta = async (id, dadosAtualizados) => {
     try {
       const plantaRef = doc(db, "plantas", id);
@@ -231,6 +216,17 @@ function Dashboard() {
     } catch {
       exibirFeedback("Falha ao atualizar os dados da planta.", "error");
       throw new Error("Falha ao atualizar dados da planta");
+    }
+  };
+
+  const deletarPlanta = async (id) => {
+    try {
+      await deleteDoc(doc(db, "plantas", id));
+      await carregarPlantas();
+      exibirFeedback("Planta removida do Sietch.", "success");
+    } catch {
+      exibirFeedback("Falha ao remover a planta.", "error");
+      throw new Error("Falha ao remover planta");
     }
   };
 
@@ -560,8 +556,8 @@ function Dashboard() {
             <PlantCard
               planta={planta}
               onRegar={regarPlanta}
-              onSalvarIntervalo={atualizarIntervaloRega}
               onAtualizarPlanta={atualizarDadosPlanta}
+              onDelete={deletarPlanta}
             />
           </Grid>
         ))}

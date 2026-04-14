@@ -4,13 +4,8 @@ import {
   Button,
   Card,
   CardContent,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   LinearProgress,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
@@ -42,7 +37,7 @@ function parseUltimaRegaDate(ultimaRega) {
   return null;
 }
 
-function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
+function PlantCard({ planta, onRegar, onAtualizarPlanta, onDelete }) {
   const mentatNumberSx = {
     fontFamily: '"Share Tech Mono", monospace',
     letterSpacing: '0.03em',
@@ -85,47 +80,15 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
       : medidorEstado === 'hoje'
         ? 'Limite operacional: fornecer agua hoje'
         : `Reserva hidrica estavel (${Math.ceil(porcentagemAgua)}%)`;
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [novoIntervalo, setNovoIntervalo] = useState(planta.intervalo_rega_dias ?? 1);
-  const [salvando, setSalvando] = useState(false);
-
-  const abrirDialog = () => {
-    setNovoIntervalo(planta.intervalo_rega_dias ?? 1);
-    setDialogOpen(true);
-  };
-
-  const fecharDialog = () => {
-    if (!salvando) {
-      setDialogOpen(false);
-    }
-  };
-
-  const salvarIntervalo = async () => {
-    const intervaloNormalizado = Number(novoIntervalo);
-
-    if (!Number.isFinite(intervaloNormalizado) || intervaloNormalizado <= 0) {
-      return;
-    }
-
-    setSalvando(true);
-    try {
-      await onSalvarIntervalo(planta.id, intervaloNormalizado);
-      setDialogOpen(false);
-    } finally {
-      setSalvando(false);
-    }
-  };
 
   return (
     <Card
       elevation={3}
-      onClick={() => setDetailsOpen(true)}
       sx={[
         {
           position: 'relative',
           overflow: 'hidden',
-          cursor: 'pointer',
           bgcolor: 'background.paper',
           boxShadow: 'none',
           borderRadius: 0,
@@ -293,7 +256,7 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
             sx={plantCardSx.adjustButton}
             onClick={(event) => {
               event.stopPropagation();
-              abrirDialog();
+              setDetailsOpen(true);
             }}
             startIcon={
               <Box component="span" aria-hidden="true" sx={plantCardSx.icon}>
@@ -301,48 +264,16 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
               </Box>
             }
           >
-            Ajustar Tolerância
+            ACESSAR PRONTUÁRIO
           </Button>
         </Stack>
-
-        <Dialog
-          open={dialogOpen}
-          onClose={(event, reason) => {
-            event?.stopPropagation?.();
-            fecharDialog(reason);
-          }}
-          onClick={(event) => event.stopPropagation()}
-          fullWidth
-          maxWidth="xs"
-        >
-          <DialogTitle>Ajustar Tolerância de Rega</DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Intervalo de rega (dias)"
-              type="number"
-              fullWidth
-              value={novoIntervalo}
-              onChange={(event) => setNovoIntervalo(event.target.value)}
-              slotProps={{ htmlInput: { min: 1 } }}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={fecharDialog} disabled={salvando}>
-              Cancelar
-            </Button>
-            <Button onClick={salvarIntervalo} variant="contained" disabled={salvando}>
-              {salvando ? 'Salvando...' : 'Salvar'}
-            </Button>
-          </DialogActions>
-        </Dialog>
 
         <PlantDetailsModal
           planta={planta}
           open={detailsOpen}
           onClose={() => setDetailsOpen(false)}
           onUpdate={onAtualizarPlanta}
+          onDelete={onDelete}
         />
       </CardContent>
     </Card>

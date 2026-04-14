@@ -22,6 +22,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import EditNoteIcon from "@mui/icons-material/EditNote";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import { adicionarNotaManual, getHistoricoPlanta } from "../firebase";
 
@@ -74,32 +76,38 @@ function obterDataRega(ultimaRega) {
   return Number.isFinite(date.getTime()) ? date : null;
 }
 
-function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
+function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
+  const mentatMonoSx = {
+    fontFamily: '"Share Tech Mono", monospace',
+    letterSpacing: "0.03em",
+  };
   const [abaAtiva, setAbaAtiva] = useState(0);
   const [historico, setHistorico] = useState([]);
   const [carregandoHistorico, setCarregandoHistorico] = useState(false);
   const [notificarWhatsapp, setNotificarWhatsapp] = useState(Boolean(planta?.notificar));
   const [intervaloRega, setIntervaloRega] = useState(planta?.intervalo_rega_dias ?? 1);
-  const [necessidadeLuz, setNecessidadeLuz] = useState(
+  const [luz, setLuz] = useState(
     planta?.necessidade_luz ?? planta?.necessidadeLuz ?? "Meia Sombra",
   );
-  const [tipoSubstrato, setTipoSubstrato] = useState(
+  const [substrato, setSubstrato] = useState(
     planta?.tipo_substrato ?? planta?.tipoSubstrato ?? "",
   );
-  const [ehToxica, setEhToxica] = useState(
+  const [toxica, setToxica] = useState(
     Boolean(planta?.eh_toxica ?? planta?.ehToxica ?? false),
   );
   const [salvando, setSalvando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
   const [notaManual, setNotaManual] = useState("");
   const [salvandoNota, setSalvandoNota] = useState(false);
 
   useEffect(() => {
     setNotificarWhatsapp(Boolean(planta?.notificar));
     setIntervaloRega(planta?.intervalo_rega_dias ?? 1);
-    setNecessidadeLuz(planta?.necessidade_luz ?? planta?.necessidadeLuz ?? "Meia Sombra");
-    setTipoSubstrato(planta?.tipo_substrato ?? planta?.tipoSubstrato ?? "");
-    setEhToxica(Boolean(planta?.eh_toxica ?? planta?.ehToxica ?? false));
+    setLuz(planta?.necessidade_luz ?? planta?.necessidadeLuz ?? "Meia Sombra");
+    setSubstrato(planta?.tipo_substrato ?? planta?.tipoSubstrato ?? "");
+    setToxica(Boolean(planta?.eh_toxica ?? planta?.ehToxica ?? false));
     setSalvando(false);
+    setExcluindo(false);
     setNotaManual("");
     setSalvandoNota(false);
   }, [
@@ -175,6 +183,8 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
     };
   }, [planta?.intervalo_rega_dias, planta?.ultima_rega]);
 
+  const diasReadoutCritico = resumoRega.diasParaRegar === "Regar hoje";
+
   const handleSalvar = async () => {
     if (!planta?.id || typeof onUpdate !== "function") {
       return;
@@ -185,9 +195,9 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
       await onUpdate(planta.id, {
         notificar: notificarWhatsapp,
         intervalo_rega_dias: Number(intervaloRega),
-        necessidade_luz: necessidadeLuz,
-        tipo_substrato: tipoSubstrato,
-        eh_toxica: ehToxica,
+        necessidade_luz: luz,
+        tipo_substrato: substrato,
+        eh_toxica: toxica,
       });
       onClose?.();
     } finally {
@@ -231,10 +241,45 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
     }
   };
 
+  const handleExcluirPlanta = async () => {
+    if (!planta?.id || typeof onDelete !== "function") {
+      return;
+    }
+
+    const confirmou = window.confirm(
+      "Tem certeza? Este registro será perdido na areia.",
+    );
+
+    if (!confirmou) {
+      return;
+    }
+
+    setExcluindo(true);
+    try {
+      await onDelete(planta.id);
+      onClose?.();
+    } finally {
+      setExcluindo(false);
+    }
+  };
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle sx={{ position: "relative", overflow: "hidden", pr: 8 }}>
-        {planta?.nome_apelido ?? "Prontuário da Planta"}
+      <DialogTitle
+        sx={{
+          position: "relative",
+          overflow: "hidden",
+          pr: 8,
+          textTransform: "uppercase",
+          fontFamily: '"Rajdhani", sans-serif',
+          letterSpacing: "0.1em",
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+        }}
+      >
+        <WaterDropIcon sx={{ color: "secondary.main" }} />
+        <Box component="span">{planta?.nome_apelido ?? "Prontuário da Planta"}</Box>
         <WaterDropIcon
           sx={{
             position: "absolute",
@@ -256,26 +301,93 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
       >
         <Tab label="Visão Geral" />
         <Tab label="Diário de Bordo" />
-        <Tab label="Ficha Botânica" />
         <Tab label="Galeria" />
       </Tabs>
 
-      <DialogContent dividers>
+      <DialogContent
+        dividers
+        sx={{
+          position: "relative",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: 20,
+            height: 20,
+            borderTop: "2px solid",
+            borderLeft: "2px solid",
+            borderColor: "secondary.main",
+            opacity: 0.7,
+            pointerEvents: "none",
+          },
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            right: 0,
+            bottom: 0,
+            width: 20,
+            height: 20,
+            borderBottom: "2px solid",
+            borderRight: "2px solid",
+            borderColor: "info.main",
+            opacity: 0.7,
+            pointerEvents: "none",
+          },
+        }}
+      >
         {abaAtiva === 0 && (
           <Stack spacing={2.2}>
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary">
-                Dias para regar
-              </Typography>
-              <Typography variant="h6">{resumoRega.diasParaRegar}</Typography>
-            </Box>
-
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary">
-                Última rega
-              </Typography>
-              <Typography variant="body1">{resumoRega.ultimaRega}</Typography>
-            </Box>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 5 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    backgroundColor: "rgba(0,0,0,0.2)",
+                    border: "1px solid rgba(211, 84, 0, 0.34)",
+                    clipPath:
+                      "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: "secondary.main", letterSpacing: "0.08em" }}>
+                    READOUT
+                  </Typography>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Dias para regar
+                  </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={[
+                      mentatMonoSx,
+                      { color: diasReadoutCritico ? "secondary.main" : "info.main" },
+                    ]}
+                  >
+                    {resumoRega.diasParaRegar}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, md: 7 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    backgroundColor: "rgba(0,0,0,0.2)",
+                    border: "1px solid rgba(27, 128, 196, 0.34)",
+                    clipPath:
+                      "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: "secondary.main", letterSpacing: "0.08em" }}>
+                    READOUT
+                  </Typography>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Última rega
+                  </Typography>
+                  <Typography variant="body1" sx={[mentatMonoSx, { color: "info.main" }]}>
+                    {resumoRega.ultimaRega}
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
 
             <TextField
               label="Intervalo de rega (dias)"
@@ -283,8 +395,46 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
               value={intervaloRega}
               onChange={(event) => setIntervaloRega(event.target.value)}
               slotProps={{ htmlInput: { min: 1 } }}
+              sx={{ "& input": mentatMonoSx }}
               fullWidth
             />
+
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormControl fullWidth>
+                  <InputLabel id="necessidade-luz-geral-label">Necessidade de luz</InputLabel>
+                  <Select
+                    labelId="necessidade-luz-geral-label"
+                    label="Necessidade de luz"
+                    value={luz}
+                    onChange={(event) => setLuz(event.target.value)}
+                  >
+                    <MenuItem value="Sol Pleno">Sol Pleno</MenuItem>
+                    <MenuItem value="Meia Sombra">Meia Sombra</MenuItem>
+                    <MenuItem value="Sombra">Sombra</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, md: 5 }}>
+                <TextField
+                  label="Tipo de substrato"
+                  value={substrato}
+                  onChange={(event) => setSubstrato(event.target.value)}
+                  fullWidth
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 3 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={toxica}
+                      onChange={(event) => setToxica(event.target.checked)}
+                    />
+                  }
+                  label="Tóxica para Pets"
+                />
+              </Grid>
+            </Grid>
 
             <FormControlLabel
               control={
@@ -296,11 +446,29 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
               label="Notificar via WhatsApp"
             />
 
-            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 1.2,
+                flexWrap: "wrap",
+              }}
+            >
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={handleExcluirPlanta}
+                disabled={excluindo || salvando || typeof onDelete !== "function"}
+              >
+                {excluindo
+                  ? "EXCLUINDO..."
+                  : "DEVOLVER ÁGUA AO SIETCH (EXCLUIR PLANTA)"}
+              </Button>
               <Button
                 variant="contained"
                 onClick={handleSalvar}
-                disabled={salvando}
+                disabled={salvando || excluindo}
               >
                 {salvando ? "Salvando..." : "Salvar Alterações"}
               </Button>
@@ -316,7 +484,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
               minRows={3}
               value={notaManual}
               onChange={(event) => setNotaManual(event.target.value)}
-              placeholder="Ex.: Adubação realizada hoje, sem sinais de estresse hídrico."
+              placeholder="Registre um evento (ex: adubação, poda)..."
               fullWidth
             />
 
@@ -343,37 +511,73 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
             )}
 
             {!carregandoHistorico && historico.length > 0 && (
-              <List sx={{ p: 0 }}>
+              <List
+                sx={{
+                  p: 0,
+                  position: "relative",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    left: "18px",
+                    top: "6px",
+                    bottom: "6px",
+                    width: "2px",
+                    background:
+                      "linear-gradient(180deg, rgba(211,84,0,0.55), rgba(27,128,196,0.55))",
+                    opacity: 0.8,
+                  },
+                }}
+              >
                 {historico.map((mensagem) => {
                   const ehManual = mensagem.tipo === "manual";
-                  const corMarcador = ehManual
-                    ? "#607D8B"
-                    : Number(mensagem.nivel_alerta) === 2
-                      ? "#D94841"
-                      : "#D39A2C";
+                  const nivelAlerta = Number(mensagem.nivel_alerta ?? 0);
+                  const ehCritico = !ehManual && nivelAlerta >= 2;
+                  const corEvento = ehManual ? "#607D8B" : ehCritico ? "#D94841" : "#D39A2C";
+                  const fundoEvento = ehManual
+                    ? "rgba(96, 125, 139, 0.12)"
+                    : ehCritico
+                      ? "rgba(217, 72, 65, 0.18)"
+                      : "rgba(211, 154, 44, 0.16)";
 
                   return (
                     <ListItem
                       key={mensagem.id}
                       sx={{
                         mb: 1,
+                        pl: 6,
                         borderRadius: 2,
                         border: "1px solid rgba(100, 70, 40, 0.16)",
-                        backgroundColor: ehManual ? "rgba(96, 125, 139, 0.08)" : "transparent",
+                        backgroundColor: fundoEvento,
                         alignItems: "flex-start",
                         gap: 1.2,
+                        position: "relative",
                       }}
                     >
                       <Box
                         sx={{
-                          width: 10,
-                          height: 10,
+                          position: "absolute",
+                          left: "6px",
+                          top: "10px",
+                          width: 24,
+                          height: 24,
                           borderRadius: "50%",
-                          backgroundColor: corMarcador,
-                          mt: "8px",
-                          flexShrink: 0,
+                          backgroundColor: "rgba(23, 30, 33, 0.86)",
+                          border: `1px solid ${corEvento}`,
+                          color: corEvento,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          zIndex: 1,
                         }}
-                      />
+                      >
+                        {ehManual ? (
+                          <EditNoteIcon sx={{ fontSize: 15 }} />
+                        ) : ehCritico ? (
+                          <WarningAmberIcon sx={{ fontSize: 15 }} />
+                        ) : (
+                          <WarningAmberIcon sx={{ fontSize: 15 }} />
+                        )}
+                      </Box>
 
                       <ListItemText
                         primary={
@@ -381,7 +585,11 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
                             ? `Nota manual: ${mensagem.mensagem ?? "Sem descrição"}`
                             : mensagem.titulo ?? mensagem.mensagem ?? "Alerta de rega"
                         }
-                        secondary={`Planta: ${mensagem.planta_nome ?? planta?.nome_apelido ?? "-"} • ${formatarDataBr(mensagem.data_envio)}`}
+                        secondary={
+                          <Box component="span" sx={mentatMonoSx}>
+                            {`Planta: ${mensagem.planta_nome ?? planta?.nome_apelido ?? "-"} • ${formatarDataBr(mensagem.data_envio)}`}
+                          </Box>
+                        }
                       />
                     </ListItem>
                   );
@@ -392,51 +600,6 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
         )}
 
         {abaAtiva === 2 && (
-          <Stack spacing={2.2}>
-            <FormControl fullWidth>
-              <InputLabel id="necessidade-luz-label">Necessidade de luz</InputLabel>
-              <Select
-                labelId="necessidade-luz-label"
-                label="Necessidade de luz"
-                value={necessidadeLuz}
-                onChange={(event) => setNecessidadeLuz(event.target.value)}
-              >
-                <MenuItem value="Sol Pleno">Sol Pleno</MenuItem>
-                <MenuItem value="Meia Sombra">Meia Sombra</MenuItem>
-                <MenuItem value="Sombra">Sombra</MenuItem>
-              </Select>
-            </FormControl>
-
-            <TextField
-              label="Tipo de substrato"
-              value={tipoSubstrato}
-              onChange={(event) => setTipoSubstrato(event.target.value)}
-              fullWidth
-            />
-
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={ehToxica}
-                  onChange={(event) => setEhToxica(event.target.checked)}
-                />
-              }
-              label="Tóxica para pets"
-            />
-
-            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-              <Button
-                variant="contained"
-                onClick={handleSalvar}
-                disabled={salvando}
-              >
-                {salvando ? "Salvando..." : "Salvar Alterações"}
-              </Button>
-            </Box>
-          </Stack>
-        )}
-
-        {abaAtiva === 3 && (
           <Box>
             <Alert severity="info" sx={{ mb: 2 }}>
               Integração com Firebase Storage em breve. Prepare-se para acompanhar o crescimento do seu Sietch!
