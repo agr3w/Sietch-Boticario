@@ -320,12 +320,6 @@
         "assignments": {
           "assignments": [
             {
-              "id": "15c34dfd-b4f0-4beb-b512-16a13ca815a5",
-              "name": "=_id",
-              "value": "={{ $json.query.id }}",
-              "type": "string"
-            },
-            {
               "id": "fb98f57a-4cf7-4c91-a5d3-c22634285456",
               "name": "planta_id",
               "value": "={{ $('Code in JavaScript1').item.json.id }}",
@@ -347,7 +341,7 @@
               "id": "563f5aa7-1180-4ac5-ae5d-9754715dda5a",
               "name": "lida",
               "value": false,
-              "type": "boolean"
+              "type": "string"
             },
             {
               "id": "fcfc387f-12dd-4db2-b9e9-c83bbdf9d6f3",
@@ -424,7 +418,7 @@
         "operation": "create",
         "projectId": "sietch-boticario",
         "collection": "mensagens",
-        "columns": "planta_id, planta_nome, nivel_alerta, lida, data_envio"
+        "columns": "=planta_id, planta_nome, nivel_alerta, lida, data_envio"
       },
       "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
       "typeVersion": 1.1,
@@ -601,7 +595,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "2e77d861-3d78-402e-b406-effeb9495798",
+  "versionId": "9a09e016-7ced-471a-b1d9-daee3481e5a9",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4adaff8c8e08d97f5fbdf25e9e5ca748b5bb7c0bdd005723397b980f492d6ffa"

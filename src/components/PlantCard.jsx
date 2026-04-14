@@ -13,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { plantCardSx } from '../theme/styles';
+import PlantDetailsModal from './PlantDetailsModal';
 
 function parseUltimaRegaDate(ultimaRega) {
   if (!ultimaRega) {
@@ -60,6 +61,7 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
       ? 'Regar amanha'
       : null;
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [novoIntervalo, setNovoIntervalo] = useState(planta.intervalo_rega_dias ?? 1);
   const [salvando, setSalvando] = useState(false);
 
@@ -93,10 +95,12 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
   return (
     <Card
       elevation={3}
+      onClick={() => setDetailsOpen(true)}
       sx={[
         plantCardSx.card,
         faltaUmDiaParaRega && plantCardSx.cardNearWater,
         precisaRegar && plantCardSx.cardNeedWater,
+        { cursor: 'pointer' },
       ]}
     >
       <CardContent sx={plantCardSx.content}>
@@ -147,7 +151,10 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
             color="success"
             fullWidth
             sx={plantCardSx.waterButton}
-            onClick={() => onRegar(planta.id)}
+            onClick={(event) => {
+              event.stopPropagation();
+              void onRegar(planta.id);
+            }}
           >
             <Box component="span" aria-hidden="true" sx={plantCardSx.icon}>
               💧
@@ -159,7 +166,10 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
             color="secondary"
             fullWidth
             sx={plantCardSx.adjustButton}
-            onClick={abrirDialog}
+            onClick={(event) => {
+              event.stopPropagation();
+              abrirDialog();
+            }}
             startIcon={
               <Box component="span" aria-hidden="true" sx={plantCardSx.icon}>
                 ⚙️
@@ -170,7 +180,16 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
           </Button>
         </Stack>
 
-        <Dialog open={dialogOpen} onClose={fecharDialog} fullWidth maxWidth="xs">
+        <Dialog
+          open={dialogOpen}
+          onClose={(event, reason) => {
+            event?.stopPropagation?.();
+            fecharDialog(reason);
+          }}
+          onClick={(event) => event.stopPropagation()}
+          fullWidth
+          maxWidth="xs"
+        >
           <DialogTitle>Ajustar Tolerância de Rega</DialogTitle>
           <DialogContent>
             <TextField
@@ -193,6 +212,12 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
             </Button>
           </DialogActions>
         </Dialog>
+
+        <PlantDetailsModal
+          planta={planta}
+          open={detailsOpen}
+          onClose={() => setDetailsOpen(false)}
+        />
       </CardContent>
     </Card>
   );

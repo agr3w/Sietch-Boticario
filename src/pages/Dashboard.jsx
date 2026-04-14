@@ -15,19 +15,20 @@ import {
   Card,
   CardContent,
   Container,
-  Drawer,
   Grid,
   IconButton,
-  List,
-  ListItem,
+  ListItemText,
+  Menu,
+  MenuItem,
   Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
+import CheckIcon from "@mui/icons-material/Check";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import {
   db,
-  getMensagensNaoLidas,
+  getNotificacoesNaoLidas,
   marcarMensagemComoLida,
 } from "../firebase";
 import PlantCard from "../components/PlantCard";
@@ -38,9 +39,9 @@ function Dashboard() {
   const [plantas, setPlantas] = useState([]);
   const [climaAtual, setClimaAtual] = useState(null);
   const [climaErro, setClimaErro] = useState("");
-  const [mensagens, setMensagens] = useState([]);
+  const [notificacoes, setNotificacoes] = useState([]);
   const [badgeCount, setBadgeCount] = useState(0);
-  const [drawerNotificacoesAberto, setDrawerNotificacoesAberto] = useState(false);
+  const [notificacoesAnchorEl, setNotificacoesAnchorEl] = useState(null);
   const [marcandoMensagemId, setMarcandoMensagemId] = useState(null);
   const [n8nStatus, setN8nStatus] = useState("nao-validada");
   const [validandoN8n, setValidandoN8n] = useState(false);
@@ -101,13 +102,13 @@ function Dashboard() {
     };
   };
 
-  const carregarMensagensNaoLidas = useCallback(async () => {
+  const carregarNotificacoesNaoLidas = useCallback(async () => {
     try {
-      const mensagensNaoLidas = await getMensagensNaoLidas();
-      setMensagens(mensagensNaoLidas);
-      setBadgeCount(mensagensNaoLidas.length);
+      const notificacoesNaoLidas = await getNotificacoesNaoLidas();
+      setNotificacoes(notificacoesNaoLidas);
+      setBadgeCount(notificacoesNaoLidas.length);
     } catch {
-      setMensagens([]);
+      setNotificacoes([]);
       setBadgeCount(0);
       exibirFeedback("Não foi possível carregar as notificações.", "error");
     }
@@ -131,18 +132,18 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
-    void carregarMensagensNaoLidas();
-  }, [carregarMensagensNaoLidas]);
+    void carregarNotificacoesNaoLidas();
+  }, [carregarNotificacoesNaoLidas]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      void carregarMensagensNaoLidas();
+      void carregarNotificacoesNaoLidas();
     }, 20000);
 
     return () => {
       clearInterval(intervalId);
     };
-  }, [carregarMensagensNaoLidas]);
+  }, [carregarNotificacoesNaoLidas]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -238,8 +239,11 @@ function Dashboard() {
     try {
       setMarcandoMensagemId(mensagemId);
       await marcarMensagemComoLida(mensagemId);
-      setDrawerNotificacoesAberto(false);
-      await carregarMensagensNaoLidas();
+      setNotificacoes((prev) => {
+        const proximo = prev.filter((mensagem) => mensagem.id !== mensagemId);
+        setBadgeCount(proximo.length);
+        return proximo;
+      });
       exibirFeedback("Mensagem marcada como lida.", "success");
     } catch {
       exibirFeedback("Falha ao atualizar a mensagem.", "error");
@@ -322,6 +326,8 @@ function Dashboard() {
         : n8nStatus === "verificando"
           ? "warning.main"
           : "text.secondary";
+
+    const menuNotificacoesAberto = Boolean(notificacoesAnchorEl);
 
   return (
     <Container maxWidth="md" sx={layoutSx.pageContainer}>
@@ -426,7 +432,7 @@ function Dashboard() {
             <Stack direction="row" spacing={1.2} sx={{ flexWrap: "wrap" }}>
               <IconButton
                 color="primary"
-                onClick={() => setDrawerNotificacoesAberto(true)}
+                onClick={(event) => setNotificacoesAnchorEl(event.currentTarget)}
                 aria-label="Abrir notificações"
               >
                 <Badge badgeContent={badgeCount} color="error">
@@ -455,63 +461,52 @@ function Dashboard() {
         </CardContent>
       </Card>
 
-      <Drawer
-        anchor="right"
-        open={drawerNotificacoesAberto}
-        onClose={() => setDrawerNotificacoesAberto(false)}
+      <Menu
+        anchorEl={notificacoesAnchorEl}
+        open={menuNotificacoesAberto}
+        onClose={() => setNotificacoesAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <Box sx={{ width: { xs: 320, sm: 380 }, p: 2 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Notificações não lidas
-          </Typography>
+        {notificacoes.length === 0 ? (
+          <MenuItem disabled sx={{ minWidth: 320 }}>
+            Nenhuma notificação não lida.
+          </MenuItem>
+        ) : (
+          notificacoes.map((mensagem) => {
+            const alertaSx = corNivelAlerta(mensagem.nivel_alerta);
 
-          {mensagens.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              Nenhuma mensagem pendente.
-            </Typography>
-          ) : (
-            <List sx={{ display: "grid", gap: 1.2 }}>
-              {mensagens.map((mensagem) => {
-                const alertaSx = corNivelAlerta(mensagem.nivel_alerta);
-
-                return (
-                  <ListItem
-                    key={mensagem.id}
-                    sx={{
-                      borderLeft: "4px solid",
-                      borderColor: alertaSx.borderColor,
-                      backgroundColor: alertaSx.backgroundColor,
-                      borderRadius: 1.5,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      gap: 1,
-                    }}
-                  >
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                      {mensagem.planta_nome ?? "Planta"}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatarDataEnvio(mensagem.data_envio)}
-                    </Typography>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="secondary"
-                      onClick={() => void handleMarcarComoLida(mensagem.id)}
-                      disabled={marcandoMensagemId === mensagem.id}
-                    >
-                      {marcandoMensagemId === mensagem.id
-                        ? "Marcando..."
-                        : "Marcar como Lida"}
-                    </Button>
-                  </ListItem>
-                );
-              })}
-            </List>
-          )}
-        </Box>
-      </Drawer>
+            return (
+              <MenuItem
+                key={mensagem.id}
+                sx={{
+                  minWidth: 340,
+                  maxWidth: 420,
+                  borderLeft: "4px solid",
+                  borderColor: alertaSx.borderColor,
+                  backgroundColor: alertaSx.backgroundColor,
+                  alignItems: "flex-start",
+                  gap: 1,
+                  whiteSpace: "normal",
+                }}
+              >
+                <ListItemText
+                  primary={mensagem.planta_nome ?? "Planta"}
+                  secondary={formatarDataEnvio(mensagem.data_envio)}
+                />
+                <IconButton
+                  size="small"
+                  color="success"
+                  onClick={() => void handleMarcarComoLida(mensagem.id)}
+                  disabled={marcandoMensagemId === mensagem.id}
+                >
+                  <CheckIcon fontSize="small" />
+                </IconButton>
+              </MenuItem>
+            );
+          })
+        )}
+      </Menu>
 
       <Grid container spacing={3}>
         {plantas.map((planta) => (

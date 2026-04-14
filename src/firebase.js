@@ -31,7 +31,7 @@ const db = getFirestore(app);
 
 export { db };
 
-export async function getMensagensNaoLidas() {
+export async function getNotificacoesNaoLidas() {
   const mensagensRef = collection(db, "mensagens");
   const mensagensQuery = query(
     mensagensRef,
@@ -44,6 +44,25 @@ export async function getMensagensNaoLidas() {
     id: mensagemDoc.id,
     ...mensagemDoc.data(),
   }));
+}
+
+export async function getHistoricoPlanta(plantaId) {
+  const mensagensRef = collection(db, "mensagens");
+  const historicoQuery = query(
+    mensagensRef,
+    where("planta_id", "==", plantaId),
+    orderBy("data_envio", "desc"),
+  );
+  const querySnapshot = await getDocs(historicoQuery);
+
+  return querySnapshot.docs.map((mensagemDoc) => ({
+    id: mensagemDoc.id,
+    ...mensagemDoc.data(),
+  }));
+}
+
+export async function getMensagensNaoLidas() {
+  return getNotificacoesNaoLidas();
 }
 
 export async function marcarMensagemComoLida(mensagemId) {
