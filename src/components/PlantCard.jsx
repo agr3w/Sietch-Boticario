@@ -38,6 +38,14 @@ function parseUltimaRegaDate(ultimaRega) {
 }
 
 function PlantCard({ planta, onRegar, onAtualizarPlanta, onDelete }) {
+  const coresVitalidade = {
+    prosperando: '#2F6F4E',
+    estavel: '#1B80C4',
+    recuperacao: '#D39A2C',
+    critico: '#D94841',
+  };
+  const vitalidadeAtual = planta.vitalidade || 'estavel';
+  const corVitalidade = coresVitalidade[vitalidadeAtual] || coresVitalidade.estavel;
   const mentatNumberSx = {
     fontFamily: '"Share Tech Mono", monospace',
     letterSpacing: '0.03em',
@@ -90,7 +98,9 @@ function PlantCard({ planta, onRegar, onAtualizarPlanta, onDelete }) {
           position: 'relative',
           overflow: 'hidden',
           bgcolor: 'background.paper',
-          boxShadow: 'none',
+          boxShadow: `0 8px 24px ${corVitalidade}30`,
+          borderTop: '2px solid',
+          borderTopColor: corVitalidade,
           borderRadius: 0,
           '@keyframes cardAlertPulse': {
             '0%': { boxShadow: '0 0 8px rgba(217, 72, 65, 0.4)' },
@@ -101,6 +111,11 @@ function PlantCard({ planta, onRegar, onAtualizarPlanta, onDelete }) {
             '0%': { boxShadow: '0 0 7px rgba(27, 128, 196, 0.22)' },
             '50%': { boxShadow: '0 0 15px rgba(27, 128, 196, 0.45)' },
             '100%': { boxShadow: '0 0 7px rgba(27, 128, 196, 0.22)' },
+          },
+          '@keyframes cardVitalityCriticalPulse': {
+            '0%': { boxShadow: `0 8px 24px ${corVitalidade}30` },
+            '50%': { boxShadow: `0 12px 34px ${corVitalidade}99` },
+            '100%': { boxShadow: `0 8px 24px ${corVitalidade}30` },
           },
         },
         faltaUmDiaParaRega && { borderLeft: '4px solid', borderLeftColor: 'secondary.main' },
@@ -114,6 +129,11 @@ function PlantCard({ planta, onRegar, onAtualizarPlanta, onDelete }) {
         medidorEstado === 'hidratada' && {
           boxShadow: '0 0 12px rgba(27, 128, 196, 0.34)',
           animation: 'cardCalmGlow 3.2s ease-in-out infinite',
+        },
+        vitalidadeAtual === 'critico' && {
+          borderTopColor: corVitalidade,
+          boxShadow: `0 10px 28px ${corVitalidade}55`,
+          animation: 'cardVitalityCriticalPulse 1s ease-in-out infinite',
         },
       ]}
     >
@@ -143,21 +163,38 @@ function PlantCard({ planta, onRegar, onAtualizarPlanta, onDelete }) {
           </Box>
         )}
 
-        <Typography
-          variant="h5"
-          component="div"
-          sx={[
-            plantCardSx.title,
-            {
-              textTransform: 'uppercase',
-              fontFamily: 'Rajdhani, sans-serif',
-              fontWeight: 700,
-              letterSpacing: '0.07em',
-            },
-          ]}
-        >
-          {planta.nome_apelido}
-        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.3 }}>
+          <Typography
+            variant="h5"
+            component="div"
+            sx={[
+              plantCardSx.title,
+              {
+                textTransform: 'uppercase',
+                fontFamily: 'Rajdhani, sans-serif',
+                fontWeight: 700,
+                letterSpacing: '0.07em',
+                mb: 0,
+              },
+            ]}
+          >
+            {planta.nome_apelido}
+          </Typography>
+          <Box
+            aria-label={`Vitalidade: ${vitalidadeAtual}`}
+            sx={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              backgroundColor: corVitalidade,
+              boxShadow: `0 0 8px ${corVitalidade}AA`,
+              animation:
+                vitalidadeAtual === 'critico'
+                  ? 'cardVitalityCriticalPulse 1s ease-in-out infinite'
+                  : 'none',
+            }}
+          />
+        </Stack>
         <Typography sx={plantCardSx.secondaryText} color="text.secondary">
           Espécie: {planta.especie} | Local: {planta.localizacao}
         </Typography>

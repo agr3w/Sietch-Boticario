@@ -32,11 +32,11 @@ import { adicionarNotaManual, getHistoricoPlanta } from "../firebase";
 const GALERIA_PLACEHOLDER_URL =
   "https://cdn.wallpapersafari.com/65/81/5YrxE9.jpg";
 
-const VITALIDADE_CONFIG = {
-  prosperando: { label: "Prosperando", color: "success" },
-  estavel: { label: "Estavel", color: "primary" },
-  recuperacao: { label: "Em Recuperacao", color: "warning" },
-  critico: { label: "Critico", color: "error" },
+const vitalidadeConfig = {
+  prosperando: { cor: "#2F6F4E", label: "Prosperando" },
+  estavel: { cor: "#1B80C4", label: "Estavel" },
+  recuperacao: { cor: "#D39A2C", label: "Em Recuperacao" },
+  critico: { cor: "#D94841", label: "Critico" },
 };
 
 function formatarDataBr(dataEnvio) {
@@ -110,13 +110,15 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const [notaManual, setNotaManual] = useState("");
   const [salvandoNota, setSalvandoNota] = useState(false);
   const [statusCopiaQr, setStatusCopiaQr] = useState("idle");
+  const vitalidadeAtualConfig =
+    vitalidadeConfig[vitalidade] ?? vitalidadeConfig.estavel;
 
   useEffect(() => {
     setNotificarWhatsapp(Boolean(planta?.notificar));
     setIntervaloRega(planta?.intervalo_rega_dias ?? 1);
     setLuz(planta?.necessidade_luz ?? planta?.necessidadeLuz ?? "Meia Sombra");
     setSubstrato(planta?.tipo_substrato ?? planta?.tipoSubstrato ?? "");
-    setVitalidade(planta?.vitalidade ?? "estavel");
+    setVitalidade(planta?.vitalidade || "estavel");
     setToxica(Boolean(planta?.eh_toxica ?? planta?.ehToxica ?? false));
     setSalvando(false);
     setExcluindo(false);
@@ -322,6 +324,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
           position: "relative",
           overflow: "hidden",
           pr: 8,
+          pb: 1.2,
+          borderBottom: "4px solid",
+          borderColor: vitalidadeAtualConfig.cor,
+          boxShadow: `inset 0 -15px 30px -15px ${vitalidadeAtualConfig.cor}60`,
           textTransform: "uppercase",
           fontFamily: '"Rajdhani", sans-serif',
           letterSpacing: "0.1em",
@@ -332,6 +338,18 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
       >
         <WaterDropIcon sx={{ color: "secondary.main" }} />
         <Box component="span">{planta?.nome_apelido ?? "Prontuário da Planta"}</Box>
+        <Chip
+          size="small"
+          label={vitalidadeAtualConfig.label}
+          sx={{
+            ml: 0.8,
+            height: 22,
+            color: "#FFFFFF",
+            backgroundColor: vitalidadeAtualConfig.cor,
+            border: "1px solid rgba(255,255,255,0.18)",
+            textTransform: "none",
+          }}
+        />
         <WaterDropIcon
           sx={{
             position: "absolute",
@@ -491,21 +509,24 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
 
             <Stack spacing={1}>
               <Typography variant="subtitle2" color="text.secondary">
-                Indice de vitalidade
+                Sinais Vitais
               </Typography>
               <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-                {Object.entries(VITALIDADE_CONFIG).map(([value, config]) => (
+                {Object.entries(vitalidadeConfig).map(([value, config]) => (
                   <Chip
                     key={value}
                     label={config.label}
-                    color={config.color}
                     variant={vitalidade === value ? "filled" : "outlined"}
                     onClick={() => setVitalidade(value)}
+                    size="small"
                     sx={{
                       borderRadius: 1,
+                      borderColor: config.cor,
+                      color: vitalidade === value ? "#FFFFFF" : config.cor,
+                      backgroundColor: vitalidade === value ? config.cor : "transparent",
                       fontWeight: 700,
                       letterSpacing: "0.03em",
-                      textTransform: "uppercase",
+                      textTransform: "none",
                     }}
                   />
                 ))}
