@@ -218,6 +218,18 @@ function Dashboard() {
     }
   };
 
+  const atualizarDadosPlanta = async (id, dadosAtualizados) => {
+    try {
+      const plantaRef = doc(db, "plantas", id);
+      await updateDoc(plantaRef, dadosAtualizados);
+      await carregarPlantas();
+      exibirFeedback("Dados atualizados.", "success");
+    } catch {
+      exibirFeedback("Falha ao atualizar os dados da planta.", "error");
+      throw new Error("Falha ao atualizar dados da planta");
+    }
+  };
+
   const adicionarPlanta = async (dadosPlanta) => {
     try {
       await addDoc(collection(db, "plantas"), {
@@ -515,6 +527,7 @@ function Dashboard() {
               planta={planta}
               onRegar={regarPlanta}
               onSalvarIntervalo={atualizarIntervaloRega}
+              onAtualizarPlanta={atualizarDadosPlanta}
             />
           </Grid>
         ))}

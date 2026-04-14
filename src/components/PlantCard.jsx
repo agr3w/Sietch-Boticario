@@ -40,7 +40,7 @@ function parseUltimaRegaDate(ultimaRega) {
   return null;
 }
 
-function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
+function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
   const dataRega = parseUltimaRegaDate(planta.ultima_rega);
   const dateOptions = { timeZone: 'America/Sao_Paulo' };
   const timeOptions = { timeZone: 'America/Sao_Paulo' };
@@ -217,6 +217,7 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo }) {
           planta={planta}
           open={detailsOpen}
           onClose={() => setDetailsOpen(false)}
+          onUpdate={onAtualizarPlanta}
         />
       </CardContent>
     </Card>

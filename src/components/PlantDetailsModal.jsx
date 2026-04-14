@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Button,
   Box,
   Dialog,
   DialogContent,
@@ -8,9 +9,11 @@ import {
   List,
   ListItem,
   ListItemText,
+  Stack,
   Switch,
   Tab,
   Tabs,
+  TextField,
   Typography,
 } from "@mui/material";
 import { getHistoricoPlanta } from "../firebase";
@@ -61,15 +64,19 @@ function obterDataRega(ultimaRega) {
   return Number.isFinite(date.getTime()) ? date : null;
 }
 
-function PlantDetailsModal({ planta, open, onClose }) {
+function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
   const [abaAtiva, setAbaAtiva] = useState(0);
   const [historico, setHistorico] = useState([]);
   const [carregandoHistorico, setCarregandoHistorico] = useState(false);
   const [notificarWhatsapp, setNotificarWhatsapp] = useState(Boolean(planta?.notificar));
+  const [intervaloRega, setIntervaloRega] = useState(planta?.intervalo_rega_dias ?? 1);
+  const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
     setNotificarWhatsapp(Boolean(planta?.notificar));
-  }, [planta?.notificar, open]);
+    setIntervaloRega(planta?.intervalo_rega_dias ?? 1);
+    setSalvando(false);
+  }, [planta?.intervalo_rega_dias, planta?.notificar, open]);
 
   useEffect(() => {
     if (!open || !planta?.id) {
@@ -130,6 +137,23 @@ function PlantDetailsModal({ planta, open, onClose }) {
     };
   }, [planta?.intervalo_rega_dias, planta?.ultima_rega]);
 
+  const handleSalvar = async () => {
+    if (!planta?.id || typeof onUpdate !== "function") {
+      return;
+    }
+
+    setSalvando(true);
+    try {
+      await onUpdate(planta.id, {
+        notificar: notificarWhatsapp,
+        intervalo_rega_dias: Number(intervaloRega),
+      });
+      onClose?.();
+    } finally {
+      setSalvando(false);
+    }
+  };
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>{planta?.nome_apelido ?? "Prontuário da Planta"}</DialogTitle>
@@ -146,7 +170,7 @@ function PlantDetailsModal({ planta, open, onClose }) {
 
       <DialogContent dividers>
         {abaAtiva === 0 && (
-          <Box sx={{ display: "grid", gap: 2 }}>
+          <Stack spacing={2.2}>
             <Box>
               <Typography variant="subtitle2" color="text.secondary">
                 Dias para regar
@@ -161,6 +185,15 @@ function PlantDetailsModal({ planta, open, onClose }) {
               <Typography variant="body1">{resumoRega.ultimaRega}</Typography>
             </Box>
 
+            <TextField
+              label="Intervalo de rega (dias)"
+              type="number"
+              value={intervaloRega}
+              onChange={(event) => setIntervaloRega(event.target.value)}
+              slotProps={{ htmlInput: { min: 1 } }}
+              fullWidth
+            />
+
             <FormControlLabel
               control={
                 <Switch
@@ -170,7 +203,17 @@ function PlantDetailsModal({ planta, open, onClose }) {
               }
               label="Notificar via WhatsApp"
             />
-          </Box>
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                variant="contained"
+                onClick={handleSalvar}
+                disabled={salvando}
+              >
+                {salvando ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </Box>
+          </Stack>
         )}
 
         {abaAtiva === 1 && (
