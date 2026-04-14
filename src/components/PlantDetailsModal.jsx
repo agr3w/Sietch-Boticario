@@ -1,14 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Button,
   Box,
   Dialog,
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  FormControl,
+  Grid,
+  InputLabel,
   List,
   ListItem,
   ListItemText,
+  MenuItem,
+  Select,
   Stack,
   Switch,
   Tab,
@@ -16,7 +22,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { getHistoricoPlanta } from "../firebase";
+import { adicionarNotaManual, getHistoricoPlanta } from "../firebase";
 
 function formatarDataBr(dataEnvio) {
   if (!dataEnvio) {
@@ -70,13 +76,40 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
   const [carregandoHistorico, setCarregandoHistorico] = useState(false);
   const [notificarWhatsapp, setNotificarWhatsapp] = useState(Boolean(planta?.notificar));
   const [intervaloRega, setIntervaloRega] = useState(planta?.intervalo_rega_dias ?? 1);
+  const [necessidadeLuz, setNecessidadeLuz] = useState(
+    planta?.necessidade_luz ?? planta?.necessidadeLuz ?? "Meia Sombra",
+  );
+  const [tipoSubstrato, setTipoSubstrato] = useState(
+    planta?.tipo_substrato ?? planta?.tipoSubstrato ?? "",
+  );
+  const [ehToxica, setEhToxica] = useState(
+    Boolean(planta?.eh_toxica ?? planta?.ehToxica ?? false),
+  );
   const [salvando, setSalvando] = useState(false);
+  const [notaManual, setNotaManual] = useState("");
+  const [salvandoNota, setSalvandoNota] = useState(false);
 
   useEffect(() => {
     setNotificarWhatsapp(Boolean(planta?.notificar));
     setIntervaloRega(planta?.intervalo_rega_dias ?? 1);
+    setNecessidadeLuz(planta?.necessidade_luz ?? planta?.necessidadeLuz ?? "Meia Sombra");
+    setTipoSubstrato(planta?.tipo_substrato ?? planta?.tipoSubstrato ?? "");
+    setEhToxica(Boolean(planta?.eh_toxica ?? planta?.ehToxica ?? false));
     setSalvando(false);
-  }, [planta?.intervalo_rega_dias, planta?.notificar, open]);
+    setNotaManual("");
+    setSalvandoNota(false);
+  }, [
+    open,
+    planta?.id,
+    planta?.intervalo_rega_dias,
+    planta?.notificar,
+    planta?.necessidade_luz,
+    planta?.necessidadeLuz,
+    planta?.tipo_substrato,
+    planta?.tipoSubstrato,
+    planta?.eh_toxica,
+    planta?.ehToxica,
+  ]);
 
   useEffect(() => {
     if (!open || !planta?.id) {
@@ -148,10 +181,49 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
       await onUpdate(planta.id, {
         notificar: notificarWhatsapp,
         intervalo_rega_dias: Number(intervaloRega),
+        necessidade_luz: necessidadeLuz,
+        tipo_substrato: tipoSubstrato,
+        eh_toxica: ehToxica,
       });
       onClose?.();
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const handleAdicionarNota = async () => {
+    const textoLimpo = notaManual.trim();
+    if (!textoLimpo || !planta?.id) {
+      return;
+    }
+
+    const notaTemporaria = {
+      id: `tmp-${Date.now()}`,
+      planta_nome: planta?.nome_apelido ?? "Planta",
+      mensagem: textoLimpo,
+      tipo: "manual",
+      nivel_alerta: 0,
+      data_envio: new Date(),
+    };
+
+    setHistorico((prev) => [notaTemporaria, ...prev]);
+    setNotaManual("");
+    setSalvandoNota(true);
+
+    try {
+      await adicionarNotaManual(
+        planta.id,
+        textoLimpo,
+        planta?.nome_apelido ?? "Planta",
+      );
+      const historicoAtualizado = await getHistoricoPlanta(planta.id);
+      setHistorico(historicoAtualizado);
+    } catch (error) {
+      console.error("Erro ao adicionar nota manual:", error);
+      setHistorico((prev) => prev.filter((item) => item.id !== notaTemporaria.id));
+      setNotaManual(textoLimpo);
+    } finally {
+      setSalvandoNota(false);
     }
   };
 
@@ -167,6 +239,8 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
       >
         <Tab label="Visão Geral" />
         <Tab label="Diário de Bordo" />
+        <Tab label="Ficha Botânica" />
+        <Tab label="Galeria" />
       </Tabs>
 
       <DialogContent dividers>
@@ -218,7 +292,27 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
         )}
 
         {abaAtiva === 1 && (
-          <Box>
+          <Stack spacing={2}>
+            <TextField
+              label="Adicionar nota manual"
+              multiline
+              minRows={3}
+              value={notaManual}
+              onChange={(event) => setNotaManual(event.target.value)}
+              placeholder="Ex.: Adubação realizada hoje, sem sinais de estresse hídrico."
+              fullWidth
+            />
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                variant="contained"
+                onClick={handleAdicionarNota}
+                disabled={salvandoNota || !notaManual.trim()}
+              >
+                {salvandoNota ? "Salvando nota..." : "Adicionar Nota"}
+              </Button>
+            </Box>
+
             {carregandoHistorico && (
               <Typography variant="body2" color="text.secondary">
                 Carregando histórico...
@@ -234,7 +328,12 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
             {!carregandoHistorico && historico.length > 0 && (
               <List sx={{ p: 0 }}>
                 {historico.map((mensagem) => {
-                  const corMarcador = Number(mensagem.nivel_alerta) === 2 ? "#D94841" : "#D39A2C";
+                  const ehManual = mensagem.tipo === "manual";
+                  const corMarcador = ehManual
+                    ? "#607D8B"
+                    : Number(mensagem.nivel_alerta) === 2
+                      ? "#D94841"
+                      : "#D39A2C";
 
                   return (
                     <ListItem
@@ -243,6 +342,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
                         mb: 1,
                         borderRadius: 2,
                         border: "1px solid rgba(100, 70, 40, 0.16)",
+                        backgroundColor: ehManual ? "rgba(96, 125, 139, 0.08)" : "transparent",
                         alignItems: "flex-start",
                         gap: 1.2,
                       }}
@@ -259,7 +359,11 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
                       />
 
                       <ListItemText
-                        primary={mensagem.titulo ?? mensagem.mensagem ?? "Alerta de rega"}
+                        primary={
+                          ehManual
+                            ? `Nota manual: ${mensagem.mensagem ?? "Sem descrição"}`
+                            : mensagem.titulo ?? mensagem.mensagem ?? "Alerta de rega"
+                        }
                         secondary={`Planta: ${mensagem.planta_nome ?? planta?.nome_apelido ?? "-"} • ${formatarDataBr(mensagem.data_envio)}`}
                       />
                     </ListItem>
@@ -267,6 +371,69 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
                 })}
               </List>
             )}
+          </Stack>
+        )}
+
+        {abaAtiva === 2 && (
+          <Stack spacing={2.2}>
+            <FormControl fullWidth>
+              <InputLabel id="necessidade-luz-label">Necessidade de luz</InputLabel>
+              <Select
+                labelId="necessidade-luz-label"
+                label="Necessidade de luz"
+                value={necessidadeLuz}
+                onChange={(event) => setNecessidadeLuz(event.target.value)}
+              >
+                <MenuItem value="Sol Pleno">Sol Pleno</MenuItem>
+                <MenuItem value="Meia Sombra">Meia Sombra</MenuItem>
+                <MenuItem value="Sombra">Sombra</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              label="Tipo de substrato"
+              value={tipoSubstrato}
+              onChange={(event) => setTipoSubstrato(event.target.value)}
+              fullWidth
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={ehToxica}
+                  onChange={(event) => setEhToxica(event.target.checked)}
+                />
+              }
+              label="Tóxica para pets"
+            />
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                variant="contained"
+                onClick={handleSalvar}
+                disabled={salvando}
+              >
+                {salvando ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </Box>
+          </Stack>
+        )}
+
+        {abaAtiva === 3 && (
+          <Box>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Integração com Firebase Storage em breve. Prepare-se para acompanhar o crescimento do seu Sietch!
+            </Alert>
+            <Grid
+              container
+              spacing={2}
+              sx={{
+                minHeight: 140,
+                border: "1px dashed rgba(100, 70, 40, 0.28)",
+                borderRadius: 2,
+                p: 1,
+              }}
+            />
           </Box>
         )}
       </DialogContent>

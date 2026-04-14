@@ -1,12 +1,14 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import {
+  addDoc,
   collection,
   doc,
   getDocs,
   getFirestore,
   orderBy,
   query,
+  serverTimestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
@@ -69,5 +71,17 @@ export async function marcarMensagemComoLida(mensagemId) {
   const mensagemRef = doc(db, "mensagens", mensagemId);
   await updateDoc(mensagemRef, {
     lida: true,
+  });
+}
+
+export async function adicionarNotaManual(plantaId, texto, plantaNome) {
+  await addDoc(collection(db, "mensagens"), {
+    planta_id: plantaId,
+    planta_nome: plantaNome,
+    mensagem: texto,
+    tipo: "manual",
+    lida: true,
+    nivel_alerta: 0,
+    data_envio: serverTimestamp(),
   });
 }
