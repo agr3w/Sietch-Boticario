@@ -33,7 +33,7 @@ import {
 } from "../firebase";
 import PlantCard from "../components/PlantCard";
 import AddPlantModal from "../components/AddPlantModal";
-import { climateSx, feedbackSx, layoutSx } from "../theme/styles";
+import { climateSx, feedbackSx, globalSx, layoutSx } from "../theme/styles";
 
 function Dashboard() {
   const [plantas, setPlantas] = useState([]);
@@ -342,7 +342,7 @@ function Dashboard() {
     const menuNotificacoesAberto = Boolean(notificacoesAnchorEl);
 
   return (
-    <Container maxWidth="md" sx={layoutSx.pageContainer}>
+    <Container maxWidth="md" sx={[layoutSx.pageContainer, globalSx.pageTexture]}>
       <Box sx={layoutSx.hero}>
         <Box sx={layoutSx.heroContent}>
           <Typography
@@ -350,7 +350,7 @@ function Dashboard() {
             component="h1"
             gutterBottom
             align="center"
-            color="primary"
+            sx={{ color: "#E8E0D5" }}
           >
             Sietch Boticário 🌿
           </Typography>
@@ -409,7 +409,7 @@ function Dashboard() {
                 </Box>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
-                <Box sx={climateSx.metricBox}>
+                <Box sx={[climateSx.metricBox, climateSx.metricBoxWater]}>
                   <Typography variant="body2" sx={climateSx.metricLabel}>
                     Umidade Relativa
                   </Typography>

@@ -1,3 +1,22 @@
+export const globalSx = {
+  pageTexture: {
+    position: "relative",
+    isolation: "isolate",
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      inset: 0,
+      pointerEvents: "none",
+      zIndex: -1,
+      opacity: 0.16,
+      backgroundImage:
+        "radial-gradient(rgba(42,54,59,0.22) 0.7px, transparent 0.7px), radial-gradient(rgba(211,84,0,0.12) 0.8px, transparent 0.8px)",
+      backgroundPosition: "0 0, 12px 12px",
+      backgroundSize: "18px 18px, 24px 24px",
+    },
+  },
+};
+
 export const layoutSx = {
   pageContainer: {
     mt: 4,
@@ -7,21 +26,11 @@ export const layoutSx = {
   hero: {
     position: "relative",
     mb: 4,
-    pt: 2,
-    pb: 2,
-    "&::before": {
-      content: '""',
-      position: "absolute",
-      width: "360px",
-      height: "360px",
-      borderRadius: "50%",
-      left: "50%",
-      top: "-120px",
-      transform: "translateX(-50%)",
-      background: "radial-gradient(circle, rgba(196,122,44,0.22) 0%, rgba(196,122,44,0.04) 55%, transparent 80%)",
-      pointerEvents: "none",
-      zIndex: 0,
-    },
+    px: { xs: 2, sm: 3 },
+    py: 3,
+    borderBottom: "4px solid #D35400",
+    color: "#E8E0D5",
+    background: "radial-gradient(circle at 50% 0%, #2A363B 0%, #171E21 100%)",
   },
   heroContent: {
     position: "relative",
@@ -29,6 +38,7 @@ export const layoutSx = {
   },
   subtitle: {
     mb: 3,
+    color: "#E8E0D5",
   },
   addButtonRow: {
     mb: 3,
@@ -42,16 +52,26 @@ export const layoutSx = {
 export const climateSx = {
   card: {
     mb: 4,
-    color: "#fff7ed",
-    background: "linear-gradient(135deg,#8C5A2B,#C47A2C)",
-    boxShadow: "0 18px 32px rgba(126, 76, 30, 0.34)",
+    color: "#E8E0D5",
+    backgroundColor: "rgba(23, 30, 33, 0.86)",
+    borderLeft: "4px solid rgba(211, 84, 0, 0.82)",
+    border: "1px solid rgba(211, 84, 0, 0.22)",
     backdropFilter: "blur(6px)",
   },
   metricBox: {
     p: 2.2,
-    borderRadius: 1,
-    backgroundColor: "rgba(248, 234, 212, 0.2)",
-    border: "1px solid rgba(245, 222, 179, 0.28)",
+    borderRadius: 0,
+    backgroundColor: "rgba(232, 224, 213, 0.08)",
+    border: "1px solid rgba(211, 84, 0, 0.22)",
+    borderLeft: "4px solid rgba(211, 84, 0, 0.9)",
+    boxShadow: "none",
+    backdropFilter: "blur(4px)",
+  },
+  metricBoxWater: {
+    borderLeft: "4px solid #1B80C4",
+    borderColor: "rgba(27, 128, 196, 0.3)",
+    backgroundColor: "rgba(27, 128, 196, 0.12)",
+    boxShadow: "none",
     backdropFilter: "blur(8px)",
   },
   metricLabel: {

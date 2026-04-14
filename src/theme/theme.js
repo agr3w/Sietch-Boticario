@@ -4,49 +4,70 @@ const theme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: "#C47A2C",
+      main: "#1E3A2F",
     },
     secondary: {
-      main: "#6E4B2A",
+      main: "#D35400",
     },
     success: {
       main: "#2F6F4E",
     },
+    info: {
+      main: "#1B80C4",
+    },
     background: {
-      default: "#F4EDE4",
-      paper: "#EFE4D6",
+      default: "#E8E0D5",
+      paper: "#F5F2EB",
     },
     text: {
       primary: "#3B2F2F",
     },
   },
-  sandGradient: "linear-gradient(135deg,#C47A2C,#E7B36A,#8C5A2B)",
+  sandGradient: "linear-gradient(135deg,#1E3A2F,#D35400,#E8E0D5)",
   shape: {
-    borderRadius: 22,
+    borderRadius: 0,
   },
   typography: {
-    fontFamily: '"Cinzel", "Trajan Pro", "Segoe UI", serif',
+    fontFamily: '"Rajdhani", sans-serif',
+    h1: {
+      fontWeight: 700,
+      letterSpacing: "0.05em",
+      textTransform: "uppercase",
+    },
+    h2: {
+      fontWeight: 700,
+      letterSpacing: "0.05em",
+      textTransform: "uppercase",
+    },
     h3: {
-      fontWeight: 800,
-      letterSpacing: "0.06em",
+      fontWeight: 700,
+      letterSpacing: "0.05em",
+      textTransform: "uppercase",
+    },
+    h4: {
+      fontWeight: 700,
+      letterSpacing: "0.05em",
+      textTransform: "uppercase",
     },
     h5: {
       fontWeight: 700,
-      letterSpacing: "0.04em",
+      letterSpacing: "0.05em",
+      textTransform: "uppercase",
     },
     h6: {
       fontWeight: 700,
-      letterSpacing: "0.04em",
+      letterSpacing: "0.05em",
+      textTransform: "uppercase",
     },
     subtitle1: {
-      color: "#6E4B2A",
+      color: "#1E3A2F",
     },
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          background: "linear-gradient(180deg,#F4EDE4,#EDE0CF)",
+          background: "linear-gradient(180deg,#E8E0D5,#DCD2C2)",
           color: "#3B2F2F",
         },
       },
@@ -54,8 +75,8 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 22,
-          border: "1px solid rgba(100,70,40,0.2)",
+          borderRadius: 0,
+          border: "1px solid rgba(194, 88, 36, 0.3)",
           boxShadow: "0 14px 30px rgba(103, 71, 38, 0.16)",
         },
       },
@@ -66,10 +87,12 @@ const theme = createTheme({
       },
       styleOverrides: {
         root: {
-          borderRadius: 14,
-          textTransform: "none",
+          borderRadius: 0,
+          textTransform: "uppercase",
           fontWeight: 700,
           padding: "10px 18px",
+          clipPath:
+            "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
           boxShadow: "0 8px 16px rgba(114, 73, 36, 0.18)",
           transition: "transform 180ms ease, filter 180ms ease, box-shadow 180ms ease",
           "&:hover": {
@@ -83,7 +106,7 @@ const theme = createTheme({
     MuiDialog: {
       styleOverrides: {
         paper: {
-          borderRadius: 22,
+          borderRadius: 0,
           border: "1px solid rgba(100,70,40,0.2)",
         },
       },

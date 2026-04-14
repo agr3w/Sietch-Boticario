@@ -24,6 +24,9 @@ import {
 } from "@mui/material";
 import { adicionarNotaManual, getHistoricoPlanta } from "../firebase";
 
+const GALERIA_PLACEHOLDER_URL =
+  "https://cdn.wallpapersafari.com/65/81/5YrxE9.jpg";
+
 function formatarDataBr(dataEnvio) {
   if (!dataEnvio) {
     return "Sem data";
@@ -433,7 +436,23 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
                 borderRadius: 2,
                 p: 1,
               }}
-            />
+            >
+              {[1, 2, 3].map((item) => (
+                <Grid key={item} size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Box
+                    component="img"
+                    src={GALERIA_PLACEHOLDER_URL}
+                    alt={`Imagem de teste da galeria ${item}`}
+                    sx={{
+                      width: "100%",
+                      height: 160,
+                      objectFit: "cover",
+                      border: "1px solid rgba(100, 70, 40, 0.2)",
+                    }}
+                  />
+                </Grid>
+              ))}
+            </Grid>
           </Box>
         )}
       </DialogContent>

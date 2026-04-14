@@ -8,10 +8,12 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  LinearProgress,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import { plantCardSx } from '../theme/styles';
 import PlantDetailsModal from './PlantDetailsModal';
 
@@ -53,13 +55,32 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
   const faltaUmDiaParaRega =
     dataRegaValida && intervaloRega > 0 && !precisaRegar && intervaloRega - diasDesdeRega === 1;
   const diasAtraso = precisaRegar ? diasDesdeRega - intervaloRega : 0;
-  const textoSelo = precisaRegar
-    ? diasAtraso > 0
-      ? `Atrasada ${diasAtraso}d`
-      : 'Regar hoje'
-    : faltaUmDiaParaRega
-      ? 'Regar amanha'
-      : null;
+  const regaHoje = dataRegaValida && intervaloRega > 0 && diasDesdeRega === intervaloRega;
+  const estaAtrasada = dataRegaValida && intervaloRega > 0 && diasDesdeRega > intervaloRega;
+  const textoSelo = estaAtrasada
+    ? `Atrasada ${diasAtraso}d`
+    : regaHoje
+      ? 'Regar hoje'
+      : faltaUmDiaParaRega
+        ? 'Regar amanha'
+        : null;
+  const nivelHidratacao =
+    dataRegaValida && intervaloRega > 0
+      ? Math.max(0, Math.min(100, 100 - (diasDesdeRega / intervaloRega) * 100))
+      : 0;
+  const medidorEstado = estaAtrasada ? 'atrasada' : regaHoje ? 'hoje' : 'hidratada';
+  const medidorCor =
+    medidorEstado === 'atrasada'
+      ? 'error.main'
+      : medidorEstado === 'hoje'
+        ? 'secondary.main'
+        : 'info.main';
+  const medidorTexto =
+    medidorEstado === 'atrasada'
+      ? `Critico: reposicao atrasada em ${diasAtraso} dia${diasAtraso === 1 ? '' : 's'}`
+      : medidorEstado === 'hoje'
+        ? 'Limite operacional: fornecer agua hoje'
+        : `Reserva hidrica estavel (${Math.ceil(nivelHidratacao)}%)`;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [novoIntervalo, setNovoIntervalo] = useState(planta.intervalo_rega_dias ?? 1);
@@ -97,10 +118,15 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
       elevation={3}
       onClick={() => setDetailsOpen(true)}
       sx={[
-        plantCardSx.card,
-        faltaUmDiaParaRega && plantCardSx.cardNearWater,
-        precisaRegar && plantCardSx.cardNeedWater,
-        { cursor: 'pointer' },
+        {
+          cursor: 'pointer',
+          bgcolor: 'background.paper',
+          boxShadow: 'none',
+          borderRadius: 0,
+        },
+        faltaUmDiaParaRega && { borderLeft: '4px solid', borderLeftColor: 'secondary.main' },
+        regaHoje && { borderLeft: '4px solid', borderLeftColor: 'secondary.main' },
+        estaAtrasada && { borderLeft: '4px solid', borderLeftColor: 'error.main' },
       ]}
     >
       <CardContent sx={plantCardSx.content}>
@@ -116,12 +142,57 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
           </Box>
         )}
 
-        <Typography variant="h5" component="div" sx={plantCardSx.title}>
+        <Typography
+          variant="h5"
+          component="div"
+          sx={[
+            plantCardSx.title,
+            {
+              textTransform: 'uppercase',
+              fontFamily: 'Rajdhani, sans-serif',
+              fontWeight: 700,
+              letterSpacing: '0.07em',
+            },
+          ]}
+        >
           {planta.nome_apelido}
         </Typography>
         <Typography sx={plantCardSx.secondaryText} color="text.secondary">
           Espécie: {planta.especie} | Local: {planta.localizacao}
         </Typography>
+
+        <Box sx={{ mb: 1.2 }}>
+          <Typography variant="body2" sx={[plantCardSx.intervalText, { mb: 0.8 }]}>
+            Medidor de Umidade Fremen
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={nivelHidratacao}
+            sx={{
+              height: 11,
+              borderRadius: 0,
+              backgroundColor: 'rgba(18, 24, 27, 0.16)',
+              border: '1px solid rgba(23, 30, 33, 0.24)',
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: medidorCor,
+                transition: 'transform 280ms linear',
+                ...(medidorEstado === 'atrasada' && {
+                  backgroundImage:
+                    'repeating-linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.16) 8px, transparent 8px, transparent 16px)',
+                  animation: 'dangerPulse 1s ease-in-out infinite',
+                }),
+              },
+              '@keyframes dangerPulse': {
+                '0%': { filter: 'brightness(0.85)' },
+                '50%': { filter: 'brightness(1.2)' },
+                '100%': { filter: 'brightness(0.85)' },
+              },
+            }}
+          />
+          <Typography variant="caption" sx={{ display: 'block', mt: 0.7, color: 'text.secondary' }}>
+            {medidorTexto}
+          </Typography>
+        </Box>
 
         <Typography variant="body2" sx={plantCardSx.intervalText}>
           <strong>Intervalo de Rega:</strong> a cada {planta.intervalo_rega_dias} dias
@@ -156,10 +227,8 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
               void onRegar(planta.id);
             }}
           >
-            <Box component="span" aria-hidden="true" sx={plantCardSx.icon}>
-              💧
-            </Box>
-            &nbsp;Registrar Rega (Dar Água)
+            <WaterDropIcon fontSize="small" />
+            &nbsp;FORNECER ÁGUA (WATER DISPENSED)
           </Button>
           <Button
             variant="outlined"
