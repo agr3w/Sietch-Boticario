@@ -55,6 +55,9 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
   const diasDesdeRega = dataRegaValida
     ? Math.floor((Date.now() - dataRega.getTime()) / (1000 * 60 * 60 * 24))
     : 0;
+  const diasExatosDesdeRega = dataRegaValida
+    ? (Date.now() - dataRega.getTime()) / (1000 * 60 * 60 * 24)
+    : 0;
   const precisaRegar = dataRegaValida && intervaloRega > 0 && diasDesdeRega >= intervaloRega;
   const faltaUmDiaParaRega =
     dataRegaValida && intervaloRega > 0 && !precisaRegar && intervaloRega - diasDesdeRega === 1;
@@ -70,7 +73,7 @@ function PlantCard({ planta, onRegar, onSalvarIntervalo, onAtualizarPlanta }) {
         : null;
   const porcentagemAgua =
     dataRegaValida && Number.isFinite(intervaloRega) && intervaloRega > 0
-      ? Math.max(0, 100 - (diasDesdeRega / intervaloRega) * 100)
+      ? Math.min(100, Math.max(0, 100 - (diasExatosDesdeRega / intervaloRega) * 100))
       : 0;
   const corMedidor =
     porcentagemAgua > 25 ? 'info' : porcentagemAgua > 0 && porcentagemAgua <= 25 ? 'secondary' : 'error';
