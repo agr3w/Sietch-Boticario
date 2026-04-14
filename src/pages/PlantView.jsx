@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
-import { Box, Container, LinearProgress, Stack, Typography } from "@mui/material";
+import { Box, Container, Grid, LinearProgress, Stack, Typography } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
+import WbSunnyIcon from "@mui/icons-material/WbSunny";
+import BrightnessMediumIcon from "@mui/icons-material/BrightnessMedium";
+import CloudIcon from "@mui/icons-material/Cloud";
+import TerrainIcon from "@mui/icons-material/Terrain";
+import PetsIcon from "@mui/icons-material/Pets";
+import WarningIcon from "@mui/icons-material/Warning";
 import { db } from "../firebase";
 
 function parseUltimaRegaDate(ultimaRega) {
@@ -17,7 +23,9 @@ function parseUltimaRegaDate(ultimaRega) {
   }
 
   if (typeof ultimaRega?.seconds === "number") {
-    const date = new Date(ultimaRega.seconds * 1000);
+    const milliseconds =
+      ultimaRega.seconds * 1000 + Math.floor((ultimaRega.nanoseconds ?? 0) / 1000000);
+    const date = new Date(milliseconds);
     return Number.isFinite(date.getTime()) ? date : null;
   }
 
@@ -123,28 +131,120 @@ function PlantView() {
         ? Math.min(100, Math.max(0, 100 - (diasExatosDesdeRega / intervaloRega) * 100))
         : 0;
 
-    const status =
-      porcentagemAgua > 25 ? "prosperando" : porcentagemAgua > 0 ? "alerta" : "critico";
+    const statusTelemetrico =
+      porcentagemAgua === 0
+        ? "Seca Critica"
+        : porcentagemAgua <= 25
+          ? "Reserva Baixa"
+          : "Nivel Estavel";
+
+    const corTelemetria =
+      porcentagemAgua === 0
+        ? "#D94841"
+        : porcentagemAgua <= 25
+          ? "#D39A2C"
+          : "#1B80C4";
 
     return {
       porcentagemAgua,
-      status,
+      statusTelemetrico,
+      corTelemetria,
     };
   }, [planta]);
 
+  const vitalidadeAtual = planta?.vitalidade || "estavel";
+  const vitalidadeConfig = {
+    prosperando: {
+      label: "Prosperando",
+      cor: "#2F6F4E",
+      icon: <WaterDropIcon sx={{ fontSize: 32, color: "#2F6F4E" }} />,
+    },
+    estavel: {
+      label: "Estavel",
+      cor: "#1B80C4",
+      icon: <WaterDropIcon sx={{ fontSize: 32, color: "#1B80C4" }} />,
+    },
+    recuperacao: {
+      label: "Em Recuperacao",
+      cor: "#D39A2C",
+      icon: <WarningAmberIcon sx={{ fontSize: 32, color: "#D39A2C" }} />,
+    },
+    critico: {
+      label: "Critico",
+      cor: "#D94841",
+      icon: <WarningAmberIcon sx={{ fontSize: 32, color: "#D94841" }} />,
+    },
+  };
+  const estadoVisual = vitalidadeConfig[vitalidadeAtual] ?? vitalidadeConfig.estavel;
+  const necessidadeLuz = planta?.necessidade_luz ?? planta?.necessidadeLuz ?? planta?.luz ?? "Meia Sombra";
+  const tipoSubstrato =
+    planta?.tipo_substrato ?? planta?.tipoSubstrato ?? planta?.substrato ?? "Nao informado";
+  const toxicidadePets = Boolean(planta?.eh_toxica ?? planta?.ehToxica ?? planta?.toxica ?? false);
+
+  const luzVisual = useMemo(() => {
+    const luzNormalizada = String(necessidadeLuz).toLowerCase();
+
+    if (luzNormalizada.includes("sol")) {
+      return {
+        label: "Sol Pleno",
+        icon: <WbSunnyIcon sx={{ color: "#E0B52C", fontSize: 26 }} />,
+      };
+    }
+
+    if (luzNormalizada.includes("sombra")) {
+      return {
+        label: "Sombra",
+        icon: <CloudIcon sx={{ color: "#9BA6B2", fontSize: 26 }} />,
+      };
+    }
+
+    return {
+      label: "Meia Sombra",
+      icon: <BrightnessMediumIcon sx={{ color: "#D6C277", fontSize: 26 }} />,
+    };
+  }, [necessidadeLuz]);
+
+  const tendencia24h = useMemo(() => {
+    const clamp = (valor, min, max) => Math.min(max, Math.max(min, valor));
+    const assinatura = String(planta?.id ?? "")
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const ajusteVitalidade =
+      vitalidadeAtual === "prosperando"
+        ? 6
+        : vitalidadeAtual === "estavel"
+          ? 2
+          : vitalidadeAtual === "recuperacao"
+            ? -4
+            : -8;
+
+    const base = clamp(Math.round(sinaisVitais.porcentagemAgua) + ajusteVitalidade, 6, 96);
+
+    const pontos = Array.from({ length: 8 }, (_, index) => {
+      const oscilacao = ((assinatura + index * 7) % 9) - 4;
+      const tendencia = (index - 3.5) * (vitalidadeAtual === "critico" ? -2.1 : -1.1);
+      return clamp(Math.round(base + oscilacao + tendencia), 3, 99);
+    });
+
+    const largura = 196;
+    const altura = 58;
+    const pontosSvg = pontos
+      .map((valor, index) => {
+        const x = (index / (pontos.length - 1)) * largura;
+        const y = altura - (valor / 100) * altura;
+        return `${x},${y}`;
+      })
+      .join(" ");
+
+    return { pontos, pontosSvg, largura, altura };
+  }, [planta?.id, sinaisVitais.porcentagemAgua, vitalidadeAtual]);
+
   const auraColor =
-    sinaisVitais.status === "critico"
+    sinaisVitais.statusTelemetrico === "Seca Critica"
       ? "rgba(217, 72, 65, 0.34)"
-      : sinaisVitais.status === "alerta"
+      : sinaisVitais.statusTelemetrico === "Reserva Baixa"
         ? "rgba(211, 154, 44, 0.3)"
         : "rgba(47, 111, 78, 0.34)";
-
-  const barraColor =
-    sinaisVitais.porcentagemAgua > 25
-      ? "info"
-      : sinaisVitais.porcentagemAgua > 0
-        ? "secondary"
-        : "error";
 
   return (
     <Box
@@ -205,82 +305,262 @@ function PlantView() {
                 {planta.nome_apelido}
               </Typography>
 
-              <Box
+              <Grid container spacing={1.6} sx={{ textAlign: "left" }}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    sx={{
+                      minHeight: 192,
+                      p: 2,
+                      border: "1px solid rgba(232, 224, 213, 0.2)",
+                      borderTop: `2px solid ${estadoVisual.cor}`,
+                      background: "rgba(12, 16, 20, 0.58)",
+                      backdropFilter: "blur(6px)",
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25)",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "rgba(232,224,213,0.82)",
+                        fontFamily: '"Share Tech Mono", monospace',
+                        letterSpacing: "0.08em",
+                      }}
+                    >
+                      DIAGNOSTICO FREMEN (VISUAL)
+                    </Typography>
+
+                    <Stack direction="row" spacing={1.2} alignItems="center" sx={{ mt: 1.2 }}>
+                      <Box
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: 1,
+                          border: `1px solid ${estadoVisual.cor}`,
+                          backgroundColor: "rgba(0,0,0,0.22)",
+                          display: "grid",
+                          placeItems: "center",
+                        }}
+                      >
+                        {estadoVisual.icon}
+                      </Box>
+                      <Typography
+                        sx={{
+                          color: estadoVisual.cor,
+                          fontFamily: '"Share Tech Mono", monospace',
+                          fontSize: "1.05rem",
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {estadoVisual.label}
+                      </Typography>
+                    </Stack>
+
+                    <Box sx={{ mt: 1.2 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "rgba(232,224,213,0.75)",
+                          fontFamily: '"Share Tech Mono", monospace',
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Evolucao nas ultimas 24h (simulada)
+                      </Typography>
+                      <Box
+                        component="svg"
+                        viewBox={`0 0 ${tendencia24h.largura} ${tendencia24h.altura}`}
+                        sx={{ width: "100%", mt: 0.7 }}
+                      >
+                        <polyline
+                          points={tendencia24h.pontosSvg}
+                          fill="none"
+                          stroke={estadoVisual.cor}
+                          strokeWidth="2.2"
+                          strokeLinecap="square"
+                        />
+                      </Box>
+                    </Box>
+                  </Box>
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Box
+                    sx={{
+                      minHeight: 192,
+                      p: 2,
+                      border: "1px solid rgba(232, 224, 213, 0.2)",
+                      borderTop: `2px solid ${sinaisVitais.corTelemetria}`,
+                      background: "rgba(12, 16, 20, 0.58)",
+                      backdropFilter: "blur(6px)",
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25)",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "rgba(232,224,213,0.82)",
+                        fontFamily: '"Share Tech Mono", monospace',
+                        letterSpacing: "0.08em",
+                      }}
+                    >
+                      LEITURA DE SENSORES (AGUA)
+                    </Typography>
+
+                    <Box sx={{ mt: 1.3 }}>
+                      <LinearProgress
+                        variant="determinate"
+                        value={sinaisVitais.porcentagemAgua}
+                        sx={{
+                          height: 16,
+                          borderRadius: 0,
+                          backgroundColor: "rgba(0, 0, 0, 0.5)",
+                          border: "1px solid rgba(232, 224, 213, 0.2)",
+                          "& .MuiLinearProgress-bar": {
+                            backgroundColor: sinaisVitais.corTelemetria,
+                            backgroundImage:
+                              sinaisVitais.statusTelemetrico === "Seca Critica"
+                                ? "repeating-linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.2) 8px, transparent 8px, transparent 16px)"
+                                : "none",
+                          },
+                        }}
+                      />
+                      <Typography
+                        sx={{
+                          mt: 1,
+                          color: sinaisVitais.corTelemetria,
+                          fontFamily: '"Share Tech Mono", monospace',
+                          fontSize: "1.3rem",
+                          letterSpacing: "0.04em",
+                        }}
+                      >
+                        {Math.round(sinaisVitais.porcentagemAgua)}%
+                      </Typography>
+                      <Typography
+                        sx={{
+                          mt: 0.4,
+                          color: "rgba(232,224,213,0.9)",
+                          fontFamily: '"Share Tech Mono", monospace',
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {sinaisVitais.statusTelemetrico}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+
+              <Stack
+                direction="row"
+                spacing={1.2}
                 sx={{
-                  mx: "auto",
-                  width: 96,
-                  height: 96,
-                  borderRadius: "50%",
-                  display: "grid",
-                  placeItems: "center",
-                  border: "1px solid rgba(211, 84, 0, 0.35)",
-                  backgroundColor: "rgba(15, 20, 24, 0.6)",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  rowGap: 1.2,
                 }}
               >
-                {sinaisVitais.status === "critico" ? (
-                  <WarningAmberIcon sx={{ fontSize: 56, color: "error.main" }} />
-                ) : (
-                  <WaterDropIcon
+                <Box
+                  sx={{
+                    minHeight: 62,
+                    minWidth: 164,
+                    px: 1.4,
+                    py: 1.1,
+                    border: "1px solid rgba(232,224,213,0.2)",
+                    backgroundColor: "rgba(0,0,0,0.4)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  {luzVisual.icon}
+                  <Box>
+                    <Typography sx={{ color: "rgba(232,224,213,0.78)", fontSize: "0.72rem" }}>
+                      LUZ
+                    </Typography>
+                    <Typography sx={{ color: "#E8E0D5", fontSize: "0.9rem" }}>{luzVisual.label}</Typography>
+                  </Box>
+                </Box>
+
+                <Box
+                  sx={{
+                    minHeight: 62,
+                    minWidth: 164,
+                    px: 1.4,
+                    py: 1.1,
+                    border: "1px solid rgba(232,224,213,0.2)",
+                    backgroundColor: "rgba(0,0,0,0.4)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <TerrainIcon sx={{ color: "#8E6A48", fontSize: 26 }} />
+                  <Box>
+                    <Typography sx={{ color: "rgba(232,224,213,0.78)", fontSize: "0.72rem" }}>
+                      SUBSTRATO
+                    </Typography>
+                    <Typography sx={{ color: "#E8E0D5", fontSize: "0.9rem" }}>{tipoSubstrato}</Typography>
+                  </Box>
+                </Box>
+
+                {toxicidadePets ? (
+                  <Box
                     sx={{
-                      fontSize: 56,
-                      color: sinaisVitais.status === "alerta" ? "secondary.main" : "info.main",
+                      minHeight: 62,
+                      minWidth: 184,
+                      px: 1.4,
+                      py: 1.1,
+                      border: "1px solid rgba(217,72,65,0.82)",
+                      backgroundColor: "rgba(0,0,0,0.4)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.8,
                     }}
-                  />
+                  >
+                    <WarningIcon sx={{ color: "#D94841", fontSize: 24 }} />
+                    <PetsIcon sx={{ color: "#D94841", fontSize: 23 }} />
+                    <Typography sx={{ color: "#E8E0D5", fontWeight: 700, fontSize: "0.9rem" }}>
+                      TOXICA
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      minHeight: 62,
+                      minWidth: 184,
+                      px: 1.4,
+                      py: 1.1,
+                      border: "1px solid rgba(89,166,107,0.62)",
+                      backgroundColor: "rgba(0,0,0,0.4)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <PetsIcon sx={{ color: "#59A66B", fontSize: 24 }} />
+                    <Typography sx={{ color: "#E8E0D5", fontSize: "0.9rem" }}>
+                      Segura para Pets
+                    </Typography>
+                  </Box>
                 )}
-              </Box>
+              </Stack>
 
               <Typography
                 sx={{
                   color: "#E8E0D5",
                   fontFamily: '"Share Tech Mono", monospace',
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
                 }}
               >
-                Monitor de Sinais Vitais
+                Clima: {climaAtual ? `${climaAtual.temperatura}°C / ${climaAtual.umidade}%` : "Sinal indisponível"}
               </Typography>
-
-              <Box sx={{ px: { xs: 1, sm: 4 } }}>
-                <LinearProgress
-                  variant="determinate"
-                  value={sinaisVitais.porcentagemAgua}
-                  color={barraColor}
-                  sx={{
-                    height: 10,
-                    borderRadius: 0,
-                    backgroundColor: "rgba(0,0,0,0.42)",
-                    border: "1px solid rgba(211,84,0,0.3)",
-                  }}
-                />
-                <Typography
-                  sx={{
-                    mt: 1,
-                    color: "#E8E0D5",
-                    fontFamily: '"Share Tech Mono", monospace',
-                  }}
-                >
-                  Umidade disponível: {Math.round(sinaisVitais.porcentagemAgua)}%
-                </Typography>
-              </Box>
-
-              <Stack
-                direction="row"
-                justifyContent="center"
-                spacing={2.4}
-                sx={{
-                  color: "#E8E0D5",
-                  fontFamily: '"Share Tech Mono", monospace',
-                  flexWrap: "wrap",
-                  rowGap: 0.8,
-                }}
-              >
-                <Typography sx={{ fontFamily: '"Share Tech Mono", monospace' }}>
-                  Saúde: {sinaisVitais.status === "critico" ? "Crítico" : sinaisVitais.status === "alerta" ? "Atenção" : "Prosperando"}
-                </Typography>
-                <Typography sx={{ fontFamily: '"Share Tech Mono", monospace' }}>
-                  Clima: {climaAtual ? `${climaAtual.temperatura}°C / ${climaAtual.umidade}%` : "Sinal indisponível"}
-                </Typography>
-              </Stack>
             </>
           )}
 
