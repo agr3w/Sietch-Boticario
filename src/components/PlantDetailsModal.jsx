@@ -94,7 +94,8 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate }) {
         if (ativo) {
           setHistorico(mensagens);
         }
-      } catch {
+      } catch (error) {
+        console.error("Erro ao buscar histórico do Firebase:", error);
         if (ativo) {
           setHistorico([]);
         }
