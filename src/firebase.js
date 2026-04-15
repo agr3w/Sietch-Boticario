@@ -102,3 +102,24 @@ export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl) {
     }),
   });
 }
+
+export async function getHistoricoFotos(plantaId) {
+  const fotosRef = collection(db, "fotos");
+  const historicoQuery = query(
+    fotosRef,
+    where("planta_id", "==", plantaId),
+    orderBy("data_registro", "asc"),
+  );
+  const querySnapshot = await getDocs(historicoQuery);
+
+  return querySnapshot.docs.map((fotoDoc) => {
+    const fotoData = fotoDoc.data();
+
+    return {
+      id: fotoDoc.id,
+      url: fotoData.url ?? "",
+      data_registro: fotoData.data_registro ?? null,
+      nota: fotoData.nota ?? "",
+    };
+  });
+}

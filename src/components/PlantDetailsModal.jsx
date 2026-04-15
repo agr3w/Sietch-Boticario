@@ -17,6 +17,7 @@ import {
   MenuItem,
   Select,
   Stack,
+  Slider,
   Switch,
   Tab,
   Tabs,
@@ -29,6 +30,8 @@ import EditNoteIcon from "@mui/icons-material/EditNote";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import CloseIcon from "@mui/icons-material/Close";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import PauseIcon from "@mui/icons-material/Pause";
 import { QRCode } from "react-qr-code";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -39,6 +42,7 @@ import CameraScanner from "./CameraScanner";
 import {
   adicionarFotoGaleriaPlanta,
   adicionarNotaManual,
+  getHistoricoFotos,
   getHistoricoPlanta,
 } from "../firebase";
 
@@ -98,6 +102,46 @@ function obterDataRega(ultimaRega) {
   return Number.isFinite(date.getTime()) ? date : null;
 }
 
+function extrairDataRegistro(dataRegistro) {
+  if (!dataRegistro) {
+    return null;
+  }
+
+  if (typeof dataRegistro?.toDate === "function") {
+    const date = dataRegistro.toDate();
+    return Number.isFinite(date.getTime()) ? date : null;
+  }
+
+  if (typeof dataRegistro?.seconds === "number") {
+    const milliseconds =
+      dataRegistro.seconds * 1000 + Math.floor((dataRegistro.nanoseconds ?? 0) / 1000000);
+    const date = new Date(milliseconds);
+    return Number.isFinite(date.getTime()) ? date : null;
+  }
+
+  const date = new Date(dataRegistro);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
+function formatarDataRegistroCurta(dataRegistro) {
+  const date = extrairDataRegistro(dataRegistro);
+  if (!date) {
+    return "Registro sem data";
+  }
+
+  return `Registro de ${date.toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+  })}`;
+}
+
+function ordenarFotosPorDataAsc(fotos) {
+  return [...fotos].sort((a, b) => {
+    const dataA = extrairDataRegistro(a?.data_registro ?? a?.data_captura);
+    const dataB = extrairDataRegistro(b?.data_registro ?? b?.data_captura);
+    return (dataA?.getTime() ?? 0) - (dataB?.getTime() ?? 0);
+  });
+}
+
 function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -128,6 +172,11 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [salvandoFoto, setSalvandoFoto] = useState(false);
   const [galeriaFotos, setGaleriaFotos] = useState([]);
+  const [fotosTimelapse, setFotosTimelapse] = useState([]);
+  const [carregandoFotos, setCarregandoFotos] = useState(false);
+  const [indexFoto, setIndexFoto] = useState(0);
+  const [autoplayAtivo, setAutoplayAtivo] = useState(false);
+  const [velocidadeTimelapse, setVelocidadeTimelapse] = useState(1400);
   const [erroFoto, setErroFoto] = useState("");
   const vitalidadeAtualConfig =
     vitalidadeConfig[vitalidade] ?? vitalidadeConfig.estavel;
@@ -147,6 +196,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     setScannerOpen(false);
     setSalvandoFoto(false);
     setErroFoto("");
+    setCarregandoFotos(false);
+    setIndexFoto(0);
+    setAutoplayAtivo(false);
+    setVelocidadeTimelapse(1400);
     setGaleriaFotos(
       Array.isArray(planta?.galeria_fotos)
         ? planta.galeria_fotos
@@ -154,6 +207,13 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
           ? planta.galeriaFotos
           : [],
     );
+    const fallbackGaleria =
+      Array.isArray(planta?.galeria_fotos)
+        ? planta.galeria_fotos
+        : Array.isArray(planta?.galeriaFotos)
+          ? planta.galeriaFotos
+          : [];
+    setFotosTimelapse(ordenarFotosPorDataAsc(fallbackGaleria));
   }, [
     open,
     planta?.id,
@@ -169,6 +229,78 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     planta?.eh_toxica,
     planta?.ehToxica,
   ]);
+
+  useEffect(() => {
+    if (!open || !planta?.id) {
+      setFotosTimelapse([]);
+      return;
+    }
+
+    let ativo = true;
+
+    const carregarHistoricoFotos = async () => {
+      try {
+        setCarregandoFotos(true);
+        const fotosHistorico = await getHistoricoFotos(planta.id);
+        if (!ativo) {
+          return;
+        }
+
+        if (fotosHistorico.length > 0) {
+          setFotosTimelapse(ordenarFotosPorDataAsc(fotosHistorico));
+        } else {
+          setFotosTimelapse(ordenarFotosPorDataAsc(galeriaFotos));
+        }
+      } catch (error) {
+        console.error("Erro ao carregar histórico de fotos:", error);
+        if (ativo) {
+          setFotosTimelapse(ordenarFotosPorDataAsc(galeriaFotos));
+        }
+      } finally {
+        if (ativo) {
+          setCarregandoFotos(false);
+        }
+      }
+    };
+
+    void carregarHistoricoFotos();
+
+    return () => {
+      ativo = false;
+    };
+  }, [open, planta?.id, galeriaFotos]);
+
+  useEffect(() => {
+    setIndexFoto((valorAtual) => {
+      if (fotosTimelapse.length === 0) {
+        return 0;
+      }
+
+      return Math.min(valorAtual, fotosTimelapse.length - 1);
+    });
+  }, [fotosTimelapse.length]);
+
+  useEffect(() => {
+    if (abaAtiva !== 3) {
+      setAutoplayAtivo(false);
+    }
+  }, [abaAtiva]);
+
+  useEffect(() => {
+    if (!autoplayAtivo || fotosTimelapse.length <= 1) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      setIndexFoto((valorAtual) =>
+        valorAtual >= fotosTimelapse.length - 1 ? 0 : valorAtual + 1,
+      );
+    }, velocidadeTimelapse);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [autoplayAtivo, fotosTimelapse.length, velocidadeTimelapse]);
 
   const qrCodeValue = useMemo(() => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -359,6 +491,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
       url: imagemUrl,
       origem: "scanner",
       data_captura: new Date().toISOString(),
+      data_registro: new Date().toISOString(),
     };
 
     setErroFoto("");
@@ -372,11 +505,18 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
         url: imagemUrl,
         origem: "scanner",
         data_captura: new Date().toISOString(),
+        data_registro: new Date().toISOString(),
       };
       setGaleriaFotos((prev) => [
         fotoPersistida,
         ...prev.filter((foto) => foto.id !== fotoTemporaria.id),
       ]);
+      setFotosTimelapse((prev) =>
+        ordenarFotosPorDataAsc([
+          ...prev.filter((foto) => foto.id !== fotoTemporaria.id),
+          fotoPersistida,
+        ]),
+      );
       setScannerOpen(false);
     } catch (error) {
       console.error("Erro ao salvar captura na galeria:", error);
@@ -934,32 +1074,139 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </Alert>
             )}
 
-            <Grid
-              container
-              spacing={2}
-              sx={{
-                minHeight: 140,
-                border: "1px dashed rgba(100, 70, 40, 0.28)",
-                borderRadius: 2,
-                p: 1,
-              }}
-            >
-              {galeriaFotos.map((foto) => (
-                <Grid key={foto.id ?? foto.url} size={{ xs: 12, sm: 6, md: 4 }}>
+            {carregandoFotos && (
+              <Typography sx={{ color: "text.secondary", mb: 1.5 }}>
+                Carregando linha do tempo fotografica...
+              </Typography>
+            )}
+
+            {fotosTimelapse.length > 0 && (
+              <Stack spacing={1.2}>
+                <Box
+                  sx={{
+                    width: "100%",
+                    maxWidth: 520,
+                    mx: "auto",
+                    position: "relative",
+                    border: "1px solid rgba(100, 70, 40, 0.28)",
+                    backgroundColor: "rgba(0,0,0,0.38)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      zIndex: 1,
+                      px: 1,
+                      py: 0.45,
+                      border: "1px solid rgba(232,224,213,0.36)",
+                      backgroundColor: "rgba(7, 11, 15, 0.72)",
+                      color: "#E8E0D5",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      fontSize: "0.74rem",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {indexFoto + 1}/{fotosTimelapse.length}
+                    {autoplayAtivo ? " • AUTO" : ""}
+                  </Box>
+
                   <Box
                     component="img"
-                    src={foto.url}
-                    alt="Captura morfologica da planta"
+                    key={fotosTimelapse[indexFoto]?.id ?? fotosTimelapse[indexFoto]?.url}
+                    src={fotosTimelapse[indexFoto]?.url}
+                    alt="Registro cronologico da planta"
                     sx={{
                       width: "100%",
-                      height: 160,
+                      height: { xs: 220, sm: 280 },
                       objectFit: "cover",
-                      border: "1px solid rgba(100, 70, 40, 0.2)",
+                      opacity: 1,
+                      transition: "opacity 320ms ease-in-out",
                     }}
                   />
-                </Grid>
-              ))}
-            </Grid>
+                </Box>
+
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "rgba(232,224,213,0.86)",
+                    fontFamily: '"Share Tech Mono", monospace',
+                    letterSpacing: "0.03em",
+                    textAlign: "center",
+                  }}
+                >
+                  {formatarDataRegistroCurta(
+                    fotosTimelapse[indexFoto]?.data_registro ?? fotosTimelapse[indexFoto]?.data_captura,
+                  )}
+                </Typography>
+
+                {fotosTimelapse.length > 1 && (
+                  <Stack spacing={1.1} sx={{ maxWidth: 520, mx: "auto", width: "100%" }}>
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={1}
+                      justifyContent="space-between"
+                    >
+                      <Button
+                        variant={autoplayAtivo ? "contained" : "outlined"}
+                        color="info"
+                        startIcon={autoplayAtivo ? <PauseIcon /> : <PlayArrowIcon />}
+                        onClick={() => setAutoplayAtivo((valor) => !valor)}
+                        sx={{ minWidth: { xs: "100%", sm: 190 } }}
+                      >
+                        {autoplayAtivo ? "Pausar Timelapse" : "Iniciar Timelapse"}
+                      </Button>
+
+                      <Select
+                        size="small"
+                        value={velocidadeTimelapse}
+                        onChange={(event) => setVelocidadeTimelapse(Number(event.target.value))}
+                        sx={{
+                          minWidth: { xs: "100%", sm: 165 },
+                          "& .MuiSelect-select": {
+                            fontFamily: '"Share Tech Mono", monospace',
+                          },
+                        }}
+                      >
+                        <MenuItem value={800}>Velocidade: Rapida</MenuItem>
+                        <MenuItem value={1400}>Velocidade: Media</MenuItem>
+                        <MenuItem value={2200}>Velocidade: Lenta</MenuItem>
+                      </Select>
+                    </Stack>
+
+                    <Slider
+                      min={0}
+                      max={fotosTimelapse.length - 1}
+                      step={1}
+                      value={indexFoto}
+                      onChange={(_event, valor) => setIndexFoto(Number(valor))}
+                      sx={{
+                        color: "#D39A2C",
+                        "& .MuiSlider-rail": {
+                          backgroundColor: "rgba(0,0,0,0.62)",
+                          opacity: 1,
+                          border: "1px solid rgba(90, 64, 36, 0.45)",
+                        },
+                        "& .MuiSlider-track": {
+                          backgroundColor: "#1B80C4",
+                          border: "none",
+                        },
+                        "& .MuiSlider-thumb": {
+                          width: 18,
+                          height: 18,
+                          borderRadius: 0,
+                          backgroundColor: "#D39A2C",
+                          border: "2px solid #E8E0D5",
+                          boxShadow: "0 0 0 2px rgba(211,154,44,0.25)",
+                        },
+                      }}
+                    />
+                  </Stack>
+                )}
+              </Stack>
+            )}
           </Box>
         )}
       </DialogContent>

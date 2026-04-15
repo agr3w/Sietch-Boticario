@@ -1,7 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
-import { Box, Container, Grid, LinearProgress, Stack, Typography } from "@mui/material";
+import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
+import {
+  Alert,
+  Box,
+  Button,
+  Container,
+  Grid,
+  LinearProgress,
+  MenuItem,
+  Select,
+  Slider,
+  Stack,
+  Typography,
+} from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import WbSunnyIcon from "@mui/icons-material/WbSunny";
@@ -10,7 +22,11 @@ import CloudIcon from "@mui/icons-material/Cloud";
 import TerrainIcon from "@mui/icons-material/Terrain";
 import PetsIcon from "@mui/icons-material/Pets";
 import WarningIcon from "@mui/icons-material/Warning";
-import { db } from "../firebase";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import PauseIcon from "@mui/icons-material/Pause";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import CameraScanner from "../components/CameraScanner";
+import { adicionarFotoGaleriaPlanta, db, getHistoricoFotos } from "../firebase";
 
 function parseUltimaRegaDate(ultimaRega) {
   if (!ultimaRega) {
@@ -33,12 +49,60 @@ function parseUltimaRegaDate(ultimaRega) {
   return Number.isFinite(date.getTime()) ? date : null;
 }
 
+function extrairDataRegistro(dataRegistro) {
+  if (!dataRegistro) {
+    return null;
+  }
+
+  if (typeof dataRegistro?.toDate === "function") {
+    const date = dataRegistro.toDate();
+    return Number.isFinite(date.getTime()) ? date : null;
+  }
+
+  if (typeof dataRegistro?.seconds === "number") {
+    const milliseconds =
+      dataRegistro.seconds * 1000 + Math.floor((dataRegistro.nanoseconds ?? 0) / 1000000);
+    const date = new Date(milliseconds);
+    return Number.isFinite(date.getTime()) ? date : null;
+  }
+
+  const date = new Date(dataRegistro);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
+function formatarDataRegistroCurta(dataRegistro) {
+  const date = extrairDataRegistro(dataRegistro);
+  if (!date) {
+    return "Registro sem data";
+  }
+
+  return `Registro de ${date.toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+  })}`;
+}
+
+function ordenarFotosPorDataAsc(fotos) {
+  return [...fotos].sort((a, b) => {
+    const dataA = extrairDataRegistro(a?.data_registro ?? a?.data_captura);
+    const dataB = extrairDataRegistro(b?.data_registro ?? b?.data_captura);
+    return (dataA?.getTime() ?? 0) - (dataB?.getTime() ?? 0);
+  });
+}
+
 function PlantView() {
   const { id } = useParams();
   const [planta, setPlanta] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [climaAtual, setClimaAtual] = useState(null);
+  const [fotos, setFotos] = useState([]);
+  const [indexFoto, setIndexFoto] = useState(0);
+  const [carregandoFotos, setCarregandoFotos] = useState(false);
+  const [autoplayAtivo, setAutoplayAtivo] = useState(false);
+  const [velocidadeTimelapse, setVelocidadeTimelapse] = useState(1400);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [salvandoFoto, setSalvandoFoto] = useState(false);
+  const [erroFoto, setErroFoto] = useState("");
 
   useEffect(() => {
     let ativo = true;
@@ -83,6 +147,79 @@ function PlantView() {
       ativo = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!planta?.id) {
+      setFotos([]);
+      return;
+    }
+
+    let ativo = true;
+
+    const carregarFotos = async () => {
+      try {
+        setCarregandoFotos(true);
+        const historicoFotos = await getHistoricoFotos(planta.id);
+        if (!ativo) {
+          return;
+        }
+
+        if (historicoFotos.length > 0) {
+          setFotos(ordenarFotosPorDataAsc(historicoFotos));
+        } else {
+          const fallbackGaleria = Array.isArray(planta?.galeria_fotos)
+            ? planta.galeria_fotos
+            : Array.isArray(planta?.galeriaFotos)
+              ? planta.galeriaFotos
+              : [];
+          setFotos(ordenarFotosPorDataAsc(fallbackGaleria));
+        }
+      } catch {
+        if (ativo) {
+          const fallbackGaleria = Array.isArray(planta?.galeria_fotos)
+            ? planta.galeria_fotos
+            : Array.isArray(planta?.galeriaFotos)
+              ? planta.galeriaFotos
+              : [];
+          setFotos(ordenarFotosPorDataAsc(fallbackGaleria));
+        }
+      } finally {
+        if (ativo) {
+          setCarregandoFotos(false);
+        }
+      }
+    };
+
+    void carregarFotos();
+
+    return () => {
+      ativo = false;
+    };
+  }, [planta?.id, planta?.galeria_fotos, planta?.galeriaFotos]);
+
+  useEffect(() => {
+    setIndexFoto((valorAtual) => {
+      if (fotos.length === 0) {
+        return 0;
+      }
+
+      return Math.min(valorAtual, fotos.length - 1);
+    });
+  }, [fotos.length]);
+
+  useEffect(() => {
+    if (!autoplayAtivo || fotos.length <= 1) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      setIndexFoto((valorAtual) => (valorAtual >= fotos.length - 1 ? 0 : valorAtual + 1));
+    }, velocidadeTimelapse);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [autoplayAtivo, fotos.length, velocidadeTimelapse]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -246,6 +383,69 @@ function PlantView() {
         ? "rgba(211, 154, 44, 0.3)"
         : "rgba(47, 111, 78, 0.34)";
 
+  const ultimaFoto = fotos.length > 0 ? fotos[fotos.length - 1] : null;
+  const dataUltimoRegistro = useMemo(
+    () => extrairDataRegistro(ultimaFoto?.data_registro ?? ultimaFoto?.data_captura),
+    [ultimaFoto?.data_captura, ultimaFoto?.data_registro],
+  );
+  const diasSemAtualizacao = useMemo(() => {
+    if (!dataUltimoRegistro) {
+      return null;
+    }
+
+    return Math.floor((Date.now() - dataUltimoRegistro.getTime()) / (1000 * 60 * 60 * 24));
+  }, [dataUltimoRegistro]);
+
+  const requerAtualizacaoMorfologica =
+    !carregando &&
+    !erro &&
+    !carregandoFotos &&
+    Boolean(planta?.id) &&
+    (fotos.length === 0 || Number(diasSemAtualizacao) > 15);
+
+  const janelaToleranciaTexto =
+    fotos.length === 0
+      ? "Sem registro fotografico"
+      : `${diasSemAtualizacao} dia${diasSemAtualizacao === 1 ? "" : "s"} sem registro`;
+
+  const handleCapturaMissao = async (fotoBase64) => {
+    if (!planta?.id || !fotoBase64) {
+      setErroFoto("Nao foi possivel concluir a captura morfologica.");
+      return;
+    }
+
+    setErroFoto("");
+    setSalvandoFoto(true);
+
+    const fotoLocal = {
+      id: `local-${Date.now()}`,
+      url: fotoBase64,
+      data_registro: new Date().toISOString(),
+      nota: "Atualizacao morfologica via scanner QR",
+    };
+
+    try {
+      await addDoc(collection(db, "fotos"), {
+        planta_id: planta.id,
+        url: fotoBase64,
+        data_registro: serverTimestamp(),
+        nota: "Atualizacao morfologica via scanner QR",
+      });
+      await adicionarFotoGaleriaPlanta(planta.id, fotoBase64);
+      setFotos((prev) => {
+        const proximo = ordenarFotosPorDataAsc([...prev, fotoLocal]);
+        setIndexFoto(proximo.length - 1);
+        return proximo;
+      });
+      setScannerOpen(false);
+    } catch (error) {
+      console.error("Falha ao registrar missao morfologica:", error);
+      setErroFoto("Falha ao salvar a nova foto morfologica.");
+    } finally {
+      setSalvandoFoto(false);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -277,6 +477,64 @@ function PlantView() {
         },
       }}
     >
+      {requerAtualizacaoMorfologica && (
+        <Button
+          variant="contained"
+          color="info"
+          startIcon={<CameraAltIcon />}
+          onClick={() => setScannerOpen(true)}
+          disabled={salvandoFoto}
+          sx={{
+            position: "fixed",
+            top: 12,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 12,
+            minHeight: 50,
+            px: 2,
+            borderRadius: 0,
+            border: "1px solid rgba(232,224,213,0.32)",
+            backgroundColor: "info.main",
+            color: "#EAF5FF",
+            boxShadow: "0 0 16px rgba(27,128,196,0.48)",
+            animation: "missaoPulse 1.3s ease-in-out infinite",
+            "@keyframes missaoPulse": {
+              "0%": { boxShadow: "0 0 8px rgba(27,128,196,0.35)" },
+              "50%": { boxShadow: "0 0 20px rgba(27,128,196,0.8)" },
+              "100%": { boxShadow: "0 0 8px rgba(27,128,196,0.35)" },
+            },
+            "&:hover": {
+              backgroundColor: "#2A96DD",
+            },
+          }}
+        >
+          <Stack spacing={0.1} alignItems="flex-start">
+            <Typography
+              sx={{
+                fontSize: { xs: "0.73rem", sm: "0.8rem" },
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                lineHeight: 1.12,
+                textAlign: "left",
+              }}
+            >
+              [ 📸 REQUER ATUALIZAÇÃO MORFOLÓGICA ]
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: "0.68rem",
+                letterSpacing: "0.03em",
+                opacity: 0.95,
+                textAlign: "left",
+                fontFamily: '"Share Tech Mono", monospace',
+              }}
+            >
+              {janelaToleranciaTexto}
+            </Typography>
+          </Stack>
+        </Button>
+      )}
+
       <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
         <Stack spacing={2.4} sx={{ textAlign: "center" }}>
           {carregando && (
@@ -553,6 +811,140 @@ function PlantView() {
                 )}
               </Stack>
 
+              {carregandoFotos && (
+                <Typography
+                  sx={{
+                    color: "rgba(232,224,213,0.75)",
+                    fontFamily: '"Share Tech Mono", monospace',
+                  }}
+                >
+                  Carregando timelapse botanico...
+                </Typography>
+              )}
+
+              {fotos.length > 0 && (
+                <Stack spacing={1.1} sx={{ width: "100%", maxWidth: 560, mx: "auto" }}>
+                  <Box
+                    sx={{
+                      position: "relative",
+                      border: "1px solid rgba(100, 70, 40, 0.3)",
+                      backgroundColor: "rgba(0, 0, 0, 0.42)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        zIndex: 1,
+                        px: 1,
+                        py: 0.45,
+                        border: "1px solid rgba(232,224,213,0.36)",
+                        backgroundColor: "rgba(7, 11, 15, 0.72)",
+                        color: "#E8E0D5",
+                        fontFamily: '"Share Tech Mono", monospace',
+                        fontSize: "0.74rem",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      {indexFoto + 1}/{fotos.length}
+                      {autoplayAtivo ? " • AUTO" : ""}
+                    </Box>
+
+                    <Box
+                      component="img"
+                      key={fotos[indexFoto]?.id ?? fotos[indexFoto]?.url}
+                      src={fotos[indexFoto]?.url}
+                      alt="Registro fotografico da planta"
+                      sx={{
+                        width: "100%",
+                        height: { xs: 220, sm: 300 },
+                        objectFit: "cover",
+                        opacity: 1,
+                        transition: "opacity 320ms ease-in-out",
+                      }}
+                    />
+                  </Box>
+
+                  <Typography
+                    sx={{
+                      color: "rgba(232,224,213,0.88)",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      fontSize: "0.88rem",
+                    }}
+                  >
+                    {formatarDataRegistroCurta(
+                      fotos[indexFoto]?.data_registro ?? fotos[indexFoto]?.data_captura,
+                    )}
+                  </Typography>
+
+                  {fotos.length > 1 && (
+                    <Stack spacing={1.1}>
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1}
+                        justifyContent="space-between"
+                      >
+                        <Button
+                          variant={autoplayAtivo ? "contained" : "outlined"}
+                          color="info"
+                          startIcon={autoplayAtivo ? <PauseIcon /> : <PlayArrowIcon />}
+                          onClick={() => setAutoplayAtivo((valor) => !valor)}
+                          sx={{ minWidth: { xs: "100%", sm: 190 } }}
+                        >
+                          {autoplayAtivo ? "Pausar Timelapse" : "Iniciar Timelapse"}
+                        </Button>
+
+                        <Select
+                          size="small"
+                          value={velocidadeTimelapse}
+                          onChange={(event) => setVelocidadeTimelapse(Number(event.target.value))}
+                          sx={{
+                            minWidth: { xs: "100%", sm: 165 },
+                            "& .MuiSelect-select": {
+                              fontFamily: '"Share Tech Mono", monospace',
+                            },
+                          }}
+                        >
+                          <MenuItem value={800}>Velocidade: Rapida</MenuItem>
+                          <MenuItem value={1400}>Velocidade: Media</MenuItem>
+                          <MenuItem value={2200}>Velocidade: Lenta</MenuItem>
+                        </Select>
+                      </Stack>
+
+                      <Slider
+                        min={0}
+                        max={fotos.length - 1}
+                        step={1}
+                        value={indexFoto}
+                        onChange={(_event, valor) => setIndexFoto(Number(valor))}
+                        sx={{
+                          color: "#D39A2C",
+                          "& .MuiSlider-rail": {
+                            backgroundColor: "rgba(0,0,0,0.62)",
+                            opacity: 1,
+                            border: "1px solid rgba(90, 64, 36, 0.45)",
+                          },
+                          "& .MuiSlider-track": {
+                            backgroundColor: "#1B80C4",
+                            border: "none",
+                          },
+                          "& .MuiSlider-thumb": {
+                            width: 18,
+                            height: 18,
+                            borderRadius: 0,
+                            backgroundColor: "#D39A2C",
+                            border: "2px solid #E8E0D5",
+                            boxShadow: "0 0 0 2px rgba(211,154,44,0.25)",
+                          },
+                        }}
+                      />
+                    </Stack>
+                  )}
+                </Stack>
+              )}
+
               <Typography
                 sx={{
                   color: "#E8E0D5",
@@ -561,6 +953,12 @@ function PlantView() {
               >
                 Clima: {climaAtual ? `${climaAtual.temperatura}°C / ${climaAtual.umidade}%` : "Sinal indisponível"}
               </Typography>
+
+              {erroFoto && (
+                <Alert severity="error" sx={{ textAlign: "left" }}>
+                  {erroFoto}
+                </Alert>
+              )}
             </>
           )}
 
@@ -577,6 +975,15 @@ function PlantView() {
           </Typography>
         </Stack>
       </Container>
+
+      <CameraScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        ultimaFotoUrl={ultimaFoto?.url ?? ""}
+        onCapture={(fotoBase64) => {
+          void handleCapturaMissao(fotoBase64);
+        }}
+      />
     </Box>
   );
 }
