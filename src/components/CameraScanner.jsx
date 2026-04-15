@@ -60,11 +60,11 @@ function CameraScanner({ open, onClose, ultimaFotoUrl, onCapture }) {
             sx={{
               position: "absolute",
               inset: 0,
+              zIndex: 2,
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              opacity: 0.35,
-              mixBlendMode: "screen",
+              opacity: 0.4,
               pointerEvents: "none",
             }}
           />

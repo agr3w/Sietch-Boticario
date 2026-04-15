@@ -48,7 +48,7 @@ import {
 } from "../firebase";
 
 const placeholderFantasma =
-  "https://images.unsplash.com/photo-1597571063304-81f08190f4e1?q=80&w=1000";
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Epipremnum_aureum_31082012.jpg/800px-Epipremnum_aureum_31082012.jpg";
 
 const vitalidadeConfig = {
   prosperando: { cor: "#2F6F4E", label: "Prosperando" },
