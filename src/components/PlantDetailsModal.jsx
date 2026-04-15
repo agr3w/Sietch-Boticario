@@ -23,14 +23,27 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
+import CloseIcon from "@mui/icons-material/Close";
 import { QRCode } from "react-qr-code";
-import { adicionarNotaManual, getHistoricoPlanta } from "../firebase";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
+import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
+import CameraScanner from "./CameraScanner";
+import {
+  adicionarFotoGaleriaPlanta,
+  adicionarNotaManual,
+  getHistoricoPlanta,
+} from "../firebase";
 
-const GALERIA_PLACEHOLDER_URL =
-  "https://cdn.wallpapersafari.com/65/81/5YrxE9.jpg";
+const placeholderFantasma =
+  "https://images.unsplash.com/photo-1597571063304-81f08190f4e1?q=80&w=1000";
 
 const vitalidadeConfig = {
   prosperando: { cor: "#2F6F4E", label: "Prosperando" },
@@ -86,6 +99,8 @@ function obterDataRega(ultimaRega) {
 }
 
 function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const mentatMonoSx = {
     fontFamily: '"Share Tech Mono", monospace',
     letterSpacing: "0.03em",
@@ -110,6 +125,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const [notaManual, setNotaManual] = useState("");
   const [salvandoNota, setSalvandoNota] = useState(false);
   const [statusCopiaQr, setStatusCopiaQr] = useState("idle");
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [salvandoFoto, setSalvandoFoto] = useState(false);
+  const [galeriaFotos, setGaleriaFotos] = useState([]);
+  const [erroFoto, setErroFoto] = useState("");
   const vitalidadeAtualConfig =
     vitalidadeConfig[vitalidade] ?? vitalidadeConfig.estavel;
 
@@ -125,6 +144,16 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     setNotaManual("");
     setSalvandoNota(false);
     setStatusCopiaQr("idle");
+    setScannerOpen(false);
+    setSalvandoFoto(false);
+    setErroFoto("");
+    setGaleriaFotos(
+      Array.isArray(planta?.galeria_fotos)
+        ? planta.galeria_fotos
+        : Array.isArray(planta?.galeriaFotos)
+          ? planta.galeriaFotos
+          : [],
+    );
   }, [
     open,
     planta?.id,
@@ -135,6 +164,8 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     planta?.tipo_substrato,
     planta?.tipoSubstrato,
     planta?.vitalidade,
+    planta?.galeria_fotos,
+    planta?.galeriaFotos,
     planta?.eh_toxica,
     planta?.ehToxica,
   ]);
@@ -317,13 +348,66 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     }
   };
 
+  const handleCapturarFoto = async (imagemUrl) => {
+    if (!planta?.id || !imagemUrl) {
+      setErroFoto("Nao foi possivel capturar a imagem.");
+      return;
+    }
+
+    const fotoTemporaria = {
+      id: `tmp-${Date.now()}`,
+      url: imagemUrl,
+      origem: "scanner",
+      data_captura: new Date().toISOString(),
+    };
+
+    setErroFoto("");
+    setSalvandoFoto(true);
+    setGaleriaFotos((prev) => [fotoTemporaria, ...prev]);
+
+    try {
+      await adicionarFotoGaleriaPlanta(planta.id, imagemUrl);
+      const fotoPersistida = {
+        id: `foto-${Date.now()}`,
+        url: imagemUrl,
+        origem: "scanner",
+        data_captura: new Date().toISOString(),
+      };
+      setGaleriaFotos((prev) => [
+        fotoPersistida,
+        ...prev.filter((foto) => foto.id !== fotoTemporaria.id),
+      ]);
+      setScannerOpen(false);
+    } catch (error) {
+      console.error("Erro ao salvar captura na galeria:", error);
+      setGaleriaFotos((prev) => prev.filter((foto) => foto.id !== fotoTemporaria.id));
+      setErroFoto("Falha ao salvar a captura no prontuario.");
+    } finally {
+      setSalvandoFoto(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="md"
+      fullScreen={isMobile}
+      PaperProps={{
+        sx: {
+          height: isMobile ? "100dvh" : undefined,
+          m: isMobile ? 0 : undefined,
+        },
+      }}
+    >
       <DialogTitle
         sx={{
           position: "relative",
+          top: 0,
+          zIndex: 2,
           overflow: "hidden",
-          pr: 8,
+          pr: { xs: 2, sm: 8 },
           pb: 1.2,
           borderBottom: "4px solid",
           borderColor: vitalidadeAtualConfig.cor,
@@ -333,9 +417,34 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
           letterSpacing: "0.1em",
           display: "flex",
           alignItems: "center",
+          flexWrap: "wrap",
           gap: 1,
         }}
       >
+        <Button
+          onClick={onClose}
+          aria-label="Fechar prontuario"
+          sx={{
+            position: "absolute",
+            right: { xs: 8, sm: 10 },
+            top: { xs: 8, sm: 10 },
+            minWidth: 36,
+            width: 36,
+            height: 36,
+            p: 0,
+            borderRadius: 1,
+            color: "#E8E0D5",
+            border: "1px solid rgba(232,224,213,0.3)",
+            backgroundColor: "rgba(7, 10, 12, 0.32)",
+            backdropFilter: "blur(3px)",
+            "&:hover": {
+              backgroundColor: "rgba(7, 10, 12, 0.56)",
+              borderColor: "rgba(232,224,213,0.56)",
+            },
+          }}
+        >
+          <CloseIcon fontSize="small" />
+        </Button>
         <WaterDropIcon sx={{ color: "secondary.main" }} />
         <Box component="span">{planta?.nome_apelido ?? "Prontuário da Planta"}</Box>
         <Chip
@@ -363,22 +472,43 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
         />
       </DialogTitle>
 
-      <Tabs
-        value={abaAtiva}
-        onChange={(_event, novaAba) => setAbaAtiva(novaAba)}
-        aria-label="Abas do prontuário da planta"
-        sx={{ px: 3 }}
-      >
-        <Tab label="Visão Geral" />
-        <Tab label="Diário de Bordo" />
-        <Tab label="Identificação" />
-        <Tab label="Galeria" />
-      </Tabs>
+      {!isMobile && (
+        <Tabs
+          value={abaAtiva}
+          onChange={(_event, novaAba) => setAbaAtiva(novaAba)}
+          aria-label="Abas do prontuário da planta"
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={{
+            px: { xs: 1, sm: 3 },
+            position: "sticky",
+            top: 0,
+            zIndex: 2,
+            backgroundColor: "background.paper",
+            borderBottom: "1px solid rgba(120, 120, 120, 0.22)",
+            "& .MuiTab-root": {
+              minWidth: { xs: 126, sm: 140 },
+              fontSize: { xs: "0.74rem", sm: "0.82rem" },
+              px: { xs: 1.1, sm: 1.8 },
+              whiteSpace: "nowrap",
+            },
+          }}
+        >
+          <Tab label="Visão Geral" />
+          <Tab label="Diário de Bordo" />
+          <Tab label="Identificação" />
+          <Tab label="Galeria" />
+        </Tabs>
+      )}
 
       <DialogContent
         dividers
         sx={{
           position: "relative",
+          px: { xs: 1.25, sm: 3 },
+          py: { xs: 1.25, sm: 2.2 },
+          pb: { xs: 10, sm: 2.2 },
           "&::before": {
             content: '""',
             position: "absolute",
@@ -762,9 +892,48 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
 
         {abaAtiva === 3 && (
           <Box>
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Integração com Firebase Storage em breve. Prepare-se para acompanhar o crescimento do seu Sietch!
-            </Alert>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ mb: 2 }}>
+              <Box
+                component="img"
+                src={placeholderFantasma}
+                alt="Referencia visual para scanner morfologico"
+                sx={{
+                  width: "100%",
+                  maxWidth: 420,
+                  height: 220,
+                  objectFit: "cover",
+                  border: "1px solid rgba(100, 70, 40, 0.35)",
+                  boxShadow: "0 10px 28px rgba(30, 18, 8, 0.45)",
+                }}
+              />
+            </Stack>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ mb: 2 }}>
+              <Button
+                variant="contained"
+                color="info"
+                startIcon={<CameraAltIcon />}
+                onClick={() => setScannerOpen(true)}
+                disabled={!planta?.id || salvandoFoto}
+              >
+                {salvandoFoto
+                  ? "Processando captura..."
+                  : "[ 📷 INICIAR SCANNER MORFOLÓGICO ]"}
+              </Button>
+            </Stack>
+
+            {erroFoto && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {erroFoto}
+              </Alert>
+            )}
+
+            {galeriaFotos.length === 0 && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Nenhuma captura registrada ainda. Use o scanner para iniciar a galeria da planta.
+              </Alert>
+            )}
+
             <Grid
               container
               spacing={2}
@@ -775,12 +944,12 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                 p: 1,
               }}
             >
-              {[1, 2, 3].map((item) => (
-                <Grid key={item} size={{ xs: 12, sm: 6, md: 4 }}>
+              {galeriaFotos.map((foto) => (
+                <Grid key={foto.id ?? foto.url} size={{ xs: 12, sm: 6, md: 4 }}>
                   <Box
                     component="img"
-                    src={GALERIA_PLACEHOLDER_URL}
-                    alt={`Imagem de teste da galeria ${item}`}
+                    src={foto.url}
+                    alt="Captura morfologica da planta"
                     sx={{
                       width: "100%",
                       height: 160,
@@ -794,6 +963,134 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
           </Box>
         )}
       </DialogContent>
+
+      {isMobile && (
+        <Box
+          sx={{
+            position: "sticky",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 3,
+            px: 1,
+            py: 0.9,
+            borderTop: "1px solid rgba(126, 166, 194, 0.36)",
+            background:
+              "linear-gradient(180deg, rgba(13, 19, 24, 0.9) 0%, rgba(13, 19, 24, 0.96) 100%)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <Stack direction="row" spacing={0.8} justifyContent="space-between">
+            <Button
+              fullWidth
+              size="small"
+              variant={abaAtiva === 0 ? "contained" : "outlined"}
+              onClick={() => setAbaAtiva(0)}
+              startIcon={<DashboardIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                fontSize: "0.72rem",
+                py: 0.7,
+                minHeight: 38,
+                borderColor: "rgba(96, 150, 191, 0.65)",
+                color: abaAtiva === 0 ? "#0E1418" : "#DCE8F0",
+                backgroundColor: abaAtiva === 0 ? "#7EC3F1" : "rgba(10, 14, 18, 0.38)",
+                boxShadow:
+                  abaAtiva === 0 ? "0 0 12px rgba(126,195,241,0.42)" : "none",
+                "&:hover": {
+                  backgroundColor:
+                    abaAtiva === 0 ? "#90CEF5" : "rgba(18, 26, 33, 0.82)",
+                  borderColor: "rgba(126, 195, 241, 0.85)",
+                },
+              }}
+            >
+              Geral
+            </Button>
+            <Button
+              fullWidth
+              size="small"
+              variant={abaAtiva === 1 ? "contained" : "outlined"}
+              onClick={() => setAbaAtiva(1)}
+              startIcon={<MenuBookIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                fontSize: "0.72rem",
+                py: 0.7,
+                minHeight: 38,
+                borderColor: "rgba(96, 150, 191, 0.65)",
+                color: abaAtiva === 1 ? "#0E1418" : "#DCE8F0",
+                backgroundColor: abaAtiva === 1 ? "#7EC3F1" : "rgba(10, 14, 18, 0.38)",
+                boxShadow:
+                  abaAtiva === 1 ? "0 0 12px rgba(126,195,241,0.42)" : "none",
+                "&:hover": {
+                  backgroundColor:
+                    abaAtiva === 1 ? "#90CEF5" : "rgba(18, 26, 33, 0.82)",
+                  borderColor: "rgba(126, 195, 241, 0.85)",
+                },
+              }}
+            >
+              Diario
+            </Button>
+            <Button
+              fullWidth
+              size="small"
+              variant={abaAtiva === 2 ? "contained" : "outlined"}
+              onClick={() => setAbaAtiva(2)}
+              startIcon={<QrCode2Icon sx={{ fontSize: 16 }} />}
+              sx={{
+                fontSize: "0.72rem",
+                py: 0.7,
+                minHeight: 38,
+                borderColor: "rgba(96, 150, 191, 0.65)",
+                color: abaAtiva === 2 ? "#0E1418" : "#DCE8F0",
+                backgroundColor: abaAtiva === 2 ? "#7EC3F1" : "rgba(10, 14, 18, 0.38)",
+                boxShadow:
+                  abaAtiva === 2 ? "0 0 12px rgba(126,195,241,0.42)" : "none",
+                "&:hover": {
+                  backgroundColor:
+                    abaAtiva === 2 ? "#90CEF5" : "rgba(18, 26, 33, 0.82)",
+                  borderColor: "rgba(126, 195, 241, 0.85)",
+                },
+              }}
+            >
+              ID
+            </Button>
+            <Button
+              fullWidth
+              size="small"
+              variant={abaAtiva === 3 ? "contained" : "outlined"}
+              onClick={() => setAbaAtiva(3)}
+              startIcon={<PhotoLibraryIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                fontSize: "0.72rem",
+                py: 0.7,
+                minHeight: 38,
+                borderColor: "rgba(96, 150, 191, 0.65)",
+                color: abaAtiva === 3 ? "#0E1418" : "#DCE8F0",
+                backgroundColor: abaAtiva === 3 ? "#7EC3F1" : "rgba(10, 14, 18, 0.38)",
+                boxShadow:
+                  abaAtiva === 3 ? "0 0 12px rgba(126,195,241,0.42)" : "none",
+                "&:hover": {
+                  backgroundColor:
+                    abaAtiva === 3 ? "#90CEF5" : "rgba(18, 26, 33, 0.82)",
+                  borderColor: "rgba(126, 195, 241, 0.85)",
+                },
+              }}
+            >
+              Galeria
+            </Button>
+          </Stack>
+        </Box>
+      )}
+
+      <CameraScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        ultimaFotoUrl={placeholderFantasma}
+        onCapture={(fotoBase64) => {
+          console.log("Foto tirada!", fotoBase64);
+          void handleCapturarFoto(fotoBase64);
+          setScannerOpen(false);
+        }}
+      />
     </Dialog>
   );
 }

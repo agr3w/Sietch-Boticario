@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import {
+  arrayUnion,
   addDoc,
   collection,
   doc,
@@ -83,5 +84,21 @@ export async function adicionarNotaManual(plantaId, texto, plantaNome) {
     lida: true,
     nivel_alerta: 0,
     data_envio: serverTimestamp(),
+  });
+}
+
+export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl) {
+  if (!plantaId || !imagemUrl) {
+    throw new Error("Dados invalidos para adicionar foto na galeria");
+  }
+
+  const plantaRef = doc(db, "plantas", plantaId);
+  await updateDoc(plantaRef, {
+    galeria_fotos: arrayUnion({
+      id: `foto-${Date.now()}`,
+      url: imagemUrl,
+      origem: "scanner",
+      data_captura: new Date().toISOString(),
+    }),
   });
 }
