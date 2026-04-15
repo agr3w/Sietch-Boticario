@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -28,6 +27,7 @@ import {
 import CheckIcon from "@mui/icons-material/Check";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import {
+  cadastrarPlantaComFoto,
   db,
   getNotificacoesNaoLidas,
   marcarMensagemComoLida,
@@ -230,13 +230,9 @@ function Dashboard() {
     }
   };
 
-  const adicionarPlanta = async (dadosPlanta) => {
+  const adicionarPlanta = async (dadosPlanta, fotoNascimentoBase64) => {
     try {
-      await addDoc(collection(db, "plantas"), {
-        ...dadosPlanta,
-        ultima_rega: serverTimestamp(),
-        notificar: true,
-      });
+      await cadastrarPlantaComFoto(dadosPlanta, fotoNascimentoBase64);
 
       await carregarPlantas();
       setIsAddModalOpen(false);

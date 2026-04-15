@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Box,
   Button,
   Divider,
   Dialog,
@@ -9,7 +10,9 @@ import {
   MenuItem,
   TextField,
 } from "@mui/material";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import { addPlantModalSx } from "../theme/styles";
+import CameraScanner from "./CameraScanner";
 
 const initialForm = {
   nome_apelido: "",
@@ -22,10 +25,14 @@ const initialForm = {
 function AddPlantModal({ open, onClose, onAdd }) {
   const [formData, setFormData] = useState(initialForm);
   const [isSaving, setIsSaving] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [fotoIniciacao, setFotoIniciacao] = useState("");
 
   useEffect(() => {
     if (open) {
       setFormData(initialForm);
+      setFotoIniciacao("");
+      setScannerOpen(false);
     }
   }, [open]);
 
@@ -56,7 +63,7 @@ function AddPlantModal({ open, onClose, onAdd }) {
         nome_apelido: formData.nome_apelido.trim(),
         especie: formData.especie.trim(),
         localizacao: formData.localizacao.trim(),
-      });
+      }, fotoIniciacao || undefined);
     } finally {
       setIsSaving(false);
     }
@@ -123,6 +130,41 @@ function AddPlantModal({ open, onClose, onAdd }) {
             <MenuItem value="media">media</MenuItem>
             <MenuItem value="alta">alta</MenuItem>
           </TextField>
+
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<CameraAltIcon />}
+            onClick={() => setScannerOpen(true)}
+            disabled={isSaving}
+            fullWidth
+          >
+            {fotoIniciacao ? "Recapturar Foto de Iniciacao" : "Capturar Foto de Iniciacao"}
+          </Button>
+
+          {fotoIniciacao && (
+            <Box
+              sx={{
+                width: "100%",
+                display: "flex",
+                justifyContent: "center",
+                mt: 0.5,
+              }}
+            >
+              <Box
+                component="img"
+                src={fotoIniciacao}
+                alt="Miniatura da foto de iniciacao"
+                sx={{
+                  width: "100%",
+                  maxWidth: 240,
+                  height: 170,
+                  objectFit: "cover",
+                  border: "1px solid rgba(126, 166, 194, 0.45)",
+                }}
+              />
+            </Box>
+          )}
         </DialogContent>
         <DialogActions sx={addPlantModalSx.actions}>
           <Button color="secondary" onClick={onClose} disabled={isSaving}>
@@ -138,6 +180,15 @@ function AddPlantModal({ open, onClose, onAdd }) {
           </Button>
         </DialogActions>
       </form>
+
+      <CameraScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onCapture={(fotoBase64) => {
+          setFotoIniciacao(fotoBase64);
+          setScannerOpen(false);
+        }}
+      />
     </Dialog>
   );
 }

@@ -43,6 +43,7 @@ import CameraScanner from "./CameraScanner";
 import {
   adicionarFotoGaleriaPlanta,
   adicionarNotaManual,
+  atualizarBadgesFoto,
   getHistoricoFotos,
   getHistoricoPlanta,
 } from "../firebase";
@@ -151,6 +152,36 @@ function ordenarFotosPorDataAsc(fotos) {
   });
 }
 
+function normalizarBadgeSlug(valor) {
+  return String(valor ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+function obterBadgesFoto(foto) {
+  if (Array.isArray(foto?.badges) && foto.badges.length > 0) {
+    return [
+      ...new Set(
+        foto.badges
+          .filter((badge) => typeof badge === "string")
+          .map((badge) => normalizarBadgeSlug(badge))
+          .filter(Boolean),
+      ),
+    ];
+  }
+
+  const badgeLegado = normalizarBadgeSlug(foto?.status_emocional ?? foto?.statusEmocional ?? "");
+  return badgeLegado ? [badgeLegado] : [];
+}
+
+function formatarBadgeLabel(badgeSlug) {
+  return badgeSlug
+    .split(" ")
+    .filter(Boolean)
+    .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1))
+    .join(" ");
+}
+
 function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -188,12 +219,38 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const [autoplayAtivo, setAutoplayAtivo] = useState(false);
   const [velocidadeTimelapse, setVelocidadeTimelapse] = useState(1400);
   const [erroFoto, setErroFoto] = useState("");
+  const [filtroBadgeAtivo, setFiltroBadgeAtivo] = useState("todas");
+  const [badgeNovoInput, setBadgeNovoInput] = useState("");
+  const [salvandoBadge, setSalvandoBadge] = useState(false);
+  const [erroBadge, setErroBadge] = useState("");
   const vitalidadeAtualConfig =
     vitalidadeConfig[vitalidade] ?? vitalidadeConfig.estavel;
   const ultimaFotoReferenciaUrl =
     fotosTimelapse[fotosTimelapse.length - 1]?.url ??
     galeriaFotos[galeriaFotos.length - 1]?.url ??
     placeholderFantasma;
+  const badgesDisponiveis = useMemo(() => {
+    const badges = fotosTimelapse.flatMap((foto) => obterBadgesFoto(foto));
+    return [...new Set(badges)].sort((a, b) => a.localeCompare(b));
+  }, [fotosTimelapse]);
+  const fotosTimelapseVisiveis = useMemo(() => {
+    if (filtroBadgeAtivo === "todas") {
+      return fotosTimelapse;
+    }
+    return fotosTimelapse.filter((foto) => obterBadgesFoto(foto).includes(filtroBadgeAtivo));
+  }, [filtroBadgeAtivo, fotosTimelapse]);
+  const fotoAtualTimelapse = fotosTimelapseVisiveis[indexFoto] ?? null;
+  const badgesFotoAtual = useMemo(
+    () => obterBadgesFoto(fotoAtualTimelapse),
+    [fotoAtualTimelapse],
+  );
+  const statusEmocionalAtual = String(
+    fotoAtualTimelapse?.status_emocional ?? fotoAtualTimelapse?.statusEmocional ?? "",
+  )
+    .trim()
+    .toLowerCase();
+  const ehNascimentoAtual =
+    badgesFotoAtual.includes("nascimento") || statusEmocionalAtual === "nascimento";
 
   useEffect(() => {
     setNotificarWhatsapp(Boolean(planta?.notificar));
@@ -215,6 +272,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     setIndexFoto(0);
     setAutoplayAtivo(false);
     setVelocidadeTimelapse(1400);
+    setFiltroBadgeAtivo("todas");
+    setBadgeNovoInput("");
+    setSalvandoBadge(false);
+    setErroBadge("");
     setGaleriaFotos(
       Array.isArray(planta?.galeria_fotos)
         ? planta.galeria_fotos
@@ -244,6 +305,16 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     planta?.eh_toxica,
     planta?.ehToxica,
   ]);
+
+  useEffect(() => {
+    if (filtroBadgeAtivo === "todas") {
+      return;
+    }
+
+    if (!badgesDisponiveis.includes(filtroBadgeAtivo)) {
+      setFiltroBadgeAtivo("todas");
+    }
+  }, [badgesDisponiveis, filtroBadgeAtivo]);
 
   useEffect(() => {
     if (!open || !planta?.id) {
@@ -287,13 +358,13 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
 
   useEffect(() => {
     setIndexFoto((valorAtual) => {
-      if (fotosTimelapse.length === 0) {
+      if (fotosTimelapseVisiveis.length === 0) {
         return 0;
       }
 
-      return Math.min(valorAtual, fotosTimelapse.length - 1);
+      return Math.min(valorAtual, fotosTimelapseVisiveis.length - 1);
     });
-  }, [fotosTimelapse.length]);
+  }, [fotosTimelapseVisiveis.length]);
 
   useEffect(() => {
     if (abaAtiva !== 3) {
@@ -302,20 +373,20 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   }, [abaAtiva]);
 
   useEffect(() => {
-    if (!autoplayAtivo || fotosTimelapse.length <= 1) {
+    if (!autoplayAtivo || fotosTimelapseVisiveis.length <= 1) {
       return;
     }
 
     const intervalId = setInterval(() => {
       setIndexFoto((valorAtual) =>
-        valorAtual >= fotosTimelapse.length - 1 ? 0 : valorAtual + 1,
+        valorAtual >= fotosTimelapseVisiveis.length - 1 ? 0 : valorAtual + 1,
       );
     }, velocidadeTimelapse);
 
     return () => {
       clearInterval(intervalId);
     };
-  }, [autoplayAtivo, fotosTimelapse.length, velocidadeTimelapse]);
+  }, [autoplayAtivo, fotosTimelapseVisiveis.length, velocidadeTimelapse]);
 
   const qrCodeValue = useMemo(() => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -522,6 +593,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
       data_captura: new Date().toISOString(),
       data_registro: new Date().toISOString(),
       data_registro_local: dataHoraLocalBr,
+      badges: [],
     };
 
     setErroFoto("");
@@ -529,14 +601,15 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     setGaleriaFotos((prev) => [fotoTemporaria, ...prev]);
 
     try {
-      await adicionarFotoGaleriaPlanta(planta.id, imagemUrl);
+      const resultado = await adicionarFotoGaleriaPlanta(planta.id, imagemUrl);
       const fotoPersistida = {
-        id: `foto-${Date.now()}`,
+        id: resultado?.id ?? `foto-${Date.now()}`,
         url: imagemUrl,
         origem: "scanner",
         data_captura: new Date().toISOString(),
         data_registro: new Date().toISOString(),
         data_registro_local: dataHoraLocalBr,
+        badges: [],
       };
       setGaleriaFotos((prev) => [
         fotoPersistida,
@@ -556,6 +629,60 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     } finally {
       setSalvandoFoto(false);
     }
+  };
+
+  const atualizarBadgesEmMemoria = (fotoId, badgesAtualizados) => {
+    setFotosTimelapse((prev) =>
+      prev.map((foto) => (foto.id === fotoId ? { ...foto, badges: badgesAtualizados } : foto)),
+    );
+    setGaleriaFotos((prev) =>
+      prev.map((foto) => (foto.id === fotoId ? { ...foto, badges: badgesAtualizados } : foto)),
+    );
+  };
+
+  const persistirBadgesFotoAtual = async (badgesAtualizados) => {
+    if (!planta?.id || !fotoAtualTimelapse?.id) {
+      return;
+    }
+
+    const badgesAnteriores = badgesFotoAtual;
+    setErroBadge("");
+    setSalvandoBadge(true);
+    atualizarBadgesEmMemoria(fotoAtualTimelapse.id, badgesAtualizados);
+
+    try {
+      await atualizarBadgesFoto(planta.id, fotoAtualTimelapse.id, badgesAtualizados);
+    } catch (error) {
+      console.error("Erro ao atualizar badges da foto:", error);
+      atualizarBadgesEmMemoria(fotoAtualTimelapse.id, badgesAnteriores);
+      setErroBadge("Falha ao salvar badges desta foto.");
+    } finally {
+      setSalvandoBadge(false);
+    }
+  };
+
+  const handleAdicionarBadgeFotoAtual = async () => {
+    if (!fotoAtualTimelapse?.id) {
+      return;
+    }
+
+    const badgeNormalizado = normalizarBadgeSlug(badgeNovoInput);
+    if (!badgeNormalizado) {
+      return;
+    }
+
+    const badgesAtualizados = [...new Set([...badgesFotoAtual, badgeNormalizado])];
+    setBadgeNovoInput("");
+    await persistirBadgesFotoAtual(badgesAtualizados);
+  };
+
+  const handleRemoverBadgeFotoAtual = async (badgeParaRemover) => {
+    if (!fotoAtualTimelapse?.id) {
+      return;
+    }
+
+    const badgesAtualizados = badgesFotoAtual.filter((badge) => badge !== badgeParaRemover);
+    await persistirBadgesFotoAtual(badgesAtualizados);
   };
 
   return (
@@ -1107,6 +1234,47 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </Button>
             </Stack>
 
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ mb: 2, flexWrap: "wrap", rowGap: 1 }}
+              useFlexGap
+            >
+              <Chip
+                label="Todos"
+                clickable
+                onClick={() => {
+                  setFiltroBadgeAtivo("todas");
+                  setIndexFoto(0);
+                  setAutoplayAtivo(false);
+                }}
+                variant={filtroBadgeAtivo === "todas" ? "filled" : "outlined"}
+                sx={{
+                  fontFamily: '"Share Tech Mono", monospace',
+                  letterSpacing: "0.03em",
+                }}
+              />
+
+              {badgesDisponiveis.map((badge) => (
+                <Chip
+                  key={badge}
+                  label={`#${formatarBadgeLabel(badge)}`}
+                  clickable
+                  onClick={() => {
+                    setFiltroBadgeAtivo(badge);
+                    setIndexFoto(0);
+                    setAutoplayAtivo(false);
+                  }}
+                  variant={filtroBadgeAtivo === badge ? "filled" : "outlined"}
+                  color={filtroBadgeAtivo === badge ? "info" : "default"}
+                  sx={{
+                    fontFamily: '"Share Tech Mono", monospace',
+                    letterSpacing: "0.03em",
+                  }}
+                />
+              ))}
+            </Stack>
+
             {erroFoto && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {erroFoto}
@@ -1125,7 +1293,16 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </Typography>
             )}
 
-            {fotosTimelapse.length > 0 && (
+            {!carregandoFotos &&
+              filtroBadgeAtivo !== "todas" &&
+              galeriaFotos.length > 0 &&
+              fotosTimelapseVisiveis.length === 0 && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Nenhuma foto com o badge selecionado foi encontrada.
+                </Alert>
+              )}
+
+            {fotosTimelapseVisiveis.length > 0 && (
               <Stack spacing={1.2}>
                 <Box
                   sx={{
@@ -1138,6 +1315,26 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                     overflow: "hidden",
                   }}
                 >
+                  {ehNascimentoAtual && (
+                    <Chip
+                      label="NASCIMENTO"
+                      size="small"
+                      sx={{
+                        position: "absolute",
+                        top: 8,
+                        left: 8,
+                        zIndex: 2,
+                        borderRadius: 1,
+                        fontWeight: 700,
+                        letterSpacing: "0.05em",
+                        color: "#0A141B",
+                        backgroundColor: "#7EC3F1",
+                        border: "1px solid rgba(255, 255, 255, 0.38)",
+                        boxShadow: "0 0 14px rgba(126,195,241,0.45)",
+                      }}
+                    />
+                  )}
+
                   <Box
                     sx={{
                       position: "absolute",
@@ -1154,14 +1351,14 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                       letterSpacing: "0.04em",
                     }}
                   >
-                    {indexFoto + 1}/{fotosTimelapse.length}
+                    {indexFoto + 1}/{fotosTimelapseVisiveis.length}
                     {autoplayAtivo ? " • AUTO" : ""}
                   </Box>
 
                   <Box
                     component="img"
-                    key={fotosTimelapse[indexFoto]?.id ?? fotosTimelapse[indexFoto]?.url}
-                    src={fotosTimelapse[indexFoto]?.url}
+                    key={fotoAtualTimelapse?.id ?? fotoAtualTimelapse?.url}
+                    src={fotoAtualTimelapse?.url}
                     alt="Registro cronologico da planta"
                     sx={{
                       width: "100%",
@@ -1183,12 +1380,104 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                   }}
                 >
                   {formatarDataRegistroCurta(
-                    fotosTimelapse[indexFoto]?.data_registro ?? fotosTimelapse[indexFoto]?.data_captura,
-                    fotosTimelapse[indexFoto]?.data_registro_local,
+                    fotoAtualTimelapse?.data_registro ?? fotoAtualTimelapse?.data_captura,
+                    fotoAtualTimelapse?.data_registro_local,
                   )}
                 </Typography>
 
-                {fotosTimelapse.length > 1 && (
+                {ehNascimentoAtual && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "#7EC3F1",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      letterSpacing: "0.05em",
+                      textAlign: "center",
+                      textTransform: "uppercase",
+                      display: "block",
+                    }}
+                  >
+                    Marco de Nascimento registrado
+                  </Typography>
+                )}
+
+                {fotoAtualTimelapse?.id && (
+                  <Box
+                    sx={{
+                      p: 1.2,
+                      border: "1px solid rgba(126, 195, 241, 0.28)",
+                      backgroundColor: "rgba(10, 16, 22, 0.36)",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "rgba(232,224,213,0.88)",
+                        fontFamily: '"Share Tech Mono", monospace',
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        display: "block",
+                        mb: 0.8,
+                      }}
+                    >
+                      Badges desta foto
+                    </Typography>
+
+                    <Stack direction="row" spacing={0.8} useFlexGap sx={{ flexWrap: "wrap", mb: 1.1 }}>
+                      {badgesFotoAtual.length === 0 && (
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                          Nenhum badge definido.
+                        </Typography>
+                      )}
+
+                      {badgesFotoAtual.map((badge) => (
+                        <Chip
+                          key={badge}
+                          size="small"
+                          label={`#${formatarBadgeLabel(badge)}`}
+                          color="info"
+                          variant="outlined"
+                          onDelete={salvandoBadge ? undefined : () => void handleRemoverBadgeFotoAtual(badge)}
+                        />
+                      ))}
+                    </Stack>
+
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        label="Novo badge"
+                        value={badgeNovoInput}
+                        onChange={(event) => setBadgeNovoInput(event.target.value)}
+                        placeholder="Ex: poda, transplante, flora"
+                        disabled={salvandoBadge}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            void handleAdicionarBadgeFotoAtual();
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="outlined"
+                        color="info"
+                        onClick={() => void handleAdicionarBadgeFotoAtual()}
+                        disabled={salvandoBadge || !normalizarBadgeSlug(badgeNovoInput)}
+                        sx={{ minWidth: { xs: "100%", sm: 170 } }}
+                      >
+                        {salvandoBadge ? "Salvando..." : "Adicionar Badge"}
+                      </Button>
+                    </Stack>
+
+                    {erroBadge && (
+                      <Alert severity="error" sx={{ mt: 1 }}>
+                        {erroBadge}
+                      </Alert>
+                    )}
+                  </Box>
+                )}
+
+                {fotosTimelapseVisiveis.length > 1 && (
                   <Stack spacing={1.1} sx={{ maxWidth: 520, mx: "auto", width: "100%" }}>
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
@@ -1224,7 +1513,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
 
                     <Slider
                       min={0}
-                      max={fotosTimelapse.length - 1}
+                      max={fotosTimelapseVisiveis.length - 1}
                       step={1}
                       value={indexFoto}
                       onChange={(_event, valor) => setIndexFoto(Number(valor))}

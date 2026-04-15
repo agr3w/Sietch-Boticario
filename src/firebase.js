@@ -5,6 +5,7 @@ import {
   addDoc,
   collection,
   doc,
+  getDoc,
   getDocs,
   getFirestore,
   orderBy,
@@ -101,16 +102,61 @@ export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl) {
 
   const plantaRef = doc(db, "plantas", plantaId);
   const dataHoraLocalBr = gerarDataHoraLocalBr();
+  const fotoId = `foto-${Date.now()}`;
 
   await updateDoc(plantaRef, {
     galeria_fotos: arrayUnion({
-      id: `foto-${Date.now()}`,
+      id: fotoId,
       url: imagemUrl,
       origem: "scanner",
+      badges: [],
       data_captura: new Date().toISOString(),
       data_registro_local: dataHoraLocalBr,
     }),
   });
+
+  return { id: fotoId };
+}
+
+export async function cadastrarPlantaComFoto(dados, fotoBase64) {
+  const dadosPlanta = {
+    ...dados,
+    ultima_rega: serverTimestamp(),
+    notificar: true,
+  };
+
+  const plantaRef = await addDoc(collection(db, "plantas"), dadosPlanta);
+
+  if (!fotoBase64 || typeof fotoBase64 !== "string") {
+    return { id: plantaRef.id };
+  }
+
+  const dataHoraLocalBr = gerarDataHoraLocalBr();
+
+  await addDoc(collection(db, "fotos"), {
+    planta_id: plantaRef.id,
+    url: fotoBase64,
+    data_registro: serverTimestamp(),
+    data_registro_local: dataHoraLocalBr,
+    nota: "Primeiro registro morfologico da planta.",
+    status_emocional: "nascimento",
+    badges: ["nascimento"],
+    origem: "cadastro",
+  });
+
+  await updateDoc(doc(db, "plantas", plantaRef.id), {
+    galeria_fotos: arrayUnion({
+      id: `foto-${Date.now()}`,
+      url: fotoBase64,
+      origem: "nascimento",
+      status_emocional: "nascimento",
+      badges: ["nascimento"],
+      data_captura: new Date().toISOString(),
+      data_registro_local: dataHoraLocalBr,
+    }),
+  });
+
+  return { id: plantaRef.id };
 }
 
 export async function getHistoricoFotos(plantaId) {
@@ -131,6 +177,74 @@ export async function getHistoricoFotos(plantaId) {
       data_registro: fotoData.data_registro ?? null,
       data_registro_local: fotoData.data_registro_local ?? "",
       nota: fotoData.nota ?? "",
+      status_emocional: fotoData.status_emocional ?? "",
+      origem: fotoData.origem ?? "",
+      badges: Array.isArray(fotoData.badges)
+        ? fotoData.badges.filter((badge) => typeof badge === "string")
+        : [],
     };
   });
+}
+
+export async function atualizarBadgesFoto(plantaId, fotoId, badges) {
+  if (!plantaId || !fotoId) {
+    throw new Error("Dados invalidos para atualizar badges da foto");
+  }
+
+  const badgesSanitizados = [
+    ...new Set(
+      (Array.isArray(badges) ? badges : [])
+        .filter((badge) => typeof badge === "string")
+        .map((badge) => badge.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ];
+
+  let atualizouEmAlgumLugar = false;
+
+  try {
+    const fotoRef = doc(db, "fotos", fotoId);
+    await updateDoc(fotoRef, { badges: badgesSanitizados });
+    atualizouEmAlgumLugar = true;
+  } catch (error) {
+    if (error?.code !== "not-found") {
+      throw error;
+    }
+  }
+
+  const plantaRef = doc(db, "plantas", plantaId);
+  const plantaSnapshot = await getDoc(plantaRef);
+
+  if (plantaSnapshot.exists()) {
+    const dadosPlanta = plantaSnapshot.data();
+    const galeriaAtual = Array.isArray(dadosPlanta?.galeria_fotos)
+      ? dadosPlanta.galeria_fotos
+      : [];
+
+    let alterouGaleria = false;
+    const galeriaAtualizada = galeriaAtual.map((foto) => {
+      if (foto?.id !== fotoId) {
+        return foto;
+      }
+
+      alterouGaleria = true;
+      return {
+        ...foto,
+        badges: badgesSanitizados,
+      };
+    });
+
+    if (alterouGaleria) {
+      await updateDoc(plantaRef, {
+        galeria_fotos: galeriaAtualizada,
+      });
+      atualizouEmAlgumLugar = true;
+    }
+  }
+
+  if (!atualizouEmAlgumLugar) {
+    throw new Error("Foto nao encontrada para atualizar badges");
+  }
+
+  return { badges: badgesSanitizados };
 }
