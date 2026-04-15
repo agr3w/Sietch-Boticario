@@ -70,7 +70,11 @@ function extrairDataRegistro(dataRegistro) {
   return Number.isFinite(date.getTime()) ? date : null;
 }
 
-function formatarDataRegistroCurta(dataRegistro) {
+function formatarDataRegistroCurta(dataRegistro, dataRegistroLocal) {
+  if (typeof dataRegistroLocal === "string" && dataRegistroLocal.trim()) {
+    return `Registro de ${dataRegistroLocal}`;
+  }
+
   const date = extrairDataRegistro(dataRegistro);
   if (!date) {
     return "Registro sem data";
@@ -78,6 +82,10 @@ function formatarDataRegistroCurta(dataRegistro) {
 
   return `Registro de ${date.toLocaleDateString("pt-BR", {
     timeZone: "America/Sao_Paulo",
+  })} às ${date.toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
   })}`;
 }
 
@@ -417,10 +425,16 @@ function PlantView() {
     setErroFoto("");
     setSalvandoFoto(true);
 
+    const dataHoraLocalBr = new Date().toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      hour12: false,
+    });
+
     const fotoLocal = {
       id: `local-${Date.now()}`,
       url: fotoBase64,
       data_registro: new Date().toISOString(),
+      data_registro_local: dataHoraLocalBr,
       nota: "Atualizacao morfologica via scanner QR",
     };
 
@@ -429,6 +443,7 @@ function PlantView() {
         planta_id: planta.id,
         url: fotoBase64,
         data_registro: serverTimestamp(),
+        data_registro_local: dataHoraLocalBr,
         nota: "Atualizacao morfologica via scanner QR",
       });
       await adicionarFotoGaleriaPlanta(planta.id, fotoBase64);
@@ -876,6 +891,7 @@ function PlantView() {
                   >
                     {formatarDataRegistroCurta(
                       fotos[indexFoto]?.data_registro ?? fotos[indexFoto]?.data_captura,
+                      fotos[indexFoto]?.data_registro_local,
                     )}
                   </Typography>
 

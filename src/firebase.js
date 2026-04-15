@@ -34,6 +34,13 @@ const db = getFirestore(app);
 
 export { db };
 
+function gerarDataHoraLocalBr() {
+  return new Date().toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour12: false,
+  });
+}
+
 export async function getNotificacoesNaoLidas() {
   const mensagensRef = collection(db, "mensagens");
   const mensagensQuery = query(
@@ -93,12 +100,15 @@ export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl) {
   }
 
   const plantaRef = doc(db, "plantas", plantaId);
+  const dataHoraLocalBr = gerarDataHoraLocalBr();
+
   await updateDoc(plantaRef, {
     galeria_fotos: arrayUnion({
       id: `foto-${Date.now()}`,
       url: imagemUrl,
       origem: "scanner",
       data_captura: new Date().toISOString(),
+      data_registro_local: dataHoraLocalBr,
     }),
   });
 }
@@ -119,6 +129,7 @@ export async function getHistoricoFotos(plantaId) {
       id: fotoDoc.id,
       url: fotoData.url ?? "",
       data_registro: fotoData.data_registro ?? null,
+      data_registro_local: fotoData.data_registro_local ?? "",
       nota: fotoData.nota ?? "",
     };
   });

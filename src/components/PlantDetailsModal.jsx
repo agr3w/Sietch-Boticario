@@ -5,6 +5,7 @@ import {
   Box,
   Chip,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
   FormControlLabel,
@@ -123,7 +124,11 @@ function extrairDataRegistro(dataRegistro) {
   return Number.isFinite(date.getTime()) ? date : null;
 }
 
-function formatarDataRegistroCurta(dataRegistro) {
+function formatarDataRegistroCurta(dataRegistro, dataRegistroLocal) {
+  if (typeof dataRegistroLocal === "string" && dataRegistroLocal.trim()) {
+    return `Registro de ${dataRegistroLocal}`;
+  }
+
   const date = extrairDataRegistro(dataRegistro);
   if (!date) {
     return "Registro sem data";
@@ -131,6 +136,10 @@ function formatarDataRegistroCurta(dataRegistro) {
 
   return `Registro de ${date.toLocaleDateString("pt-BR", {
     timeZone: "America/Sao_Paulo",
+  })} às ${date.toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
   })}`;
 }
 
@@ -169,6 +178,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const [notaManual, setNotaManual] = useState("");
   const [salvandoNota, setSalvandoNota] = useState(false);
   const [statusCopiaQr, setStatusCopiaQr] = useState("idle");
+  const [confirmarExclusaoOpen, setConfirmarExclusaoOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [salvandoFoto, setSalvandoFoto] = useState(false);
   const [galeriaFotos, setGaleriaFotos] = useState([]);
@@ -193,6 +203,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     setNotaManual("");
     setSalvandoNota(false);
     setStatusCopiaQr("idle");
+    setConfirmarExclusaoOpen(false);
     setScannerOpen(false);
     setSalvandoFoto(false);
     setErroFoto("");
@@ -431,17 +442,26 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
       return;
     }
 
-    const confirmou = window.confirm(
-      "Tem certeza? Este registro será perdido na areia.",
-    );
+    setConfirmarExclusaoOpen(true);
+  };
 
-    if (!confirmou) {
+  const handleCancelarExclusao = () => {
+    if (excluindo) {
+      return;
+    }
+
+    setConfirmarExclusaoOpen(false);
+  };
+
+  const handleConfirmarExclusao = async () => {
+    if (!planta?.id || typeof onDelete !== "function") {
       return;
     }
 
     setExcluindo(true);
     try {
       await onDelete(planta.id);
+      setConfirmarExclusaoOpen(false);
       onClose?.();
     } finally {
       setExcluindo(false);
@@ -486,12 +506,18 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
       return;
     }
 
+    const dataHoraLocalBr = new Date().toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      hour12: false,
+    });
+
     const fotoTemporaria = {
       id: `tmp-${Date.now()}`,
       url: imagemUrl,
       origem: "scanner",
       data_captura: new Date().toISOString(),
       data_registro: new Date().toISOString(),
+      data_registro_local: dataHoraLocalBr,
     };
 
     setErroFoto("");
@@ -506,6 +532,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
         origem: "scanner",
         data_captura: new Date().toISOString(),
         data_registro: new Date().toISOString(),
+        data_registro_local: dataHoraLocalBr,
       };
       setGaleriaFotos((prev) => [
         fotoPersistida,
@@ -813,33 +840,47 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               label="Notificar via WhatsApp"
             />
 
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 1.2,
-                flexWrap: "wrap",
-              }}
-            >
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={handleExcluirPlanta}
-                disabled={excluindo || salvando || typeof onDelete !== "function"}
-              >
-                {excluindo
-                  ? "EXCLUINDO..."
-                  : "DEVOLVER ÁGUA AO SIETCH (EXCLUIR PLANTA)"}
-              </Button>
+            <Stack spacing={1.4}>
               <Button
                 variant="contained"
                 onClick={handleSalvar}
                 disabled={salvando || excluindo}
+                fullWidth
               >
                 {salvando ? "Salvando..." : "Salvar Alterações"}
               </Button>
-            </Box>
+
+              <Box
+                sx={{
+                  border: "1px dashed rgba(217, 72, 65, 0.55)",
+                  backgroundColor: "rgba(217, 72, 65, 0.08)",
+                  borderRadius: 1,
+                  p: 1,
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    display: "block",
+                    mb: 0.8,
+                    color: "error.light",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Zona de risco
+                </Typography>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={handleExcluirPlanta}
+                  disabled={excluindo || salvando || typeof onDelete !== "function"}
+                  fullWidth
+                >
+                  DEVOLVER ÁGUA AO SIETCH (EXCLUIR PLANTA)
+                </Button>
+              </Box>
+            </Stack>
           </Stack>
         )}
 
@@ -1139,6 +1180,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                 >
                   {formatarDataRegistroCurta(
                     fotosTimelapse[indexFoto]?.data_registro ?? fotosTimelapse[indexFoto]?.data_captura,
+                    fotosTimelapse[indexFoto]?.data_registro_local,
                   )}
                 </Typography>
 
@@ -1338,6 +1380,39 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
           setScannerOpen(false);
         }}
       />
+
+      <Dialog
+        open={confirmarExclusaoOpen}
+        onClose={handleCancelarExclusao}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle sx={{ color: "error.main" }}>
+          Confirmar exclusão da planta
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 1 }}>
+            Você realmente deseja excluir
+            {` "${planta?.nome_apelido ?? "esta planta"}"`}?
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Esta ação é permanente e removerá os registros associados no prontuário.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelarExclusao} disabled={excluindo}>
+            Cancelar
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleConfirmarExclusao}
+            disabled={excluindo}
+          >
+            {excluindo ? "Excluindo..." : "Sim, excluir tudo"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }
