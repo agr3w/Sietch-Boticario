@@ -190,6 +190,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const [erroFoto, setErroFoto] = useState("");
   const vitalidadeAtualConfig =
     vitalidadeConfig[vitalidade] ?? vitalidadeConfig.estavel;
+  const ultimaFotoReferenciaUrl =
+    fotosTimelapse[fotosTimelapse.length - 1]?.url ??
+    galeriaFotos[galeriaFotos.length - 1]?.url ??
+    placeholderFantasma;
 
   useEffect(() => {
     setNotificarWhatsapp(Boolean(planta?.notificar));
@@ -1076,8 +1080,8 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ mb: 2 }}>
               <Box
                 component="img"
-                src={placeholderFantasma}
-                alt="Referencia visual para scanner morfologico"
+                src={ultimaFotoReferenciaUrl}
+                alt="Ultima foto registrada para alinhar o proximo clique"
                 sx={{
                   width: "100%",
                   maxWidth: 420,
@@ -1373,7 +1377,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
       <CameraScanner
         open={scannerOpen}
         onClose={() => setScannerOpen(false)}
-        ultimaFotoUrl={placeholderFantasma}
+        ultimaFotoUrl={ultimaFotoReferenciaUrl}
         onCapture={(fotoBase64) => {
           console.log("Foto tirada!", fotoBase64);
           void handleCapturarFoto(fotoBase64);
