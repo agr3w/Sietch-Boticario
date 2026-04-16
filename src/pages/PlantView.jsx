@@ -5,7 +5,6 @@ import {
   Alert,
   Box,
   Button,
-  Card,
   Container,
   Grid,
   LinearProgress,
@@ -28,6 +27,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import CameraScanner from "../components/CameraScanner";
+import SietchCard from "../components/ui/SietchCard";
 import { adicionarFotoGaleriaPlanta, db, getHistoricoFotos } from "../firebase";
 
 function parseUltimaRegaDate(ultimaRega) {
@@ -596,14 +596,14 @@ function PlantView() {
 
               <Grid container spacing={1.6} sx={{ textAlign: "left" }}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <Card
+                  <SietchCard
+                    highlightColor={estadoVisual.cor}
                     sx={{
                       minHeight: 192,
                       p: 2,
-                      border: "1px solid rgba(61, 40, 16, 0.1)",
-                      borderTop: `2px solid ${estadoVisual.cor}`,
                       backgroundColor: theme.palette.background.paper,
-                      boxShadow: "0 10px 24px rgba(61, 40, 16, 0.08)",
+                      borderTop: `2px solid ${estadoVisual.cor}`,
+                      borderLeftWidth: "1px",
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
@@ -673,18 +673,18 @@ function PlantView() {
                         />
                       </Box>
                     </Box>
-                  </Card>
+                  </SietchCard>
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <Card
+                  <SietchCard
+                    highlightColor={sinaisVitais.corTelemetria}
                     sx={{
                       minHeight: 192,
                       p: 2,
-                      border: "1px solid rgba(61, 40, 16, 0.1)",
-                      borderTop: `2px solid ${sinaisVitais.corTelemetria}`,
                       backgroundColor: theme.palette.background.paper,
-                      boxShadow: "0 10px 24px rgba(61, 40, 16, 0.08)",
+                      borderTop: `2px solid ${sinaisVitais.corTelemetria}`,
+                      borderLeftWidth: "1px",
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
@@ -737,7 +737,7 @@ function PlantView() {
                         {sinaisVitais.statusTelemetrico}
                       </Typography>
                     </Box>
-                  </Card>
+                  </SietchCard>
                 </Grid>
               </Grid>
 

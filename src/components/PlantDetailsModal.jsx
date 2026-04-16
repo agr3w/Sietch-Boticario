@@ -42,6 +42,15 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 import CameraScanner from "./CameraScanner";
 import {
   adicionarFotoGaleriaPlanta,
@@ -60,6 +69,8 @@ const vitalidadeConfig = {
   recuperacao: { cor: "#C48A31", label: "Em Recuperacao" },
   critico: { cor: "#9E3D22", label: "Critico" },
 };
+
+const valorVitalidade = { prosperando: 100, estavel: 75, recuperacao: 50, critico: 25 };
 
 function formatarDataBr(dataEnvio) {
   if (!dataEnvio) {
@@ -418,6 +429,31 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     const badges = fotosTimelapse.flatMap((foto) => obterBadgesFoto(foto));
     return [...new Set(badges)].sort((a, b) => a.localeCompare(b));
   }, [fotosTimelapse]);
+  const fotos = useMemo(() => ordenarFotosPorDataAsc(fotosTimelapse), [fotosTimelapse]);
+  const dadosGrafico = useMemo(
+    () =>
+      fotos.map((foto) => {
+        const status = String(foto?.vitalidade ?? "estavel")
+          .trim()
+          .toLowerCase();
+        const chaveVitalidade = valorVitalidade[status] ? status : "estavel";
+        const dataRegistro = extrairDataRegistro(foto?.data_registro ?? foto?.data_captura);
+        const dataFormatada = dataRegistro
+          ? dataRegistro.toLocaleDateString("pt-BR", {
+              timeZone: "America/Sao_Paulo",
+              day: "2-digit",
+              month: "2-digit",
+            })
+          : "--/--";
+
+        return {
+          data: dataFormatada,
+          saude: valorVitalidade[chaveVitalidade],
+          status: chaveVitalidade,
+        };
+      }),
+    [fotos],
+  );
   const fotosTimelapseVisiveis = useMemo(() => {
     if (filtroBadgeAtivo === "todas") {
       return fotosTimelapse;
@@ -1108,6 +1144,70 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                 </Box>
               </Grid>
             </Grid>
+
+            <Box
+              sx={{
+                width: "100%",
+                height: 300,
+                mt: 4,
+                p: 2,
+                backgroundColor: "#EEF0E8",
+                border: "1px solid rgba(61, 40, 16, 0.2)",
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  mb: 1.5,
+                  color: "#3D2810",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                }}
+              >
+                HISTORICO DE VITALIDADE
+              </Typography>
+
+              {dadosGrafico.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dadosGrafico}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="rgba(61, 40, 16, 0.15)"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="data"
+                      stroke="#6E553B"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis domain={[0, 100]} hide />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#EEF0E8",
+                        borderColor: "rgba(61, 40, 16, 0.2)",
+                        borderRadius: "4px",
+                        color: "#3D2810",
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="saude"
+                      stroke="#0D3028"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: "#A64D13", strokeWidth: 2, stroke: "#EEF0E8" }}
+                      activeDot={{ r: 6, fill: "#345A14" }}
+                      animationDuration={1500}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={mentatMonoSx}>
+                  Sem dados historicos para o grafico.
+                </Typography>
+              )}
+            </Box>
 
             <TextField
               label="Intervalo de rega (dias)"
