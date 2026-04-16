@@ -97,7 +97,7 @@ export async function adicionarNotaManual(plantaId, texto, plantaNome) {
   });
 }
 
-export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl) {
+export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl, vitalidadeMomento = "estavel") {
   if (!plantaId || !imagemUrl) {
     throw new Error("Dados invalidos para adicionar foto na galeria");
   }
@@ -112,6 +112,7 @@ export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl) {
       url: imagemUrl,
       origem: "scanner",
       badges: [],
+      vitalidade: vitalidadeMomento,
       data_captura: new Date().toISOString(),
       data_registro_local: dataHoraLocalBr,
     }),
@@ -126,6 +127,7 @@ export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl) {
       url: imagemUrl,
       origem: "scanner",
       badges: [],
+      vitalidade: vitalidadeMomento,
       data_captura: new Date().toISOString(),
       data_registro: serverTimestamp(),
       data_registro_local: dataHoraLocalBr,
@@ -137,8 +139,10 @@ export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl) {
 }
 
 export async function cadastrarPlantaComFoto(dados, fotoBase64) {
+  const vitalidadeInicial = dados?.vitalidade ?? "estavel";
   const dadosPlanta = {
     ...dados,
+    vitalidade: vitalidadeInicial,
     ultima_rega: serverTimestamp(),
     notificar: true,
   };
@@ -160,6 +164,7 @@ export async function cadastrarPlantaComFoto(dados, fotoBase64) {
     marco: "nascimento",
     status_emocional: "nascimento",
     badges: ["nascimento"],
+    vitalidade: vitalidadeInicial,
     origem: "cadastro",
   });
 
@@ -170,6 +175,7 @@ export async function cadastrarPlantaComFoto(dados, fotoBase64) {
       origem: "nascimento",
       status_emocional: "nascimento",
       badges: ["nascimento"],
+      vitalidade: vitalidadeInicial,
       data_captura: new Date().toISOString(),
       data_registro_local: dataHoraLocalBr,
     }),
@@ -199,6 +205,7 @@ export async function getHistoricoFotos(plantaId) {
       marco: fotoData.marco ?? "",
       status_emocional: fotoData.status_emocional ?? "",
       origem: fotoData.origem ?? "",
+      vitalidade: fotoData.vitalidade ?? "",
       badges: Array.isArray(fotoData.badges)
         ? fotoData.badges.filter((badge) => typeof badge === "string")
         : [],

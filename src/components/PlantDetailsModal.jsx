@@ -202,6 +202,18 @@ function normalizarTipoMarco(valor) {
   return String(valor ?? "").trim().toLowerCase();
 }
 
+function hexParaRgba(hexColor, alpha) {
+  const hex = String(hexColor ?? "").replace("#", "");
+  if (hex.length !== 6) {
+    return `rgba(126, 195, 241, ${alpha})`;
+  }
+
+  const r = Number.parseInt(hex.slice(0, 2), 16);
+  const g = Number.parseInt(hex.slice(2, 4), 16);
+  const b = Number.parseInt(hex.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function getVitalidadeFrameConfig(vitalidadeAtual) {
   if (vitalidadeAtual === "prosperando") {
     return {
@@ -402,6 +414,13 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     .trim()
     .toLowerCase();
   const marcoAtualFoto = normalizarTipoMarco(fotoAtualTimelapse?.marco);
+  const vitalidadeHistorica = useMemo(() => {
+    const chave = String(fotoAtualTimelapse?.vitalidade ?? "")
+      .trim()
+      .toLowerCase();
+    return vitalidadeConfig[chave] ? chave : "estavel";
+  }, [fotoAtualTimelapse?.vitalidade]);
+  const vitalidadeHistoricaConfig = vitalidadeConfig[vitalidadeHistorica] ?? vitalidadeConfig.estavel;
   const ehNascimentoAtual =
     badgesFotoAtual.includes("nascimento") ||
     statusEmocionalAtual === "nascimento" ||
@@ -752,6 +771,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
       id: `tmp-${Date.now()}`,
       url: imagemUrl,
       origem: "scanner",
+      vitalidade,
       data_captura: new Date().toISOString(),
       data_registro: new Date().toISOString(),
       data_registro_local: dataHoraLocalBr,
@@ -763,11 +783,12 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     setGaleriaFotos((prev) => [fotoTemporaria, ...prev]);
 
     try {
-      const resultado = await adicionarFotoGaleriaPlanta(planta.id, imagemUrl);
+      const resultado = await adicionarFotoGaleriaPlanta(planta.id, imagemUrl, vitalidade);
       const fotoPersistida = {
         id: resultado?.id ?? `foto-${Date.now()}`,
         url: imagemUrl,
         origem: "scanner",
+        vitalidade,
         data_captura: new Date().toISOString(),
         data_registro: new Date().toISOString(),
         data_registro_local: dataHoraLocalBr,
@@ -1418,8 +1439,9 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                     position: "relative",
                     border: "2px solid",
                     borderColor: framePrincipalConfig.borderColor,
+                    borderBottom: `4px solid ${vitalidadeHistoricaConfig.cor}`,
                     overflow: "hidden",
-                    boxShadow: `0 0 0 1px rgba(8, 15, 20, 0.9), 0 0 18px ${framePrincipalConfig.glow}`,
+                    boxShadow: `0 0 0 1px rgba(8, 15, 20, 0.9), 0 0 18px ${framePrincipalConfig.glow}, 0 10px 26px -14px ${hexParaRgba(vitalidadeHistoricaConfig.cor, 0.78)}`,
                     clipPath:
                       "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
                     "&::before": {
@@ -1452,6 +1474,26 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                     }}
                   >
                     Sinal Vital: {frameVitalidadeConfig.label}
+                  </Box>
+
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      right: 8,
+                      bottom: 8,
+                      zIndex: 2,
+                      px: 1,
+                      py: 0.4,
+                      border: `1px solid ${hexParaRgba(vitalidadeHistoricaConfig.cor, 0.86)}`,
+                      backgroundColor: hexParaRgba(vitalidadeHistoricaConfig.cor, 0.2),
+                      color: "#E9F3FF",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      fontSize: "0.7rem",
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    SAUDE NA EPOCA: {vitalidadeHistoricaConfig.label}
                   </Box>
 
                   {ehNascimentoAtual && (

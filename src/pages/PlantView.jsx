@@ -435,6 +435,7 @@ function PlantView() {
       url: fotoBase64,
       data_registro: new Date().toISOString(),
       data_registro_local: dataHoraLocalBr,
+      vitalidade: planta?.vitalidade ?? "estavel",
       nota: "Atualizacao morfologica via scanner QR",
     };
 
@@ -444,9 +445,14 @@ function PlantView() {
         url: fotoBase64,
         data_registro: serverTimestamp(),
         data_registro_local: dataHoraLocalBr,
+        vitalidade: planta?.vitalidade ?? "estavel",
         nota: "Atualizacao morfologica via scanner QR",
       });
-      await adicionarFotoGaleriaPlanta(planta.id, fotoBase64);
+      await adicionarFotoGaleriaPlanta(
+        planta.id,
+        fotoBase64,
+        planta?.vitalidade ?? "estavel",
+      );
       setFotos((prev) => {
         const proximo = ordenarFotosPorDataAsc([...prev, fotoLocal]);
         setIndexFoto(proximo.length - 1);
