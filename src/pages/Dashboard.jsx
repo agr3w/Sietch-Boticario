@@ -832,7 +832,7 @@ function Dashboard() {
             sx={{
               "& .MuiTabs-indicator": { backgroundColor: "#7EC3F1", height: 3 },
               "& .MuiTab-root": {
-                color: "rgba(245,242,235,0.88)",
+                color: "color.primary",
                 fontWeight: 700,
                 letterSpacing: "0.05em",
                 textTransform: "uppercase",
