@@ -41,6 +41,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
+import { AnimatePresence, motion } from "framer-motion";
 import CameraScanner from "./CameraScanner";
 import {
   adicionarFotoGaleriaPlanta,
@@ -957,92 +958,105 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
         />
       </DialogTitle>
 
-      {!isMobile && (
-        <Tabs
-          value={abaAtiva}
-          onChange={(_event, novaAba) => setAbaAtiva(novaAba)}
-          aria-label="Abas do prontuário da planta"
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      >
+        {!isMobile && (
+          <Tabs
+            value={abaAtiva}
+            onChange={(_event, novaAba) => setAbaAtiva(novaAba)}
+            aria-label="Abas do prontuário da planta"
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{
+              px: { xs: 1, sm: 3 },
+              position: "sticky",
+              top: 0,
+              zIndex: 2,
+              backgroundColor: "#E8EDE4",
+              borderBottom: "1px solid rgba(61, 40, 16, 0.14)",
+              "& .MuiTabs-indicator": {
+                height: 3,
+                backgroundColor: "primary.main",
+              },
+              "& .MuiTab-root": {
+                minWidth: { xs: 126, sm: 140 },
+                fontSize: { xs: "0.74rem", sm: "0.82rem" },
+                px: { xs: 1.1, sm: 1.8 },
+                whiteSpace: "nowrap",
+                fontFamily: '"Rajdhani", sans-serif',
+                fontWeight: 700,
+                letterSpacing: "0.03em",
+                color: "text.secondary",
+                "&:hover": {
+                  color: "primary.main",
+                  backgroundColor: "rgba(13, 48, 40, 0.08)",
+                },
+                "&:focus-visible": {
+                  outline: "3px solid #1B80C4",
+                  outlineOffset: -2,
+                  backgroundColor: "rgba(27, 128, 196, 0.12)",
+                },
+              },
+              "& .Mui-selected": {
+                color: "#0D3028 !important",
+              },
+            }}
+          >
+            <Tab label="Visão Geral" />
+            <Tab label="Diário de Bordo" />
+            <Tab label="Identificação" />
+            <Tab label="Galeria" />
+          </Tabs>
+        )}
+
+        <DialogContent
+          dividers
           sx={{
-            px: { xs: 1, sm: 3 },
-            position: "sticky",
-            top: 0,
-            zIndex: 2,
-            backgroundColor: "#E8EDE4",
-            borderBottom: "1px solid rgba(61, 40, 16, 0.14)",
-            "& .MuiTabs-indicator": {
-              height: 3,
-              backgroundColor: "primary.main",
+            position: "relative",
+            px: { xs: 1.25, sm: 3 },
+            py: { xs: 1.25, sm: 2.2 },
+            pb: { xs: 10, sm: 2.2 },
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: 20,
+              height: 20,
+              borderTop: "2px solid",
+              borderLeft: "2px solid",
+              borderColor: "secondary.main",
+              opacity: 0.7,
+              pointerEvents: "none",
             },
-            "& .MuiTab-root": {
-              minWidth: { xs: 126, sm: 140 },
-              fontSize: { xs: "0.74rem", sm: "0.82rem" },
-              px: { xs: 1.1, sm: 1.8 },
-              whiteSpace: "nowrap",
-              fontFamily: '"Rajdhani", sans-serif',
-              fontWeight: 700,
-              letterSpacing: "0.03em",
-              color: "text.secondary",
-              "&:hover": {
-                color: "primary.main",
-                backgroundColor: "rgba(13, 48, 40, 0.08)",
-              },
-              "&:focus-visible": {
-                outline: "3px solid #1B80C4",
-                outlineOffset: -2,
-                backgroundColor: "rgba(27, 128, 196, 0.12)",
-              },
-            },
-            "& .Mui-selected": {
-              color: "#0D3028 !important",
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              right: 0,
+              bottom: 0,
+              width: 20,
+              height: 20,
+              borderBottom: "2px solid",
+              borderRight: "2px solid",
+              borderColor: "info.main",
+              opacity: 0.7,
+              pointerEvents: "none",
             },
           }}
         >
-          <Tab label="Visão Geral" />
-          <Tab label="Diário de Bordo" />
-          <Tab label="Identificação" />
-          <Tab label="Galeria" />
-        </Tabs>
-      )}
-
-      <DialogContent
-        dividers
-        sx={{
-          position: "relative",
-          px: { xs: 1.25, sm: 3 },
-          py: { xs: 1.25, sm: 2.2 },
-          pb: { xs: 10, sm: 2.2 },
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: 20,
-            height: 20,
-            borderTop: "2px solid",
-            borderLeft: "2px solid",
-            borderColor: "secondary.main",
-            opacity: 0.7,
-            pointerEvents: "none",
-          },
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            right: 0,
-            bottom: 0,
-            width: 20,
-            height: 20,
-            borderBottom: "2px solid",
-            borderRight: "2px solid",
-            borderColor: "info.main",
-            opacity: 0.7,
-            pointerEvents: "none",
-          },
-        }}
-      >
+        <AnimatePresence mode="wait">
         {abaAtiva === 0 && (
+          <motion.div
+            key={0}
+            initial={{ opacity: 0, x: 15 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -15 }}
+            transition={{ duration: 0.2 }}
+          >
           <Stack spacing={2.2}>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 5 }}>
@@ -1231,9 +1245,17 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </Box>
             </Stack>
           </Stack>
+          </motion.div>
         )}
 
         {abaAtiva === 1 && (
+          <motion.div
+            key={1}
+            initial={{ opacity: 0, x: 15 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -15 }}
+            transition={{ duration: 0.2 }}
+          >
           <Stack spacing={2}>
             <TextField
               label="Adicionar nota manual"
@@ -1354,9 +1376,17 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </List>
             )}
           </Stack>
+          </motion.div>
         )}
 
         {abaAtiva === 2 && (
+          <motion.div
+            key={2}
+            initial={{ opacity: 0, x: 15 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -15 }}
+            transition={{ duration: 0.2 }}
+          >
           <Stack spacing={2} alignItems="center">
             <Box
               sx={{
@@ -1418,9 +1448,17 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </Alert>
             )}
           </Stack>
+          </motion.div>
         )}
 
         {abaAtiva === 3 && (
+          <motion.div
+            key={3}
+            initial={{ opacity: 0, x: 15 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -15 }}
+            transition={{ duration: 0.2 }}
+          >
           <Box>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ mb: 2 }}>
               <Box
@@ -1831,25 +1869,27 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </Stack>
             )}
           </Box>
+          </motion.div>
         )}
-      </DialogContent>
+        </AnimatePresence>
+        </DialogContent>
 
-      {isMobile && (
-        <Box
-          sx={{
-            position: "sticky",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 3,
-            px: 1,
-            py: 0.9,
-            borderTop: "1px solid rgba(126, 166, 194, 0.36)",
-            background:
-              "linear-gradient(180deg, rgba(13, 19, 24, 0.9) 0%, rgba(13, 19, 24, 0.96) 100%)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
+        {isMobile && (
+          <Box
+            sx={{
+              position: "sticky",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 3,
+              px: 1,
+              py: 0.9,
+              borderTop: "1px solid rgba(126, 166, 194, 0.36)",
+              background:
+                "linear-gradient(180deg, rgba(13, 19, 24, 0.9) 0%, rgba(13, 19, 24, 0.96) 100%)",
+              backdropFilter: "blur(8px)",
+            }}
+          >
           <Stack direction="row" spacing={0.8} justifyContent="space-between">
             <Button
               fullWidth
@@ -1964,8 +2004,9 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               Galeria
             </Button>
           </Stack>
-        </Box>
-      )}
+          </Box>
+        )}
+      </motion.div>
 
       <CameraScanner
         open={scannerOpen}

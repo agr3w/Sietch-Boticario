@@ -34,6 +34,7 @@ import {
 } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import { motion } from "framer-motion";
 import {
   cadastrarPlantaComFoto,
   db,
@@ -62,6 +63,23 @@ function obterUltimaFotoReferenciaPlanta(planta) {
 
   return galeria[galeria.length - 1]?.url ?? "";
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 },
+  },
+};
 
 function Dashboard() {
   const { currentUser } = useAuth();
@@ -853,9 +871,16 @@ function Dashboard() {
       </Card>
 
       {abaPainel === 0 && (
-        <Grid container spacing={3}>
+        <Grid
+          component={motion.div}
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          container
+          spacing={3}
+        >
           {plantas.map((planta) => (
-            <Grid size={{ xs: 12, sm: 6 }} key={planta.id}>
+            <Grid component={motion.div} variants={itemVariants} size={{ xs: 12, sm: 6 }} key={planta.id}>
               <PlantCard
                 planta={planta}
                 onRegar={regarPlanta}

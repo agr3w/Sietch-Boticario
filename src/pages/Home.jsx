@@ -66,17 +66,31 @@ const Home = () => {
               SIETCH BOTICÁRIO
             </Typography>
           </Stack>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/login')}
-            sx={{
-              borderRadius: 0,
-              borderColor: theme.palette.secondary.main,
-              color: theme.palette.secondary.main,
-            }}
-          >
-            IDENTIFICAR-SE
-          </Button>
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="text"
+              onClick={() => navigate('/suporte')}
+              sx={{
+                borderRadius: 0,
+                color: 'primary.main',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+              }}
+            >
+              MANUSCRITOS
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => navigate('/login')}
+              sx={{
+                borderRadius: 0,
+                borderColor: theme.palette.secondary.main,
+                color: theme.palette.secondary.main,
+              }}
+            >
+              IDENTIFICAR-SE
+            </Button>
+          </Stack>
         </Toolbar>
       </AppBar>
 

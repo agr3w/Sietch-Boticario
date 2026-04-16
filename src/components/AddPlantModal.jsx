@@ -11,6 +11,7 @@ import {
   TextField,
 } from "@mui/material";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import { motion } from "framer-motion";
 import { addPlantModalSx } from "../theme/styles";
 import CameraScanner from "./CameraScanner";
 
@@ -81,100 +82,106 @@ function AddPlantModal({ open, onClose, onAdd }) {
         <DialogTitle sx={addPlantModalSx.title}>
           Cadastrar Nova Planta
         </DialogTitle>
-        <Divider sx={addPlantModalSx.divider} />
-        <DialogContent sx={addPlantModalSx.form}>
-          <TextField
-            label="Nome/Apelido"
-            name="nome_apelido"
-            value={formData.nome_apelido}
-            onChange={handleChange}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Espécie"
-            name="especie"
-            value={formData.especie}
-            onChange={handleChange}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Localização"
-            name="localizacao"
-            value={formData.localizacao}
-            onChange={handleChange}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Intervalo de Rega em Dias"
-            name="intervalo_rega_dias"
-            type="number"
-            value={formData.intervalo_rega_dias}
-            onChange={handleChange}
-            required
-            fullWidth
-            slotProps={{ htmlInput: { min: 1 } }}
-          />
-          <TextField
-            label="Necessidade de Água"
-            name="necessidade_agua"
-            value={formData.necessidade_agua}
-            onChange={handleChange}
-            select
-            required
-            fullWidth
-          >
-            <MenuItem value="baixa">baixa</MenuItem>
-            <MenuItem value="media">media</MenuItem>
-            <MenuItem value="alta">alta</MenuItem>
-          </TextField>
-
-          <Button
-            variant="outlined"
-            color="primary"
-            startIcon={<CameraAltIcon />}
-            onClick={() => setScannerOpen(true)}
-            disabled={isSaving}
-            fullWidth
-            sx={addPlantModalSx.captureButton}
-          >
-            {fotoIniciacao ? "Recapturar Foto de Iniciacao" : "Capturar Foto de Iniciacao"}
-          </Button>
-
-          {fotoIniciacao && (
-            <Box
-              sx={{
-                width: "100%",
-                display: "flex",
-                justifyContent: "center",
-                mt: 0.5,
-              }}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          <Divider sx={addPlantModalSx.divider} />
+          <DialogContent sx={addPlantModalSx.form}>
+            <TextField
+              label="Nome/Apelido"
+              name="nome_apelido"
+              value={formData.nome_apelido}
+              onChange={handleChange}
+              required
+              fullWidth
+            />
+            <TextField
+              label="Espécie"
+              name="especie"
+              value={formData.especie}
+              onChange={handleChange}
+              required
+              fullWidth
+            />
+            <TextField
+              label="Localização"
+              name="localizacao"
+              value={formData.localizacao}
+              onChange={handleChange}
+              required
+              fullWidth
+            />
+            <TextField
+              label="Intervalo de Rega em Dias"
+              name="intervalo_rega_dias"
+              type="number"
+              value={formData.intervalo_rega_dias}
+              onChange={handleChange}
+              required
+              fullWidth
+              slotProps={{ htmlInput: { min: 1 } }}
+            />
+            <TextField
+              label="Necessidade de Água"
+              name="necessidade_agua"
+              value={formData.necessidade_agua}
+              onChange={handleChange}
+              select
+              required
+              fullWidth
             >
+              <MenuItem value="baixa">baixa</MenuItem>
+              <MenuItem value="media">media</MenuItem>
+              <MenuItem value="alta">alta</MenuItem>
+            </TextField>
+
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<CameraAltIcon />}
+              onClick={() => setScannerOpen(true)}
+              disabled={isSaving}
+              fullWidth
+              sx={addPlantModalSx.captureButton}
+            >
+              {fotoIniciacao ? "Recapturar Foto de Iniciacao" : "Capturar Foto de Iniciacao"}
+            </Button>
+
+            {fotoIniciacao && (
               <Box
-                component="img"
-                src={fotoIniciacao}
-                alt="Miniatura da foto de iniciacao"
-                sx={addPlantModalSx.previewImage}
-              />
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={addPlantModalSx.actions}>
-          <Button color="secondary" onClick={onClose} disabled={isSaving} sx={addPlantModalSx.cancelButton}>
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            disabled={isSaving}
-            sx={addPlantModalSx.submitButton}
-          >
-            {isSaving ? "Salvando..." : "Salvar Planta"}
-          </Button>
-        </DialogActions>
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: "center",
+                  mt: 0.5,
+                }}
+              >
+                <Box
+                  component="img"
+                  src={fotoIniciacao}
+                  alt="Miniatura da foto de iniciacao"
+                  sx={addPlantModalSx.previewImage}
+                />
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={addPlantModalSx.actions}>
+            <Button color="secondary" onClick={onClose} disabled={isSaving} sx={addPlantModalSx.cancelButton}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={isSaving}
+              sx={addPlantModalSx.submitButton}
+            >
+              {isSaving ? "Salvando..." : "Salvar Planta"}
+            </Button>
+          </DialogActions>
+        </motion.div>
       </form>
 
       <CameraScanner
