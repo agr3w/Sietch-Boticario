@@ -5,6 +5,7 @@ import {
   Box,
   Chip,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
   FormControlLabel,
@@ -17,20 +18,40 @@ import {
   MenuItem,
   Select,
   Stack,
+  Slider,
   Switch,
+  ToggleButton,
+  ToggleButtonGroup,
   Tab,
   Tabs,
   TextField,
   Typography,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
+import CloseIcon from "@mui/icons-material/Close";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import PauseIcon from "@mui/icons-material/Pause";
 import { QRCode } from "react-qr-code";
-import { adicionarNotaManual, getHistoricoPlanta } from "../firebase";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
+import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
+import CameraScanner from "./CameraScanner";
+import {
+  adicionarFotoGaleriaPlanta,
+  adicionarNotaManual,
+  getHistoricoFotos,
+  getHistoricoPlanta,
+  setMarcoFoto,
+} from "../firebase";
 
-const GALERIA_PLACEHOLDER_URL =
-  "https://cdn.wallpapersafari.com/65/81/5YrxE9.jpg";
+const placeholderFantasma =
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Epipremnum_aureum_31082012.jpg/800px-Epipremnum_aureum_31082012.jpg";
 
 const vitalidadeConfig = {
   prosperando: { cor: "#2F6F4E", label: "Prosperando" },
@@ -85,7 +106,270 @@ function obterDataRega(ultimaRega) {
   return Number.isFinite(date.getTime()) ? date : null;
 }
 
+function extrairDataRegistro(dataRegistro) {
+  if (!dataRegistro) {
+    return null;
+  }
+
+  if (typeof dataRegistro?.toDate === "function") {
+    const date = dataRegistro.toDate();
+    return Number.isFinite(date.getTime()) ? date : null;
+  }
+
+  if (typeof dataRegistro?.seconds === "number") {
+    const milliseconds =
+      dataRegistro.seconds * 1000 + Math.floor((dataRegistro.nanoseconds ?? 0) / 1000000);
+    const date = new Date(milliseconds);
+    return Number.isFinite(date.getTime()) ? date : null;
+  }
+
+  const date = new Date(dataRegistro);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
+function formatarDataRegistroCurta(dataRegistro, dataRegistroLocal) {
+  if (typeof dataRegistroLocal === "string" && dataRegistroLocal.trim()) {
+    return `Registro de ${dataRegistroLocal}`;
+  }
+
+  const date = extrairDataRegistro(dataRegistro);
+  if (!date) {
+    return "Registro sem data";
+  }
+
+  return `Registro de ${date.toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+  })} às ${date.toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
+}
+
+function ordenarFotosPorDataAsc(fotos) {
+  return [...fotos].sort((a, b) => {
+    const dataA = extrairDataRegistro(a?.data_registro ?? a?.data_captura);
+    const dataB = extrairDataRegistro(b?.data_registro ?? b?.data_captura);
+    return (dataA?.getTime() ?? 0) - (dataB?.getTime() ?? 0);
+  });
+}
+
+function normalizarBadgeSlug(valor) {
+  return String(valor ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+function obterBadgesFoto(foto) {
+  const marcoComoBadge = normalizarTipoMarco(foto?.marco);
+
+  if (Array.isArray(foto?.badges) && foto.badges.length > 0) {
+    const badges = [
+      ...new Set(
+        foto.badges
+          .filter((badge) => typeof badge === "string")
+          .map((badge) => normalizarBadgeSlug(badge))
+          .filter(Boolean),
+      ),
+    ];
+
+    if (marcoComoBadge && !badges.includes(marcoComoBadge)) {
+      badges.push(marcoComoBadge);
+    }
+
+    return badges;
+  }
+
+  const badgeLegado = normalizarBadgeSlug(foto?.status_emocional ?? foto?.statusEmocional ?? "");
+  const badges = badgeLegado ? [badgeLegado] : [];
+
+  if (marcoComoBadge && !badges.includes(marcoComoBadge)) {
+    badges.push(marcoComoBadge);
+  }
+
+  return badges;
+}
+
+function formatarBadgeLabel(badgeSlug) {
+  return badgeSlug
+    .split(" ")
+    .filter(Boolean)
+    .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1))
+    .join(" ");
+}
+
+function normalizarTipoMarco(valor) {
+  return String(valor ?? "").trim().toLowerCase();
+}
+
+function hexParaRgba(hexColor, alpha) {
+  const hex = String(hexColor ?? "").replace("#", "");
+  if (hex.length !== 6) {
+    return `rgba(126, 195, 241, ${alpha})`;
+  }
+
+  const r = Number.parseInt(hex.slice(0, 2), 16);
+  const g = Number.parseInt(hex.slice(2, 4), 16);
+  const b = Number.parseInt(hex.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function getVitalidadeFrameConfig(vitalidadeAtual) {
+  if (vitalidadeAtual === "prosperando") {
+    return {
+      borderColor: "#58D68D",
+      glow: "rgba(88, 214, 141, 0.55)",
+      label: "Prosperando",
+    };
+  }
+
+  if (vitalidadeAtual === "recuperacao") {
+    return {
+      borderColor: "#E2A72E",
+      glow: "rgba(226, 167, 46, 0.5)",
+      label: "Recuperacao",
+    };
+  }
+
+  if (vitalidadeAtual === "critico") {
+    return {
+      borderColor: "#EB4E5A",
+      glow: "rgba(235, 78, 90, 0.58)",
+      label: "Critico",
+    };
+  }
+
+  return {
+    borderColor: "#7EC3F1",
+    glow: "rgba(126, 195, 241, 0.48)",
+    label: "Estavel",
+  };
+}
+
+function getMarcoFrameConfig(marcoAtual) {
+  if (marcoAtual === "nascimento") {
+    return {
+      borderColor: "#7EC3F1",
+      glow: "rgba(126, 195, 241, 0.56)",
+    };
+  }
+
+  if (marcoAtual === "crescimento") {
+    return {
+      borderColor: "#5FC88A",
+      glow: "rgba(95, 200, 138, 0.56)",
+    };
+  }
+
+  if (marcoAtual === "memorial") {
+    return {
+      borderColor: "#D39A2C",
+      glow: "rgba(211, 154, 44, 0.56)",
+    };
+  }
+
+  return null;
+}
+
+function FotoMiniaturaHud({ foto, ativa, onSelecionar }) {
+  const marcoFoto = normalizarTipoMarco(foto?.marco);
+  const ehNascimento = marcoFoto === "nascimento";
+  const ehMemorial = marcoFoto === "memorial";
+  const vitalidadeMiniatura = String(foto?.vitalidade ?? "")
+    .trim()
+    .toLowerCase();
+  const vitalidadeMiniaturaConfig =
+    vitalidadeConfig[vitalidadeMiniatura] ?? vitalidadeConfig.estavel;
+
+  return (
+    <Box
+      role="button"
+      tabIndex={0}
+      aria-label="Selecionar foto da linha do tempo"
+      onClick={onSelecionar}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelecionar?.();
+        }
+      }}
+      sx={{
+        position: "relative",
+        width: { xs: 86, sm: 96 },
+        height: { xs: 86, sm: 96 },
+        border: "1px solid",
+        borderColor: ehMemorial
+          ? "secondary.main"
+          : ativa
+            ? "info.main"
+            : "rgba(126, 195, 241, 0.34)",
+        clipPath:
+          "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
+        cursor: "pointer",
+        overflow: "hidden",
+        transition: "border-color 180ms ease, transform 180ms ease",
+        transform: ativa ? "translateY(-1px)" : "none",
+        boxShadow: ativa ? `0 0 10px ${hexParaRgba(vitalidadeMiniaturaConfig.cor, 0.52)}` : "none",
+        "&:hover": {
+          borderColor: "info.main",
+        },
+        "&:focus-visible": {
+          outline: "3px solid #7EC3F1",
+          outlineOffset: 2,
+          borderColor: "#7EC3F1",
+          boxShadow: "0 0 0 2px rgba(5,10,14,0.86), 0 0 0 5px rgba(126,195,241,0.55)",
+        },
+      }}
+    >
+      <Box
+        component="img"
+        src={foto?.url}
+        alt="Miniatura tática da galeria"
+        sx={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          filter: ativa ? "none" : "saturate(0.85) contrast(1.02)",
+        }}
+      />
+
+      {ehNascimento && (
+        <Box
+          component="span"
+          sx={{
+            position: "absolute",
+            top: 6,
+            left: 8,
+            zIndex: 3,
+            color: "info.main",
+            fontSize: "0.92rem",
+            lineHeight: 1,
+            textShadow: "0 0 8px rgba(126, 195, 241, 0.65)",
+          }}
+        >
+          ♦
+        </Box>
+      )}
+
+      <Box
+        sx={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 4,
+          backgroundColor: vitalidadeMiniaturaConfig.cor,
+          boxShadow: `0 0 10px ${hexParaRgba(vitalidadeMiniaturaConfig.cor, 0.6)}`,
+          zIndex: 2,
+        }}
+      />
+    </Box>
+  );
+}
+
 function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const mentatMonoSx = {
     fontFamily: '"Share Tech Mono", monospace',
     letterSpacing: "0.03em",
@@ -110,8 +394,59 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const [notaManual, setNotaManual] = useState("");
   const [salvandoNota, setSalvandoNota] = useState(false);
   const [statusCopiaQr, setStatusCopiaQr] = useState("idle");
+  const [confirmarExclusaoOpen, setConfirmarExclusaoOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [salvandoFoto, setSalvandoFoto] = useState(false);
+  const [galeriaFotos, setGaleriaFotos] = useState([]);
+  const [fotosTimelapse, setFotosTimelapse] = useState([]);
+  const [carregandoFotos, setCarregandoFotos] = useState(false);
+  const [indexFoto, setIndexFoto] = useState(0);
+  const [autoplayAtivo, setAutoplayAtivo] = useState(false);
+  const [velocidadeTimelapse, setVelocidadeTimelapse] = useState(1400);
+  const [erroFoto, setErroFoto] = useState("");
+  const [filtroBadgeAtivo, setFiltroBadgeAtivo] = useState("todas");
+  const [salvandoMarco, setSalvandoMarco] = useState(false);
+  const [erroMarco, setErroMarco] = useState("");
   const vitalidadeAtualConfig =
     vitalidadeConfig[vitalidade] ?? vitalidadeConfig.estavel;
+  const ultimaFotoReferenciaUrl =
+    fotosTimelapse[fotosTimelapse.length - 1]?.url ??
+    galeriaFotos[galeriaFotos.length - 1]?.url ??
+    placeholderFantasma;
+  const badgesDisponiveis = useMemo(() => {
+    const badges = fotosTimelapse.flatMap((foto) => obterBadgesFoto(foto));
+    return [...new Set(badges)].sort((a, b) => a.localeCompare(b));
+  }, [fotosTimelapse]);
+  const fotosTimelapseVisiveis = useMemo(() => {
+    if (filtroBadgeAtivo === "todas") {
+      return fotosTimelapse;
+    }
+    return fotosTimelapse.filter((foto) => obterBadgesFoto(foto).includes(filtroBadgeAtivo));
+  }, [filtroBadgeAtivo, fotosTimelapse]);
+  const fotoAtualTimelapse = fotosTimelapseVisiveis[indexFoto] ?? null;
+  const badgesFotoAtual = useMemo(
+    () => obterBadgesFoto(fotoAtualTimelapse),
+    [fotoAtualTimelapse],
+  );
+  const statusEmocionalAtual = String(
+    fotoAtualTimelapse?.status_emocional ?? fotoAtualTimelapse?.statusEmocional ?? "",
+  )
+    .trim()
+    .toLowerCase();
+  const marcoAtualFoto = normalizarTipoMarco(fotoAtualTimelapse?.marco);
+  const vitalidadeHistorica = useMemo(() => {
+    const chave = String(fotoAtualTimelapse?.vitalidade ?? "")
+      .trim()
+      .toLowerCase();
+    return vitalidadeConfig[chave] ? chave : "estavel";
+  }, [fotoAtualTimelapse?.vitalidade]);
+  const vitalidadeHistoricaConfig = vitalidadeConfig[vitalidadeHistorica] ?? vitalidadeConfig.estavel;
+  const ehNascimentoAtual =
+    badgesFotoAtual.includes("nascimento") ||
+    statusEmocionalAtual === "nascimento" ||
+    marcoAtualFoto === "nascimento";
+  const ehMemorialAtual = marcoAtualFoto === "memorial";
+  const frameVitalidadeConfig = getVitalidadeFrameConfig(vitalidade);
 
   useEffect(() => {
     setNotificarWhatsapp(Boolean(planta?.notificar));
@@ -125,6 +460,31 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     setNotaManual("");
     setSalvandoNota(false);
     setStatusCopiaQr("idle");
+    setConfirmarExclusaoOpen(false);
+    setScannerOpen(false);
+    setSalvandoFoto(false);
+    setErroFoto("");
+    setCarregandoFotos(false);
+    setIndexFoto(0);
+    setAutoplayAtivo(false);
+    setVelocidadeTimelapse(1400);
+    setFiltroBadgeAtivo("todas");
+    setSalvandoMarco(false);
+    setErroMarco("");
+    setGaleriaFotos(
+      Array.isArray(planta?.galeria_fotos)
+        ? planta.galeria_fotos
+        : Array.isArray(planta?.galeriaFotos)
+          ? planta.galeriaFotos
+          : [],
+    );
+    const fallbackGaleria =
+      Array.isArray(planta?.galeria_fotos)
+        ? planta.galeria_fotos
+        : Array.isArray(planta?.galeriaFotos)
+          ? planta.galeriaFotos
+          : [];
+    setFotosTimelapse(ordenarFotosPorDataAsc(fallbackGaleria));
   }, [
     open,
     planta?.id,
@@ -135,9 +495,93 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     planta?.tipo_substrato,
     planta?.tipoSubstrato,
     planta?.vitalidade,
+    planta?.galeria_fotos,
+    planta?.galeriaFotos,
     planta?.eh_toxica,
     planta?.ehToxica,
   ]);
+
+  useEffect(() => {
+    if (filtroBadgeAtivo === "todas") {
+      return;
+    }
+
+    if (!badgesDisponiveis.includes(filtroBadgeAtivo)) {
+      setFiltroBadgeAtivo("todas");
+    }
+  }, [badgesDisponiveis, filtroBadgeAtivo]);
+
+  useEffect(() => {
+    if (!open || !planta?.id || !planta?.userId) {
+      setFotosTimelapse([]);
+      return;
+    }
+
+    let ativo = true;
+
+    const carregarHistoricoFotos = async () => {
+      try {
+        setCarregandoFotos(true);
+        const fotosHistorico = await getHistoricoFotos(planta.id, planta.userId);
+        if (!ativo) {
+          return;
+        }
+
+        if (fotosHistorico.length > 0) {
+          setFotosTimelapse(ordenarFotosPorDataAsc(fotosHistorico));
+        } else {
+          setFotosTimelapse(ordenarFotosPorDataAsc(galeriaFotos));
+        }
+      } catch (error) {
+        console.error("Erro ao carregar histórico de fotos:", error);
+        if (ativo) {
+          setFotosTimelapse(ordenarFotosPorDataAsc(galeriaFotos));
+        }
+      } finally {
+        if (ativo) {
+          setCarregandoFotos(false);
+        }
+      }
+    };
+
+    void carregarHistoricoFotos();
+
+    return () => {
+      ativo = false;
+    };
+  }, [open, planta?.id, planta?.userId, galeriaFotos]);
+
+  useEffect(() => {
+    setIndexFoto((valorAtual) => {
+      if (fotosTimelapseVisiveis.length === 0) {
+        return 0;
+      }
+
+      return Math.min(valorAtual, fotosTimelapseVisiveis.length - 1);
+    });
+  }, [fotosTimelapseVisiveis.length]);
+
+  useEffect(() => {
+    if (abaAtiva !== 3) {
+      setAutoplayAtivo(false);
+    }
+  }, [abaAtiva]);
+
+  useEffect(() => {
+    if (!autoplayAtivo || fotosTimelapseVisiveis.length <= 1) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      setIndexFoto((valorAtual) =>
+        valorAtual >= fotosTimelapseVisiveis.length - 1 ? 0 : valorAtual + 1,
+      );
+    }, velocidadeTimelapse);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [autoplayAtivo, fotosTimelapseVisiveis.length, velocidadeTimelapse]);
 
   const qrCodeValue = useMemo(() => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -145,7 +589,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   }, [planta?.id]);
 
   useEffect(() => {
-    if (!open || !planta?.id) {
+    if (!open || !planta?.id || !planta?.userId) {
       setHistorico([]);
       return;
     }
@@ -155,7 +599,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     const carregarHistorico = async () => {
       try {
         setCarregandoHistorico(true);
-        const mensagens = await getHistoricoPlanta(planta.id);
+        const mensagens = await getHistoricoPlanta(planta.id, planta.userId);
 
         if (ativo) {
           setHistorico(mensagens);
@@ -177,7 +621,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     return () => {
       ativo = false;
     };
-  }, [open, planta?.id]);
+  }, [open, planta?.id, planta?.userId]);
 
   const resumoRega = useMemo(() => {
     const intervalo = Number(planta?.intervalo_rega_dias ?? 0);
@@ -251,8 +695,9 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
         planta.id,
         textoLimpo,
         planta?.nome_apelido ?? "Planta",
+        planta?.userId,
       );
-      const historicoAtualizado = await getHistoricoPlanta(planta.id);
+      const historicoAtualizado = await getHistoricoPlanta(planta.id, planta.userId);
       setHistorico(historicoAtualizado);
     } catch (error) {
       console.error("Erro ao adicionar nota manual:", error);
@@ -268,17 +713,30 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
       return;
     }
 
-    const confirmou = window.confirm(
-      "Tem certeza? Este registro será perdido na areia.",
-    );
+    setConfirmarExclusaoOpen(true);
+  };
 
-    if (!confirmou) {
+  const handleCancelarExclusao = () => {
+    if (excluindo) {
+      return;
+    }
+
+    setConfirmarExclusaoOpen(false);
+  };
+
+  const handleConfirmarExclusao = async () => {
+    if (!planta?.id || typeof onDelete !== "function") {
       return;
     }
 
     setExcluindo(true);
     try {
-      await onDelete(planta.id);
+      const exclusaoConcluida = await onDelete(planta.id);
+      if (exclusaoConcluida === false) {
+        return;
+      }
+
+      setConfirmarExclusaoOpen(false);
       onClose?.();
     } finally {
       setExcluindo(false);
@@ -317,13 +775,118 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     }
   };
 
+  const handleCapturarFoto = async (imagemUrl) => {
+    if (!planta?.id || !imagemUrl) {
+      setErroFoto("Nao foi possivel capturar a imagem.");
+      return;
+    }
+
+    const dataHoraLocalBr = new Date().toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      hour12: false,
+    });
+
+    const fotoTemporaria = {
+      id: `tmp-${Date.now()}`,
+      url: imagemUrl,
+      origem: "scanner",
+      vitalidade,
+      data_captura: new Date().toISOString(),
+      data_registro: new Date().toISOString(),
+      data_registro_local: dataHoraLocalBr,
+      badges: [],
+    };
+
+    setErroFoto("");
+    setSalvandoFoto(true);
+    setGaleriaFotos((prev) => [fotoTemporaria, ...prev]);
+
+    try {
+      const resultado = await adicionarFotoGaleriaPlanta(planta.id, imagemUrl, vitalidade);
+      const fotoPersistida = {
+        id: resultado?.id ?? `foto-${Date.now()}`,
+        url: imagemUrl,
+        origem: "scanner",
+        vitalidade,
+        data_captura: new Date().toISOString(),
+        data_registro: new Date().toISOString(),
+        data_registro_local: dataHoraLocalBr,
+        badges: [],
+      };
+      setGaleriaFotos((prev) => [
+        fotoPersistida,
+        ...prev.filter((foto) => foto.id !== fotoTemporaria.id),
+      ]);
+      setFotosTimelapse((prev) =>
+        ordenarFotosPorDataAsc([
+          ...prev.filter((foto) => foto.id !== fotoTemporaria.id),
+          fotoPersistida,
+        ]),
+      );
+      setScannerOpen(false);
+    } catch (error) {
+      console.error("Erro ao salvar captura na galeria:", error);
+      setGaleriaFotos((prev) => prev.filter((foto) => foto.id !== fotoTemporaria.id));
+      setErroFoto("Falha ao salvar a captura no prontuario.");
+    } finally {
+      setSalvandoFoto(false);
+    }
+  };
+
+  const atualizarMarcoEmMemoria = (fotoId, tipoMarco) => {
+    setFotosTimelapse((prev) =>
+      prev.map((foto) => (foto.id === fotoId ? { ...foto, marco: tipoMarco } : foto)),
+    );
+    setGaleriaFotos((prev) =>
+      prev.map((foto) => (foto.id === fotoId ? { ...foto, marco: tipoMarco } : foto)),
+    );
+  };
+
+  const handleToggleMarco = async (novoMarco) => {
+    if (!fotoAtualTimelapse?.id || !planta?.id) {
+      return;
+    }
+
+    const fotoId = fotoAtualTimelapse.id;
+    const tipoMarcoNormalizado = novoMarco ? normalizarTipoMarco(novoMarco) : null;
+    const marcoAnterior = normalizarTipoMarco(fotoAtualTimelapse?.marco) || null;
+
+    setErroMarco("");
+    setSalvandoMarco(true);
+    atualizarMarcoEmMemoria(fotoId, tipoMarcoNormalizado);
+
+    try {
+      await setMarcoFoto(fotoId, tipoMarcoNormalizado);
+    } catch (error) {
+      console.error("Erro ao definir marco da foto:", error);
+      atualizarMarcoEmMemoria(fotoId, marcoAnterior);
+      setErroMarco("Falha ao aplicar marco tatico nesta foto.");
+    } finally {
+      setSalvandoMarco(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="md"
+      fullScreen={isMobile}
+      PaperProps={{
+        sx: {
+          height: isMobile ? "100dvh" : undefined,
+          m: isMobile ? 0 : undefined,
+        },
+      }}
+    >
       <DialogTitle
         sx={{
           position: "relative",
+          top: 0,
+          zIndex: 2,
           overflow: "hidden",
-          pr: 8,
+          pr: { xs: 2, sm: 8 },
           pb: 1.2,
           borderBottom: "4px solid",
           borderColor: vitalidadeAtualConfig.cor,
@@ -333,9 +896,40 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
           letterSpacing: "0.1em",
           display: "flex",
           alignItems: "center",
+          flexWrap: "wrap",
           gap: 1,
         }}
       >
+        <Button
+          onClick={onClose}
+          aria-label="Fechar prontuario"
+          sx={{
+            position: "absolute",
+            right: { xs: 8, sm: 10 },
+            top: { xs: 8, sm: 10 },
+            minWidth: 36,
+            width: 36,
+            height: 36,
+            p: 0,
+            borderRadius: 1,
+            color: "#E8E0D5",
+            border: "1px solid rgba(232,224,213,0.3)",
+            backgroundColor: "rgba(7, 10, 12, 0.32)",
+            backdropFilter: "blur(3px)",
+            "&:hover": {
+              backgroundColor: "rgba(7, 10, 12, 0.56)",
+              borderColor: "rgba(232,224,213,0.56)",
+            },
+            "&:focus-visible": {
+              outline: "3px solid #7EC3F1",
+              outlineOffset: 2,
+              borderColor: "#7EC3F1",
+              boxShadow: "0 0 0 2px rgba(7,10,12,0.92), 0 0 0 5px rgba(126,195,241,0.52)",
+            },
+          }}
+        >
+          <CloseIcon fontSize="small" />
+        </Button>
         <WaterDropIcon sx={{ color: "secondary.main" }} />
         <Box component="span">{planta?.nome_apelido ?? "Prontuário da Planta"}</Box>
         <Chip
@@ -363,22 +957,56 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
         />
       </DialogTitle>
 
-      <Tabs
-        value={abaAtiva}
-        onChange={(_event, novaAba) => setAbaAtiva(novaAba)}
-        aria-label="Abas do prontuário da planta"
-        sx={{ px: 3 }}
-      >
-        <Tab label="Visão Geral" />
-        <Tab label="Diário de Bordo" />
-        <Tab label="Identificação" />
-        <Tab label="Galeria" />
-      </Tabs>
+      {!isMobile && (
+        <Tabs
+          value={abaAtiva}
+          onChange={(_event, novaAba) => setAbaAtiva(novaAba)}
+          aria-label="Abas do prontuário da planta"
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={{
+            px: { xs: 1, sm: 3 },
+            position: "sticky",
+            top: 0,
+            zIndex: 2,
+            backgroundColor: "background.paper",
+            borderBottom: "1px solid rgba(120, 120, 120, 0.22)",
+            "& .MuiTab-root": {
+              minWidth: { xs: 126, sm: 140 },
+              fontSize: { xs: "0.74rem", sm: "0.82rem" },
+              px: { xs: 1.1, sm: 1.8 },
+              whiteSpace: "nowrap",
+              color: "rgba(245, 242, 235, 0.9)",
+              "&:hover": {
+                color: "#F5F2EB",
+                backgroundColor: "rgba(126, 195, 241, 0.12)",
+              },
+              "&:focus-visible": {
+                outline: "3px solid #7EC3F1",
+                outlineOffset: -2,
+                backgroundColor: "rgba(126, 195, 241, 0.16)",
+              },
+            },
+            "& .Mui-selected": {
+              color: "#7EC3F1 !important",
+            },
+          }}
+        >
+          <Tab label="Visão Geral" />
+          <Tab label="Diário de Bordo" />
+          <Tab label="Identificação" />
+          <Tab label="Galeria" />
+        </Tabs>
+      )}
 
       <DialogContent
         dividers
         sx={{
           position: "relative",
+          px: { xs: 1.25, sm: 3 },
+          py: { xs: 1.25, sm: 2.2 },
+          pb: { xs: 10, sm: 2.2 },
           "&::before": {
             content: '""',
             position: "absolute",
@@ -527,6 +1155,17 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                       fontWeight: 700,
                       letterSpacing: "0.03em",
                       textTransform: "none",
+                      "&:hover": {
+                        backgroundColor:
+                          vitalidade === value
+                            ? config.cor
+                            : hexParaRgba(config.cor, 0.16),
+                      },
+                      "&:focus-visible": {
+                        outline: "3px solid #7EC3F1",
+                        outlineOffset: 2,
+                        boxShadow: "0 0 0 2px rgba(7, 13, 18, 0.84)",
+                      },
                     }}
                   />
                 ))}
@@ -543,33 +1182,47 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               label="Notificar via WhatsApp"
             />
 
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 1.2,
-                flexWrap: "wrap",
-              }}
-            >
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={handleExcluirPlanta}
-                disabled={excluindo || salvando || typeof onDelete !== "function"}
-              >
-                {excluindo
-                  ? "EXCLUINDO..."
-                  : "DEVOLVER ÁGUA AO SIETCH (EXCLUIR PLANTA)"}
-              </Button>
+            <Stack spacing={1.4}>
               <Button
                 variant="contained"
                 onClick={handleSalvar}
                 disabled={salvando || excluindo}
+                fullWidth
               >
                 {salvando ? "Salvando..." : "Salvar Alterações"}
               </Button>
-            </Box>
+
+              <Box
+                sx={{
+                  border: "1px dashed rgba(217, 72, 65, 0.55)",
+                  backgroundColor: "rgba(217, 72, 65, 0.08)",
+                  borderRadius: 1,
+                  p: 1,
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    display: "block",
+                    mb: 0.8,
+                    color: "error.light",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Zona de risco
+                </Typography>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={handleExcluirPlanta}
+                  disabled={excluindo || salvando || typeof onDelete !== "function"}
+                  fullWidth
+                >
+                  DEVOLVER ÁGUA AO SIETCH (EXCLUIR PLANTA)
+                </Button>
+              </Box>
+            </Stack>
           </Stack>
         )}
 
@@ -762,38 +1415,594 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
 
         {abaAtiva === 3 && (
           <Box>
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Integração com Firebase Storage em breve. Prepare-se para acompanhar o crescimento do seu Sietch!
-            </Alert>
-            <Grid
-              container
-              spacing={2}
-              sx={{
-                minHeight: 140,
-                border: "1px dashed rgba(100, 70, 40, 0.28)",
-                borderRadius: 2,
-                p: 1,
-              }}
-            >
-              {[1, 2, 3].map((item) => (
-                <Grid key={item} size={{ xs: 12, sm: 6, md: 4 }}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ mb: 2 }}>
+              <Box
+                component="img"
+                src={ultimaFotoReferenciaUrl}
+                alt="Ultima foto registrada para alinhar o proximo clique"
+                sx={{
+                  width: "100%",
+                  maxWidth: 420,
+                  height: 220,
+                  objectFit: "cover",
+                  border: "1px solid rgba(100, 70, 40, 0.35)",
+                  boxShadow: "0 10px 28px rgba(30, 18, 8, 0.45)",
+                }}
+              />
+            </Stack>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ mb: 2 }}>
+              <Button
+                variant="contained"
+                color="info"
+                startIcon={<CameraAltIcon />}
+                onClick={() => setScannerOpen(true)}
+                disabled={!planta?.id || salvandoFoto}
+              >
+                {salvandoFoto
+                  ? "Processando captura..."
+                  : "[ 📷 INICIAR SCANNER MORFOLÓGICO ]"}
+              </Button>
+            </Stack>
+
+            {erroFoto && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {erroFoto}
+              </Alert>
+            )}
+
+            {erroMarco && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {erroMarco}
+              </Alert>
+            )}
+
+            {galeriaFotos.length === 0 && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Nenhuma captura registrada ainda. Use o scanner para iniciar a galeria da planta.
+              </Alert>
+            )}
+
+            {carregandoFotos && (
+              <Typography sx={{ color: "text.secondary", mb: 1.5 }}>
+                Carregando linha do tempo fotografica...
+              </Typography>
+            )}
+
+            {!carregandoFotos &&
+              filtroBadgeAtivo !== "todas" &&
+              galeriaFotos.length > 0 &&
+              fotosTimelapseVisiveis.length === 0 && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Nenhuma foto com o badge selecionado foi encontrada.
+                </Alert>
+              )}
+
+            {fotosTimelapseVisiveis.length > 0 && (
+              <Stack spacing={1.2}>
+                <Box
+                  sx={{
+                    width: "100%",
+                    maxWidth: 520,
+                    mx: "auto",
+                    position: "relative",
+                    border: "2px solid",
+                    borderColor: vitalidadeHistoricaConfig.cor,
+                    borderBottom: `4px solid ${vitalidadeHistoricaConfig.cor}`,
+                    overflow: "hidden",
+                    boxShadow: `0 8px 32px ${vitalidadeHistoricaConfig.cor}40`,
+                    clipPath:
+                      "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      inset: 0,
+                      zIndex: 2,
+                      pointerEvents: "none",
+                      border: ehMemorialAtual ? "1px solid" : "1px solid transparent",
+                      borderColor: ehMemorialAtual ? "secondary.main" : "transparent",
+                      opacity: ehMemorialAtual ? 0.95 : 0,
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      left: 8,
+                      bottom: 8,
+                      zIndex: 2,
+                      px: 1,
+                      py: 0.4,
+                      border: "1px solid rgba(232,224,213,0.34)",
+                      backgroundColor: "rgba(7, 11, 15, 0.72)",
+                      color: frameVitalidadeConfig.borderColor,
+                      fontFamily: '"Share Tech Mono", monospace',
+                      fontSize: "0.7rem",
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Sinal Vital: {frameVitalidadeConfig.label}
+                  </Box>
+
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      right: 8,
+                      bottom: 8,
+                      zIndex: 2,
+                      px: 1,
+                      py: 0.4,
+                      border: `1px solid ${hexParaRgba(vitalidadeHistoricaConfig.cor, 0.86)}`,
+                      backgroundColor: hexParaRgba(vitalidadeHistoricaConfig.cor, 0.2),
+                      color: "#E9F3FF",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      fontSize: "0.7rem",
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    SAUDE NA EPOCA: {vitalidadeHistoricaConfig.label}
+                  </Box>
+
+                  {ehNascimentoAtual && (
+                    <Chip
+                      label="NASCIMENTO"
+                      size="small"
+                      sx={{
+                        position: "absolute",
+                        top: 8,
+                        left: 8,
+                        zIndex: 2,
+                        borderRadius: 1,
+                        fontWeight: 700,
+                        letterSpacing: "0.05em",
+                        color: "#0A141B",
+                        backgroundColor: "#7EC3F1",
+                        border: "1px solid rgba(255, 255, 255, 0.38)",
+                        boxShadow: "0 0 14px rgba(126,195,241,0.45)",
+                      }}
+                    />
+                  )}
+
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      zIndex: 1,
+                      px: 1,
+                      py: 0.45,
+                      border: "1px solid rgba(232,224,213,0.36)",
+                      backgroundColor: "rgba(7, 11, 15, 0.72)",
+                      color: "#E8E0D5",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      fontSize: "0.74rem",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {indexFoto + 1}/{fotosTimelapseVisiveis.length}
+                    {autoplayAtivo ? " • AUTO" : ""}
+                  </Box>
+
                   <Box
                     component="img"
-                    src={GALERIA_PLACEHOLDER_URL}
-                    alt={`Imagem de teste da galeria ${item}`}
+                    key={fotoAtualTimelapse?.id ?? fotoAtualTimelapse?.url}
+                    src={fotoAtualTimelapse?.url}
+                    alt="Registro cronologico da planta"
                     sx={{
                       width: "100%",
-                      height: 160,
+                      height: { xs: 220, sm: 280 },
                       objectFit: "cover",
-                      border: "1px solid rgba(100, 70, 40, 0.2)",
+                      opacity: 1,
+                      transition: "opacity 320ms ease-in-out",
                     }}
                   />
-                </Grid>
-              ))}
-            </Grid>
+                </Box>
+
+                <ToggleButtonGroup
+                  exclusive
+                  value={marcoAtualFoto || null}
+                  onChange={(_event, novoMarco) => {
+                    void handleToggleMarco(novoMarco);
+                  }}
+                  sx={{
+                    width: "100%",
+                    maxWidth: 520,
+                    mx: "auto",
+                    mt: 0.8,
+                    mb: 0.2,
+                    borderRadius: 0,
+                    "& .MuiToggleButtonGroup-grouped": {
+                      borderRadius: "0 !important",
+                      borderColor: "rgba(126, 195, 241, 0.45)",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      letterSpacing: "0.03em",
+                      fontSize: { xs: "0.68rem", sm: "0.76rem" },
+                      color: "rgba(221, 233, 242, 0.88)",
+                      backgroundColor: "rgba(7, 14, 20, 0.56)",
+                      flex: 1,
+                      minHeight: 40,
+                    },
+                  }}
+                >
+                  <ToggleButton
+                    value="nascimento"
+                    disabled={salvandoMarco}
+                    sx={{
+                      "&.Mui-selected": {
+                        color: "#06141E",
+                        backgroundColor: "#7EC3F1",
+                      },
+                      "&.Mui-selected:hover": {
+                        backgroundColor: "#8FCEF5",
+                      },
+                      "&:focus-visible": {
+                        outline: "3px solid #7EC3F1",
+                        outlineOffset: -2,
+                      },
+                    }}
+                  >
+                    [♦ NASCIMENTO]
+                  </ToggleButton>
+                  <ToggleButton
+                    value="crescimento"
+                    disabled={salvandoMarco}
+                    sx={{
+                      "&.Mui-selected": {
+                        color: "#072212",
+                        backgroundColor: "#5FC88A",
+                      },
+                      "&.Mui-selected:hover": {
+                        backgroundColor: "#72D599",
+                      },
+                      "&:focus-visible": {
+                        outline: "3px solid #7EC3F1",
+                        outlineOffset: -2,
+                      },
+                    }}
+                  >
+                    [↗ CRESCIMENTO]
+                  </ToggleButton>
+                  <ToggleButton
+                    value="memorial"
+                    disabled={salvandoMarco}
+                    sx={{
+                      "&.Mui-selected": {
+                        color: "#231005",
+                        backgroundColor: "#D39A2C",
+                      },
+                      "&.Mui-selected:hover": {
+                        backgroundColor: "#DEAA48",
+                      },
+                      "&:focus-visible": {
+                        outline: "3px solid #7EC3F1",
+                        outlineOffset: -2,
+                      },
+                    }}
+                  >
+                    [† MEMORIAL]
+                  </ToggleButton>
+                </ToggleButtonGroup>
+
+                {fotosTimelapseVisiveis.length > 1 && (
+                  <Stack
+                    direction="row"
+                    spacing={0.9}
+                    sx={{
+                      maxWidth: 520,
+                      mx: "auto",
+                      width: "100%",
+                      overflowX: "auto",
+                      pb: 0.2,
+                      pr: 0.2,
+                    }}
+                  >
+                    {fotosTimelapseVisiveis.map((foto, indice) => (
+                      <FotoMiniaturaHud
+                        key={foto.id ?? `${foto.url}-${indice}`}
+                        foto={foto}
+                        ativa={indice === indexFoto}
+                        onSelecionar={() => {
+                          setIndexFoto(indice);
+                          setAutoplayAtivo(false);
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                )}
+
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "rgba(232,224,213,0.86)",
+                    fontFamily: '"Share Tech Mono", monospace',
+                    letterSpacing: "0.03em",
+                    textAlign: "center",
+                  }}
+                >
+                  {formatarDataRegistroCurta(
+                    fotoAtualTimelapse?.data_registro ?? fotoAtualTimelapse?.data_captura,
+                    fotoAtualTimelapse?.data_registro_local,
+                  )}
+                </Typography>
+
+                {ehNascimentoAtual && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "#7EC3F1",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      letterSpacing: "0.05em",
+                      textAlign: "center",
+                      textTransform: "uppercase",
+                      display: "block",
+                    }}
+                  >
+                    Marco de Nascimento registrado
+                  </Typography>
+                )}
+                {marcoAtualFoto && marcoAtualFoto !== "nascimento" && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "rgba(216, 229, 241, 0.86)",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      letterSpacing: "0.05em",
+                      textAlign: "center",
+                      textTransform: "uppercase",
+                      display: "block",
+                    }}
+                  >
+                    Marco ativo: {formatarBadgeLabel(marcoAtualFoto)}
+                  </Typography>
+                )}
+
+                {fotosTimelapseVisiveis.length > 1 && (
+                  <Stack spacing={1.1} sx={{ maxWidth: 520, mx: "auto", width: "100%" }}>
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={1}
+                      justifyContent="space-between"
+                    >
+                      <Button
+                        variant={autoplayAtivo ? "contained" : "outlined"}
+                        color="info"
+                        startIcon={autoplayAtivo ? <PauseIcon /> : <PlayArrowIcon />}
+                        onClick={() => setAutoplayAtivo((valor) => !valor)}
+                        sx={{ minWidth: { xs: "100%", sm: 190 } }}
+                      >
+                        {autoplayAtivo ? "Pausar Timelapse" : "Iniciar Timelapse"}
+                      </Button>
+
+                      <Select
+                        size="small"
+                        value={velocidadeTimelapse}
+                        onChange={(event) => setVelocidadeTimelapse(Number(event.target.value))}
+                        sx={{
+                          minWidth: { xs: "100%", sm: 165 },
+                          "& .MuiSelect-select": {
+                            fontFamily: '"Share Tech Mono", monospace',
+                          },
+                        }}
+                      >
+                        <MenuItem value={800}>Velocidade: Rapida</MenuItem>
+                        <MenuItem value={1400}>Velocidade: Media</MenuItem>
+                        <MenuItem value={2200}>Velocidade: Lenta</MenuItem>
+                      </Select>
+                    </Stack>
+
+                    <Slider
+                      min={0}
+                      max={fotosTimelapseVisiveis.length - 1}
+                      step={1}
+                      value={indexFoto}
+                      onChange={(_event, valor) => setIndexFoto(Number(valor))}
+                      sx={{
+                        color: "#D39A2C",
+                        "& .MuiSlider-rail": {
+                          backgroundColor: "rgba(0,0,0,0.62)",
+                          opacity: 1,
+                          border: "1px solid rgba(90, 64, 36, 0.45)",
+                        },
+                        "& .MuiSlider-track": {
+                          backgroundColor: "#1B80C4",
+                          border: "none",
+                        },
+                        "& .MuiSlider-thumb": {
+                          width: 18,
+                          height: 18,
+                          borderRadius: 0,
+                          backgroundColor: "#D39A2C",
+                          border: "2px solid #E8E0D5",
+                          boxShadow: "0 0 0 2px rgba(211,154,44,0.25)",
+                        },
+                      }}
+                    />
+                  </Stack>
+                )}
+              </Stack>
+            )}
           </Box>
         )}
       </DialogContent>
+
+      {isMobile && (
+        <Box
+          sx={{
+            position: "sticky",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 3,
+            px: 1,
+            py: 0.9,
+            borderTop: "1px solid rgba(126, 166, 194, 0.36)",
+            background:
+              "linear-gradient(180deg, rgba(13, 19, 24, 0.9) 0%, rgba(13, 19, 24, 0.96) 100%)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <Stack direction="row" spacing={0.8} justifyContent="space-between">
+            <Button
+              fullWidth
+              size="small"
+              variant={abaAtiva === 0 ? "contained" : "outlined"}
+              onClick={() => setAbaAtiva(0)}
+              startIcon={<DashboardIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                fontSize: "0.72rem",
+                py: 0.7,
+                minHeight: 38,
+                borderColor: "rgba(96, 150, 191, 0.65)",
+                color: abaAtiva === 0 ? "#0E1418" : "#DCE8F0",
+                backgroundColor: abaAtiva === 0 ? "#7EC3F1" : "rgba(10, 14, 18, 0.38)",
+                boxShadow:
+                  abaAtiva === 0 ? "0 0 12px rgba(126,195,241,0.42)" : "none",
+                "&:hover": {
+                  backgroundColor:
+                    abaAtiva === 0 ? "#90CEF5" : "rgba(18, 26, 33, 0.82)",
+                  borderColor: "rgba(126, 195, 241, 0.85)",
+                },
+                  "&:focus-visible": {
+                    outline: "3px solid #7EC3F1",
+                    outlineOffset: 2,
+                  },
+              }}
+            >
+              Geral
+            </Button>
+            <Button
+              fullWidth
+              size="small"
+              variant={abaAtiva === 1 ? "contained" : "outlined"}
+              onClick={() => setAbaAtiva(1)}
+              startIcon={<MenuBookIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                fontSize: "0.72rem",
+                py: 0.7,
+                minHeight: 38,
+                borderColor: "rgba(96, 150, 191, 0.65)",
+                color: abaAtiva === 1 ? "#0E1418" : "#DCE8F0",
+                backgroundColor: abaAtiva === 1 ? "#7EC3F1" : "rgba(10, 14, 18, 0.38)",
+                boxShadow:
+                  abaAtiva === 1 ? "0 0 12px rgba(126,195,241,0.42)" : "none",
+                "&:hover": {
+                  backgroundColor:
+                    abaAtiva === 1 ? "#90CEF5" : "rgba(18, 26, 33, 0.82)",
+                  borderColor: "rgba(126, 195, 241, 0.85)",
+                },
+                  "&:focus-visible": {
+                    outline: "3px solid #7EC3F1",
+                    outlineOffset: 2,
+                  },
+              }}
+            >
+              Diario
+            </Button>
+            <Button
+              fullWidth
+              size="small"
+              variant={abaAtiva === 2 ? "contained" : "outlined"}
+              onClick={() => setAbaAtiva(2)}
+              startIcon={<QrCode2Icon sx={{ fontSize: 16 }} />}
+              sx={{
+                fontSize: "0.72rem",
+                py: 0.7,
+                minHeight: 38,
+                borderColor: "rgba(96, 150, 191, 0.65)",
+                color: abaAtiva === 2 ? "#0E1418" : "#DCE8F0",
+                backgroundColor: abaAtiva === 2 ? "#7EC3F1" : "rgba(10, 14, 18, 0.38)",
+                boxShadow:
+                  abaAtiva === 2 ? "0 0 12px rgba(126,195,241,0.42)" : "none",
+                "&:hover": {
+                  backgroundColor:
+                    abaAtiva === 2 ? "#90CEF5" : "rgba(18, 26, 33, 0.82)",
+                  borderColor: "rgba(126, 195, 241, 0.85)",
+                },
+                  "&:focus-visible": {
+                    outline: "3px solid #7EC3F1",
+                    outlineOffset: 2,
+                  },
+              }}
+            >
+              ID
+            </Button>
+            <Button
+              fullWidth
+              size="small"
+              variant={abaAtiva === 3 ? "contained" : "outlined"}
+              onClick={() => setAbaAtiva(3)}
+              startIcon={<PhotoLibraryIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                fontSize: "0.72rem",
+                py: 0.7,
+                minHeight: 38,
+                borderColor: "rgba(96, 150, 191, 0.65)",
+                color: abaAtiva === 3 ? "#0E1418" : "#DCE8F0",
+                backgroundColor: abaAtiva === 3 ? "#7EC3F1" : "rgba(10, 14, 18, 0.38)",
+                boxShadow:
+                  abaAtiva === 3 ? "0 0 12px rgba(126,195,241,0.42)" : "none",
+                "&:hover": {
+                  backgroundColor:
+                    abaAtiva === 3 ? "#90CEF5" : "rgba(18, 26, 33, 0.82)",
+                  borderColor: "rgba(126, 195, 241, 0.85)",
+                },
+                  "&:focus-visible": {
+                    outline: "3px solid #7EC3F1",
+                    outlineOffset: 2,
+                  },
+              }}
+            >
+              Galeria
+            </Button>
+          </Stack>
+        </Box>
+      )}
+
+      <CameraScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        ultimaFotoUrl={ultimaFotoReferenciaUrl}
+        onCapture={(fotoBase64) => {
+          console.log("Foto tirada!", fotoBase64);
+          void handleCapturarFoto(fotoBase64);
+          setScannerOpen(false);
+        }}
+      />
+
+      <Dialog
+        open={confirmarExclusaoOpen}
+        onClose={handleCancelarExclusao}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle sx={{ color: "error.main" }}>
+          Confirmar exclusão da planta
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 1 }}>
+            Você realmente deseja excluir
+            {` "${planta?.nome_apelido ?? "esta planta"}"`}?
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Esta ação é permanente e removerá os registros associados no prontuário.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelarExclusao} disabled={excluindo}>
+            Cancelar
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleConfirmarExclusao}
+            disabled={excluindo}
+          >
+            {excluindo ? "Excluindo..." : "Sim, excluir tudo"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }

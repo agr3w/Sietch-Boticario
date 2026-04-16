@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwnerFromResource() {
+      return isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    function isOwnerFromRequest() {
+      return isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    function isOwnerOnUpdate() {
+      return isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId;
+    }
+
+    function plantaSchemaValido() {
+      return request.resource.data.keys().hasAll(["userId"]);
+    }
+
+    function fotoSchemaValido() {
+      return request.resource.data.keys().hasAll(["userId", "planta_id", "url"])
+        && request.resource.data.planta_id is string
+        && request.resource.data.url is string;
+    }
+
+    function mensagemSchemaValido() {
+      return request.resource.data.keys().hasAll(["userId", "planta_id", "mensagem", "lida"])
+        && request.resource.data.planta_id is string
+        && request.resource.data.mensagem is string
+        && request.resource.data.lida is bool;
+    }
+
+    function arquivoMortoSchemaValido() {
+      return request.resource.data.keys().hasAll(["userId", "planta_id_original"])
+        && request.resource.data.planta_id_original is string;
+    }
+
+    match /plantas/{docId} {
+      allow create: if isOwnerFromRequest() && plantaSchemaValido();
+      allow read, delete: if isOwnerFromResource();
+      allow update: if isOwnerOnUpdate() && plantaSchemaValido();
+    }
+
+    match /fotos/{docId} {
+      allow create: if isOwnerFromRequest() && fotoSchemaValido();
+      allow read, delete: if isOwnerFromResource();
+      allow update: if isOwnerOnUpdate() && fotoSchemaValido();
+    }
+
+    match /mensagens/{docId} {
+      allow create: if isOwnerFromRequest() && mensagemSchemaValido();
+      allow read, delete: if isOwnerFromResource();
+      allow update: if isOwnerOnUpdate() && mensagemSchemaValido();
+    }
+
+    match /arquivo_morto/{docId} {
+      allow create: if isOwnerFromRequest() && arquivoMortoSchemaValido();
+      allow read, delete: if isOwnerFromResource();
+      allow update: if isOwnerOnUpdate() && arquivoMortoSchemaValido();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

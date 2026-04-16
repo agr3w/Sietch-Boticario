@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   addDoc,
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
+  query,
   serverTimestamp,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import {
   Alert,
@@ -15,12 +18,16 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   Container,
+  Divider,
   Grid,
   IconButton,
   ListItemText,
   Menu,
   MenuItem,
+  Tab,
+  Tabs,
   Snackbar,
   Stack,
   Typography,
@@ -28,20 +35,42 @@ import {
 import CheckIcon from "@mui/icons-material/Check";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import {
+  cadastrarPlantaComFoto,
   db,
   getNotificacoesNaoLidas,
   marcarMensagemComoLida,
 } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
 import PlantCard from "../components/PlantCard";
 import AddPlantModal from "../components/AddPlantModal";
+import CameraScanner from "../components/CameraScanner";
 import { climateSx, feedbackSx, globalSx, layoutSx } from "../theme/styles";
 
+function gerarDataHoraLocalBr() {
+  return new Date().toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour12: false,
+  });
+}
+
+function obterUltimaFotoReferenciaPlanta(planta) {
+  const galeria = Array.isArray(planta?.galeria_fotos)
+    ? planta.galeria_fotos
+    : Array.isArray(planta?.galeriaFotos)
+      ? planta.galeriaFotos
+      : [];
+
+  return galeria[galeria.length - 1]?.url ?? "";
+}
+
 function Dashboard() {
+  const { currentUser } = useAuth();
   const mentatNumberSx = {
     fontFamily: '"Share Tech Mono", monospace',
     letterSpacing: '0.03em',
   };
   const [plantas, setPlantas] = useState([]);
+  const [arquivoMorto, setArquivoMorto] = useState([]);
   const [climaAtual, setClimaAtual] = useState(null);
   const [climaErro, setClimaErro] = useState("");
   const [notificacoes, setNotificacoes] = useState([]);
@@ -51,6 +80,12 @@ function Dashboard() {
   const [n8nStatus, setN8nStatus] = useState("nao-validada");
   const [validandoN8n, setValidandoN8n] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [abaPainel, setAbaPainel] = useState(0);
+  const [scannerMemorialOpen, setScannerMemorialOpen] = useState(false);
+  const [processandoMemorial, setProcessandoMemorial] = useState(false);
+  const [restaurandoArquivoId, setRestaurandoArquivoId] = useState("");
+  const [plantaMemorialPendente, setPlantaMemorialPendente] = useState(null);
+  const fluxoMemorialRef = useRef(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -108,8 +143,14 @@ function Dashboard() {
   };
 
   const carregarNotificacoesNaoLidas = useCallback(async () => {
+    if (!currentUser?.uid) {
+      setNotificacoes([]);
+      setBadgeCount(0);
+      return;
+    }
+
     try {
-      const notificacoesNaoLidas = await getNotificacoesNaoLidas();
+      const notificacoesNaoLidas = await getNotificacoesNaoLidas(currentUser.uid);
       setNotificacoes(notificacoesNaoLidas);
       setBadgeCount(notificacoesNaoLidas.length);
     } catch {
@@ -117,10 +158,19 @@ function Dashboard() {
       setBadgeCount(0);
       exibirFeedback("Não foi possível carregar as notificações.", "error");
     }
-  }, [exibirFeedback]);
+  }, [currentUser?.uid, exibirFeedback]);
 
   const carregarPlantas = async () => {
-    const querySnapshot = await getDocs(collection(db, "plantas"));
+    if (!currentUser?.uid) {
+      setPlantas([]);
+      return;
+    }
+
+    const plantasQuery = query(
+      collection(db, "plantas"),
+      where("userId", "==", currentUser.uid),
+    );
+    const querySnapshot = await getDocs(plantasQuery);
     const listaPlantas = [];
 
     querySnapshot.forEach((plantaDoc) => {
@@ -130,11 +180,50 @@ function Dashboard() {
     setPlantas(listaPlantas);
   };
 
+  const carregarArquivoMorto = async () => {
+    if (!currentUser?.uid) {
+      setArquivoMorto([]);
+      return;
+    }
+
+    const arquivoQuery = query(
+      collection(db, "arquivo_morto"),
+      where("userId", "==", currentUser.uid),
+    );
+    const querySnapshot = await getDocs(arquivoQuery);
+    const listaArquivo = [];
+
+    querySnapshot.forEach((arquivoDoc) => {
+      listaArquivo.push({ id: arquivoDoc.id, ...arquivoDoc.data() });
+    });
+
+    listaArquivo.sort((a, b) => {
+      const dataA =
+        (typeof a?.data_arquivamento?.seconds === "number"
+          ? a.data_arquivamento.seconds * 1000
+          : new Date(a?.data_arquivamento ?? 0).getTime()) || 0;
+      const dataB =
+        (typeof b?.data_arquivamento?.seconds === "number"
+          ? b.data_arquivamento.seconds * 1000
+          : new Date(b?.data_arquivamento ?? 0).getTime()) || 0;
+      return dataB - dataA;
+    });
+
+    setArquivoMorto(listaArquivo);
+  };
+
   useEffect(() => {
+    if (!currentUser?.uid) {
+      setPlantas([]);
+      setArquivoMorto([]);
+      return;
+    }
+
     void (async () => {
       await carregarPlantas();
+      await carregarArquivoMorto();
     })();
-  }, []);
+  }, [currentUser?.uid]);
 
   useEffect(() => {
     void carregarNotificacoesNaoLidas();
@@ -220,23 +309,168 @@ function Dashboard() {
   };
 
   const deletarPlanta = async (id) => {
-    try {
-      await deleteDoc(doc(db, "plantas", id));
-      await carregarPlantas();
-      exibirFeedback("Planta removida do Sietch.", "success");
-    } catch {
-      exibirFeedback("Falha ao remover a planta.", "error");
-      throw new Error("Falha ao remover planta");
+    const plantaSelecionada = plantas.find((item) => item.id === id);
+    if (!plantaSelecionada) {
+      exibirFeedback("Planta não encontrada para arquivamento.", "error");
+      throw new Error("Planta não encontrada");
+    }
+
+    exibirFeedback("Capture a Foto de Despedida para arquivar a planta.", "info");
+
+    return new Promise((resolve) => {
+      fluxoMemorialRef.current = {
+        id,
+        resolve,
+      };
+      setPlantaMemorialPendente(plantaSelecionada);
+      setScannerMemorialOpen(true);
+    });
+  };
+
+  const cancelarFluxoMemorial = () => {
+    if (processandoMemorial) {
+      return;
+    }
+
+    setScannerMemorialOpen(false);
+    setPlantaMemorialPendente(null);
+
+    const fluxoAtual = fluxoMemorialRef.current;
+    fluxoMemorialRef.current = null;
+
+    if (fluxoAtual) {
+      fluxoAtual.resolve(false);
+      exibirFeedback("Arquivamento cancelado. Nenhuma planta foi removida.", "info");
     }
   };
 
-  const adicionarPlanta = async (dadosPlanta) => {
+  const concluirMemorialEArquivar = async (fotoMemorialBase64) => {
+    const fluxoAtual = fluxoMemorialRef.current;
+
+    if (!fluxoAtual?.id || !fotoMemorialBase64) {
+      exibirFeedback("Falha ao capturar Foto de Despedida.", "error");
+      return;
+    }
+
+    if (!currentUser?.uid) {
+      exibirFeedback("Sessão inválida para arquivamento memorial.", "error");
+      return;
+    }
+
+    setProcessandoMemorial(true);
+
     try {
-      await addDoc(collection(db, "plantas"), {
-        ...dadosPlanta,
-        ultima_rega: serverTimestamp(),
-        notificar: true,
+      const plantaRef = doc(db, "plantas", fluxoAtual.id);
+      const plantaSnapshot = await getDoc(plantaRef);
+
+      if (!plantaSnapshot.exists()) {
+        throw new Error("Planta não encontrada para arquivamento");
+      }
+
+      const plantaData = plantaSnapshot.data();
+      const dataHoraLocalBr = gerarDataHoraLocalBr();
+
+      await addDoc(collection(db, "fotos"), {
+        planta_id: fluxoAtual.id,
+        userId: currentUser.uid,
+        url: fotoMemorialBase64,
+        data_registro: serverTimestamp(),
+        data_registro_local: dataHoraLocalBr,
+        nota: "Foto de despedida antes do arquivamento da planta.",
+        marco: "memorial",
+        status_emocional: "memorial",
+        badges: ["memorial"],
+        origem: "memorial",
       });
+
+      await addDoc(collection(db, "arquivo_morto"), {
+        ...plantaData,
+        userId: currentUser.uid,
+        planta_id_original: fluxoAtual.id,
+        data_arquivamento: serverTimestamp(),
+        data_arquivamento_local: dataHoraLocalBr,
+        status_emocional: "memorial",
+        foto_memorial_url: fotoMemorialBase64,
+      });
+
+      await deleteDoc(plantaRef);
+      await carregarPlantas();
+      await carregarArquivoMorto();
+
+      exibirFeedback("Planta movida para o arquivo_morto do Sietch.", "success");
+      fluxoAtual.resolve(true);
+    } catch {
+      exibirFeedback("Falha ao arquivar a planta no memorial.", "error");
+      fluxoAtual.resolve(false);
+    } finally {
+      fluxoMemorialRef.current = null;
+      setProcessandoMemorial(false);
+      setScannerMemorialOpen(false);
+      setPlantaMemorialPendente(null);
+    }
+  };
+
+  const restaurarPlantaDoArquivo = async (arquivoId) => {
+    if (!arquivoId) {
+      return;
+    }
+
+    if (!currentUser?.uid) {
+      exibirFeedback("Sessão inválida para restauração.", "error");
+      return;
+    }
+
+    setRestaurandoArquivoId(arquivoId);
+
+    try {
+      const arquivoRef = doc(db, "arquivo_morto", arquivoId);
+      const arquivoSnapshot = await getDoc(arquivoRef);
+
+      if (!arquivoSnapshot.exists()) {
+        throw new Error("Registro não encontrado no arquivo_morto");
+      }
+
+      const dadosArquivo = arquivoSnapshot.data();
+      const {
+        planta_id_original: _plantaIdOriginal,
+        data_arquivamento: _dataArquivamento,
+        data_arquivamento_local: _dataArquivamentoLocal,
+        foto_memorial_url: _fotoMemorialUrl,
+        status_emocional: _statusEmocional,
+        ...dadosPlantaRestaurada
+      } = dadosArquivo;
+
+      await addDoc(collection(db, "plantas"), {
+        ...dadosPlantaRestaurada,
+        userId: currentUser.uid,
+        restaurada_em: serverTimestamp(),
+      });
+
+      await deleteDoc(arquivoRef);
+      await carregarPlantas();
+      await carregarArquivoMorto();
+      exibirFeedback("Planta restaurada do arquivo_morto com sucesso.", "success");
+    } catch {
+      exibirFeedback("Falha ao restaurar a planta do arquivo_morto.", "error");
+    } finally {
+      setRestaurandoArquivoId("");
+    }
+  };
+
+  const adicionarPlanta = async (dadosPlanta, fotoNascimentoBase64) => {
+    if (!currentUser?.uid) {
+      exibirFeedback("Sessão inválida para cadastro de planta.", "error");
+      return;
+    }
+
+    try {
+      await cadastrarPlantaComFoto(
+        {
+          ...dadosPlanta,
+          userId: currentUser.uid,
+        },
+        fotoNascimentoBase64,
+      );
 
       await carregarPlantas();
       setIsAddModalOpen(false);
@@ -327,7 +561,7 @@ function Dashboard() {
       : n8nStatus === "inativa"
         ? "Inativa"
         : n8nStatus === "verificando"
-          ? "Verificando..."
+          ? "Sincronizando..."
           : "Não validada";
 
   const n8nStatusCor =
@@ -392,7 +626,7 @@ function Dashboard() {
 
           {!climaErro && !climaAtual && (
             <Typography variant="body2" sx={climateSx.loadingText}>
-              Carregando dados meteorológicos...
+              Sincronizando dados climáticos...
             </Typography>
           )}
 
@@ -450,8 +684,27 @@ function Dashboard() {
                 color="primary"
                 onClick={(event) => setNotificacoesAnchorEl(event.currentTarget)}
                 aria-label="Abrir notificações"
+                sx={{
+                  color: "text.primary",
+                  border: "1px solid rgba(245, 242, 235, 0.28)",
+                  backgroundColor: "rgba(11, 18, 21, 0.52)",
+                  "&:hover": {
+                    backgroundColor: "rgba(21, 33, 38, 0.78)",
+                  },
+                }}
               >
-                <Badge badgeContent={badgeCount} color="error">
+                <Badge
+                  badgeContent={badgeCount}
+                  color="error"
+                  sx={{
+                    "& .MuiBadge-badge": {
+                      color: "#FFFFFF",
+                      fontWeight: 800,
+                      backgroundColor: "#B3261E",
+                      border: "1px solid rgba(255,255,255,0.55)",
+                    },
+                  }}
+                >
                   <NotificationsIcon />
                 </Badge>
               </IconButton>
@@ -461,7 +714,7 @@ function Dashboard() {
                 onClick={validarIntegracaoN8n}
                 disabled={validandoN8n}
               >
-                {validandoN8n ? "Validando..." : "Validar Integração"}
+                {validandoN8n ? "Sincronizando..." : "Validar Integração"}
               </Button>
               <Button
                 variant="outlined"
@@ -483,9 +736,18 @@ function Dashboard() {
         onClose={() => setNotificacoesAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
+        PaperProps={{
+          sx: {
+            border: "1px solid rgba(211, 154, 44, 0.45)",
+            background:
+              "linear-gradient(180deg, rgba(13, 20, 24, 0.98) 0%, rgba(10, 16, 20, 0.96) 100%)",
+            color: "text.primary",
+            minWidth: 340,
+          },
+        }}
       >
         {notificacoes.length === 0 ? (
-          <MenuItem disabled sx={{ minWidth: 320 }}>
+          <MenuItem disabled sx={{ minWidth: 320, color: "rgba(245, 242, 235, 0.7)" }}>
             Nenhuma notificação não lida.
           </MenuItem>
         ) : (
@@ -504,11 +766,20 @@ function Dashboard() {
                   alignItems: "flex-start",
                   gap: 1,
                   whiteSpace: "normal",
+                  color: "text.primary",
                 }}
               >
                 <ListItemText
                   primary={mensagem.planta_nome ?? "Planta"}
-                  secondary={<Box component="span" sx={mentatNumberSx}>{formatarDataEnvio(mensagem.data_envio)}</Box>}
+                  primaryTypographyProps={{
+                    fontWeight: 700,
+                    color: "text.primary",
+                  }}
+                  secondary={(
+                    <Box component="span" sx={[mentatNumberSx, { color: "rgba(245, 242, 235, 0.84)" }]}>
+                      {formatarDataEnvio(mensagem.data_envio)}
+                    </Box>
+                  )}
                 />
                 <IconButton
                   size="small"
@@ -550,23 +821,160 @@ function Dashboard() {
         ))}
       </Box>
 
-      <Grid container spacing={3}>
-        {plantas.map((planta) => (
-          <Grid size={{ xs: 12, sm: 6 }} key={planta.id}>
-            <PlantCard
-              planta={planta}
-              onRegar={regarPlanta}
-              onAtualizarPlanta={atualizarDadosPlanta}
-              onDelete={deletarPlanta}
-            />
-          </Grid>
-        ))}
-      </Grid>
+      <Card elevation={3} sx={{ mb: 3 }}>
+        <CardContent sx={{ py: 1.4, "&:last-child": { pb: 1.4 } }}>
+          <Tabs
+            value={abaPainel}
+            onChange={(_event, novaAba) => setAbaPainel(novaAba)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{
+              "& .MuiTabs-indicator": { backgroundColor: "#7EC3F1", height: 3 },
+              "& .MuiTab-root": {
+                color: "rgba(245,242,235,0.88)",
+                fontWeight: 700,
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                minHeight: 48,
+              },
+              "& .Mui-selected": {
+                color: "#7EC3F1 !important",
+              },
+              "& .MuiTabs-scrollButtons": {
+                color: "text.primary",
+              },
+            }}
+          >
+            <Tab label={`Jardim Ativo (${plantas.length})`} />
+            <Tab label={`Arquivo Morto (${arquivoMorto.length})`} />
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {abaPainel === 0 && (
+        <Grid container spacing={3}>
+          {plantas.map((planta) => (
+            <Grid size={{ xs: 12, sm: 6 }} key={planta.id}>
+              <PlantCard
+                planta={planta}
+                onRegar={regarPlanta}
+                onAtualizarPlanta={atualizarDadosPlanta}
+                onDelete={deletarPlanta}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      {abaPainel === 1 && (
+        <Stack spacing={2.2} sx={{ mb: 2 }}>
+          {arquivoMorto.length === 0 && (
+            <Alert severity="info">
+              Nenhuma planta memorializada no arquivo_morto.
+            </Alert>
+          )}
+
+          {arquivoMorto.map((registro) => (
+            <Card
+              key={registro.id}
+              elevation={4}
+              sx={{
+                border: "1px solid rgba(247, 170, 176, 0.42)",
+                background:
+                  "linear-gradient(160deg, rgba(43, 14, 17, 0.94) 0%, rgba(26, 11, 13, 0.94) 100%)",
+                color: "text.primary",
+              }}
+            >
+              <CardContent>
+                <Stack spacing={1.2}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1.5}
+                    justifyContent="space-between"
+                  >
+                    <Box>
+                      <Typography variant="h6" sx={{ color: "#F6D8D9" }}>
+                        {registro.nome_apelido ?? "Planta sem nome"}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "rgba(248, 231, 231, 0.82)" }}>
+                        {registro.especie ?? "Espécie não informada"}
+                      </Typography>
+                    </Box>
+
+                    <Chip
+                      label="Memorial"
+                      sx={{
+                        alignSelf: { xs: "flex-start", sm: "center" },
+                        color: "#FFEDEE",
+                        backgroundColor: "#7A0E1A",
+                        border: "1px solid rgba(255, 214, 218, 0.7)",
+                        fontWeight: 800,
+                        letterSpacing: "0.04em",
+                      }}
+                    />
+                  </Stack>
+
+                  {registro.foto_memorial_url && (
+                    <Box
+                      component="img"
+                      src={registro.foto_memorial_url}
+                      alt={`Foto memorial de ${registro.nome_apelido ?? "planta"}`}
+                      sx={{
+                        width: "100%",
+                        maxWidth: 420,
+                        height: { xs: 180, sm: 210 },
+                        objectFit: "cover",
+                        border: "1px solid rgba(255, 214, 218, 0.35)",
+                        boxShadow: "0 8px 20px rgba(0,0,0,0.35)",
+                      }}
+                    />
+                  )}
+
+                  <Divider sx={{ borderColor: "rgba(255, 214, 218, 0.25)" }} />
+
+                  <Typography variant="body2" sx={{ color: "rgba(248, 231, 231, 0.88)" }}>
+                    Arquivada em: {formatarDataEnvio(registro.data_arquivamento)}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "rgba(248, 231, 231, 0.86)" }}>
+                    Localização: {registro.localizacao ?? "Não informada"}
+                  </Typography>
+
+                  <Button
+                    variant="contained"
+                    color="info"
+                    onClick={() => void restaurarPlantaDoArquivo(registro.id)}
+                    disabled={restaurandoArquivoId === registro.id}
+                    sx={{ alignSelf: "flex-start", mt: 0.7 }}
+                  >
+                    {restaurandoArquivoId === registro.id
+                      ? "Restaurando..."
+                      : "Restaurar para Jardim Ativo"}
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      )}
 
       <AddPlantModal
         open={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAdd={adicionarPlanta}
+      />
+
+      <CameraScanner
+        open={scannerMemorialOpen}
+        onClose={cancelarFluxoMemorial}
+        ultimaFotoUrl={obterUltimaFotoReferenciaPlanta(plantaMemorialPendente)}
+        onCapture={(fotoBase64) => {
+          if (processandoMemorial) {
+            return;
+          }
+
+          void concluirMemorialEArquivar(fotoBase64);
+        }}
       />
 
       <Snackbar

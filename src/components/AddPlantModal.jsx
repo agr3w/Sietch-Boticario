@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Box,
   Button,
   Divider,
   Dialog,
@@ -9,7 +10,9 @@ import {
   MenuItem,
   TextField,
 } from "@mui/material";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import { addPlantModalSx } from "../theme/styles";
+import CameraScanner from "./CameraScanner";
 
 const initialForm = {
   nome_apelido: "",
@@ -22,10 +25,14 @@ const initialForm = {
 function AddPlantModal({ open, onClose, onAdd }) {
   const [formData, setFormData] = useState(initialForm);
   const [isSaving, setIsSaving] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [fotoIniciacao, setFotoIniciacao] = useState("");
 
   useEffect(() => {
     if (open) {
       setFormData(initialForm);
+      setFotoIniciacao("");
+      setScannerOpen(false);
     }
   }, [open]);
 
@@ -56,7 +63,7 @@ function AddPlantModal({ open, onClose, onAdd }) {
         nome_apelido: formData.nome_apelido.trim(),
         especie: formData.especie.trim(),
         localizacao: formData.localizacao.trim(),
-      });
+      }, fotoIniciacao || undefined);
     } finally {
       setIsSaving(false);
     }
@@ -74,7 +81,7 @@ function AddPlantModal({ open, onClose, onAdd }) {
         <DialogTitle sx={addPlantModalSx.title}>
           Cadastrar Nova Planta
         </DialogTitle>
-        <Divider />
+        <Divider sx={addPlantModalSx.divider} />
         <DialogContent sx={addPlantModalSx.form}>
           <TextField
             label="Nome/Apelido"
@@ -123,9 +130,39 @@ function AddPlantModal({ open, onClose, onAdd }) {
             <MenuItem value="media">media</MenuItem>
             <MenuItem value="alta">alta</MenuItem>
           </TextField>
+
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<CameraAltIcon />}
+            onClick={() => setScannerOpen(true)}
+            disabled={isSaving}
+            fullWidth
+            sx={addPlantModalSx.captureButton}
+          >
+            {fotoIniciacao ? "Recapturar Foto de Iniciacao" : "Capturar Foto de Iniciacao"}
+          </Button>
+
+          {fotoIniciacao && (
+            <Box
+              sx={{
+                width: "100%",
+                display: "flex",
+                justifyContent: "center",
+                mt: 0.5,
+              }}
+            >
+              <Box
+                component="img"
+                src={fotoIniciacao}
+                alt="Miniatura da foto de iniciacao"
+                sx={addPlantModalSx.previewImage}
+              />
+            </Box>
+          )}
         </DialogContent>
         <DialogActions sx={addPlantModalSx.actions}>
-          <Button color="secondary" onClick={onClose} disabled={isSaving}>
+          <Button color="secondary" onClick={onClose} disabled={isSaving} sx={addPlantModalSx.cancelButton}>
             Cancelar
           </Button>
           <Button
@@ -133,11 +170,21 @@ function AddPlantModal({ open, onClose, onAdd }) {
             variant="contained"
             color="primary"
             disabled={isSaving}
+            sx={addPlantModalSx.submitButton}
           >
             {isSaving ? "Salvando..." : "Salvar Planta"}
           </Button>
         </DialogActions>
       </form>
+
+      <CameraScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onCapture={(fotoBase64) => {
+          setFotoIniciacao(fotoBase64);
+          setScannerOpen(false);
+        }}
+      />
     </Dialog>
   );
 }

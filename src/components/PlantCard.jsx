@@ -163,7 +163,7 @@ function PlantCard({ planta, onRegar, onAtualizarPlanta, onDelete }) {
           </Box>
         )}
 
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.3 }}>
+        <Stack direction="row" spacing={1} sx={{ mb: 0.3, alignItems: 'center' }}>
           <Typography
             variant="h5"
             component="div"
