@@ -16,8 +16,10 @@ function FooterSietch() {
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           spacing={{ xs: 2, md: 1 }}
-          alignItems={{ xs: 'flex-start', md: 'center' }}
-          justifyContent="space-between"
+          sx={{
+            alignItems: { xs: 'flex-start', md: 'center' },
+            justifyContent: 'space-between',
+          }}
         >
           <Stack spacing={0.2}>
             <Typography
@@ -43,7 +45,7 @@ function FooterSietch() {
             </Typography>
           </Stack>
 
-          <Stack direction="row" spacing={2.2} useFlexGap flexWrap="wrap">
+          <Stack direction="row" spacing={2.2} useFlexGap sx={{ flexWrap: 'wrap' }}>
             <Link
               component={RouterLink}
               to="/suporte"

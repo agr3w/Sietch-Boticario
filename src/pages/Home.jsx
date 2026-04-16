@@ -68,18 +68,6 @@ const Home = () => {
           </Stack>
           <Stack direction="row" spacing={1}>
             <Button
-              variant="text"
-              onClick={() => navigate('/suporte')}
-              sx={{
-                borderRadius: 0,
-                color: 'primary.main',
-                fontWeight: 700,
-                letterSpacing: '0.04em',
-              }}
-            >
-              MANUSCRITOS
-            </Button>
-            <Button
               variant="outlined"
               onClick={() => navigate('/login')}
               sx={{
@@ -518,7 +506,7 @@ const Home = () => {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <Card
+          <SietchCard
             sx={{
               p: { xs: 5, md: 8 },
               borderRadius: 0,
@@ -561,7 +549,7 @@ const Home = () => {
                 ESTABELECER MEU SIETCH
               </Button>
             </Stack>
-          </Card>
+          </SietchCard>
         </MotionDiv>
       </Container>
 

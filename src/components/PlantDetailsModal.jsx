@@ -15,6 +15,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  LinearProgress,
   MenuItem,
   Select,
   Stack,
@@ -59,6 +60,8 @@ import {
   getHistoricoPlanta,
   setMarcoFoto,
 } from "../firebase";
+import { calcularHP } from "../utils/telemetria";
+import SietchCard from "./ui/SietchCard";
 
 const placeholderFantasma =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Epipremnum_aureum_31082012.jpg/800px-Epipremnum_aureum_31082012.jpg";
@@ -69,8 +72,6 @@ const vitalidadeConfig = {
   recuperacao: { cor: "#C48A31", label: "Em Recuperacao" },
   critico: { cor: "#9E3D22", label: "Critico" },
 };
-
-const valorVitalidade = { prosperando: 100, estavel: 75, recuperacao: 50, critico: 25 };
 
 function formatarDataBr(dataEnvio) {
   if (!dataEnvio) {
@@ -430,13 +431,11 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     return [...new Set(badges)].sort((a, b) => a.localeCompare(b));
   }, [fotosTimelapse]);
   const fotos = useMemo(() => ordenarFotosPorDataAsc(fotosTimelapse), [fotosTimelapse]);
+  const hpAtual = useMemo(() => calcularHP(planta, fotos), [planta, fotos]);
+  const hpProgressColor = hpAtual >= 75 ? "success.main" : hpAtual >= 40 ? "warning.main" : "error.main";
   const dadosGrafico = useMemo(
     () =>
-      fotos.map((foto) => {
-        const status = String(foto?.vitalidade ?? "estavel")
-          .trim()
-          .toLowerCase();
-        const chaveVitalidade = valorVitalidade[status] ? status : "estavel";
+      fotos.map((foto, index) => {
         const dataRegistro = extrairDataRegistro(foto?.data_registro ?? foto?.data_captura);
         const dataFormatada = dataRegistro
           ? dataRegistro.toLocaleDateString("pt-BR", {
@@ -445,14 +444,20 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               month: "2-digit",
             })
           : "--/--";
+        const plantaSimulada = {
+          ...planta,
+          vitalidade: foto?.vitalidade,
+          ultima_rega: foto?.data_registro,
+        };
+        const valorCalculado = calcularHP(plantaSimulada, fotos.slice(0, index + 1));
 
         return {
           data: dataFormatada,
-          saude: valorVitalidade[chaveVitalidade],
-          status: chaveVitalidade,
+          saude: valorCalculado,
+          status: foto?.vitalidade ?? "estavel",
         };
       }),
-    [fotos],
+    [fotos, planta],
   );
   const fotosTimelapseVisiveis = useMemo(() => {
     if (filtroBadgeAtivo === "todas") {
@@ -1292,6 +1297,48 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                 ))}
               </Stack>
             </Stack>
+
+            <SietchCard
+              highlightColor={hpAtual >= 75 ? "#345A14" : hpAtual >= 40 ? "#C48A31" : "#9E3D22"}
+              sx={{ p: 1.5 }}
+            >
+              <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 1.2 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: "text.primary",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  NIVEL DE SOBREVIVENCIA (HP)
+                </Typography>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontFamily: '"Share Tech Mono", monospace',
+                    color: "text.primary",
+                    lineHeight: 1,
+                  }}
+                >
+                  {hpAtual} / 100
+                </Typography>
+              </Stack>
+
+              <LinearProgress
+                variant="determinate"
+                value={hpAtual}
+                sx={{
+                  height: 12,
+                  borderRadius: 0,
+                  backgroundColor: "rgba(61, 40, 16, 0.12)",
+                  border: "1px solid rgba(61, 40, 16, 0.2)",
+                  "& .MuiLinearProgress-bar": {
+                    backgroundColor: hpProgressColor,
+                  },
+                }}
+              />
+            </SietchCard>
 
             <FormControlLabel
               control={
