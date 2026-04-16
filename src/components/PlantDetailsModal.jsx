@@ -271,10 +271,15 @@ function getMarcoFrameConfig(marcoAtual) {
   return null;
 }
 
-function FotoMiniaturaHud({ foto, ativa, onSelecionar, corVitalidade, brilhoVitalidade }) {
+function FotoMiniaturaHud({ foto, ativa, onSelecionar }) {
   const marcoFoto = normalizarTipoMarco(foto?.marco);
   const ehNascimento = marcoFoto === "nascimento";
   const ehMemorial = marcoFoto === "memorial";
+  const vitalidadeMiniatura = String(foto?.vitalidade ?? "")
+    .trim()
+    .toLowerCase();
+  const vitalidadeMiniaturaConfig =
+    vitalidadeConfig[vitalidadeMiniatura] ?? vitalidadeConfig.estavel;
 
   return (
     <Box
@@ -295,7 +300,7 @@ function FotoMiniaturaHud({ foto, ativa, onSelecionar, corVitalidade, brilhoVita
         overflow: "hidden",
         transition: "border-color 180ms ease, transform 180ms ease",
         transform: ativa ? "translateY(-1px)" : "none",
-        boxShadow: ativa ? `0 0 10px ${brilhoVitalidade}` : "none",
+        boxShadow: ativa ? `0 0 10px ${hexParaRgba(vitalidadeMiniaturaConfig.cor, 0.52)}` : "none",
         "&:hover": {
           borderColor: "info.main",
         },
@@ -338,8 +343,8 @@ function FotoMiniaturaHud({ foto, ativa, onSelecionar, corVitalidade, brilhoVita
           right: 0,
           bottom: 0,
           height: 4,
-          backgroundColor: corVitalidade,
-          boxShadow: `0 0 10px ${brilhoVitalidade}`,
+          backgroundColor: vitalidadeMiniaturaConfig.cor,
+          boxShadow: `0 0 10px ${hexParaRgba(vitalidadeMiniaturaConfig.cor, 0.6)}`,
           zIndex: 2,
         }}
       />
@@ -427,8 +432,6 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     marcoAtualFoto === "nascimento";
   const ehMemorialAtual = marcoAtualFoto === "memorial";
   const frameVitalidadeConfig = getVitalidadeFrameConfig(vitalidade);
-  const frameMarcoConfig = getMarcoFrameConfig(marcoAtualFoto);
-  const framePrincipalConfig = frameMarcoConfig ?? frameVitalidadeConfig;
 
   useEffect(() => {
     setNotificarWhatsapp(Boolean(planta?.notificar));
@@ -1438,10 +1441,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                     mx: "auto",
                     position: "relative",
                     border: "2px solid",
-                    borderColor: framePrincipalConfig.borderColor,
+                    borderColor: vitalidadeHistoricaConfig.cor,
                     borderBottom: `4px solid ${vitalidadeHistoricaConfig.cor}`,
                     overflow: "hidden",
-                    boxShadow: `0 0 0 1px rgba(8, 15, 20, 0.9), 0 0 18px ${framePrincipalConfig.glow}, 0 10px 26px -14px ${hexParaRgba(vitalidadeHistoricaConfig.cor, 0.78)}`,
+                    boxShadow: `0 8px 32px ${vitalidadeHistoricaConfig.cor}40`,
                     clipPath:
                       "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
                     "&::before": {
@@ -1642,8 +1645,6 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                         key={foto.id ?? `${foto.url}-${indice}`}
                         foto={foto}
                         ativa={indice === indexFoto}
-                        corVitalidade={frameVitalidadeConfig.borderColor}
-                        brilhoVitalidade={frameVitalidadeConfig.glow}
                         onSelecionar={() => {
                           setIndexFoto(indice);
                           setAutoplayAtivo(false);
