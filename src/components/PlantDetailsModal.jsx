@@ -182,6 +182,53 @@ function formatarBadgeLabel(badgeSlug) {
     .join(" ");
 }
 
+function getBadgeColorConfig(badgeSlug) {
+  const badge = normalizarBadgeSlug(badgeSlug);
+
+  if (badge === "poda") {
+    return {
+      color: "#2A1704",
+      backgroundColor: "#E2A72E",
+      borderColor: "rgba(255, 235, 198, 0.62)",
+      glow: "rgba(226, 167, 46, 0.45)",
+    };
+  }
+
+  if (badge === "transplante") {
+    return {
+      color: "#06202D",
+      backgroundColor: "#60C7F2",
+      borderColor: "rgba(215, 246, 255, 0.72)",
+      glow: "rgba(96, 199, 242, 0.45)",
+    };
+  }
+
+  if (badge === "praga") {
+    return {
+      color: "#2D0407",
+      backgroundColor: "#EB4E5A",
+      borderColor: "rgba(255, 207, 212, 0.65)",
+      glow: "rgba(235, 78, 90, 0.42)",
+    };
+  }
+
+  if (badge === "nascimento") {
+    return {
+      color: "#0A141B",
+      backgroundColor: "#7EC3F1",
+      borderColor: "rgba(255, 255, 255, 0.38)",
+      glow: "rgba(126, 195, 241, 0.45)",
+    };
+  }
+
+  return {
+    color: "#EAF4FF",
+    backgroundColor: "rgba(15, 30, 42, 0.82)",
+    borderColor: "rgba(126, 195, 241, 0.48)",
+    glow: "rgba(126, 195, 241, 0.26)",
+  };
+}
+
 function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -535,7 +582,11 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
 
     setExcluindo(true);
     try {
-      await onDelete(planta.id);
+      const exclusaoConcluida = await onDelete(planta.id);
+      if (exclusaoConcluida === false) {
+        return;
+      }
+
       setConfirmarExclusaoOpen(false);
       onClose?.();
     } finally {
@@ -1256,6 +1307,11 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               />
 
               {badgesDisponiveis.map((badge) => (
+                (() => {
+                  const badgeColor = getBadgeColorConfig(badge);
+                  const estaAtivo = filtroBadgeAtivo === badge;
+
+                  return (
                 <Chip
                   key={badge}
                   label={`#${formatarBadgeLabel(badge)}`}
@@ -1265,13 +1321,23 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                     setIndexFoto(0);
                     setAutoplayAtivo(false);
                   }}
-                  variant={filtroBadgeAtivo === badge ? "filled" : "outlined"}
-                  color={filtroBadgeAtivo === badge ? "info" : "default"}
+                  variant={estaAtivo ? "filled" : "outlined"}
                   sx={{
                     fontFamily: '"Share Tech Mono", monospace',
                     letterSpacing: "0.03em",
+                    color: estaAtivo ? badgeColor.color : "#DCE8F0",
+                    backgroundColor: estaAtivo ? badgeColor.backgroundColor : "rgba(8, 14, 20, 0.38)",
+                    borderColor: badgeColor.borderColor,
+                    boxShadow: estaAtivo ? `0 0 14px ${badgeColor.glow}` : "none",
+                    "&:hover": {
+                      backgroundColor: estaAtivo
+                        ? badgeColor.backgroundColor
+                        : "rgba(15, 25, 34, 0.7)",
+                    },
                   }}
                 />
+                  );
+                })()
               ))}
             </Stack>
 
@@ -1404,20 +1470,26 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                 {fotoAtualTimelapse?.id && (
                   <Box
                     sx={{
-                      p: 1.2,
-                      border: "1px solid rgba(126, 195, 241, 0.28)",
-                      backgroundColor: "rgba(10, 16, 22, 0.36)",
+                      p: 1.3,
+                      border: "1px solid rgba(126, 195, 241, 0.58)",
+                      background:
+                        "linear-gradient(160deg, rgba(8, 18, 26, 0.94) 0%, rgba(6, 15, 22, 0.92) 45%, rgba(14, 26, 38, 0.9) 100%)",
+                      boxShadow:
+                        "0 0 0 1px rgba(0,0,0,0.52), inset 0 1px 0 rgba(180, 226, 250, 0.14), 0 14px 30px rgba(3, 8, 14, 0.42)",
+                      backdropFilter: "blur(6px)",
                     }}
                   >
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "rgba(232,224,213,0.88)",
+                        color: "#EAF6FF",
                         fontFamily: '"Share Tech Mono", monospace',
-                        letterSpacing: "0.04em",
+                        letterSpacing: "0.05em",
+                        fontWeight: 700,
                         textTransform: "uppercase",
                         display: "block",
                         mb: 0.8,
+                        textShadow: "0 1px 0 rgba(0,0,0,0.42)",
                       }}
                     >
                       Badges desta foto
@@ -1430,16 +1502,32 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                         </Typography>
                       )}
 
-                      {badgesFotoAtual.map((badge) => (
-                        <Chip
-                          key={badge}
-                          size="small"
-                          label={`#${formatarBadgeLabel(badge)}`}
-                          color="info"
-                          variant="outlined"
-                          onDelete={salvandoBadge ? undefined : () => void handleRemoverBadgeFotoAtual(badge)}
-                        />
-                      ))}
+                      {badgesFotoAtual.map((badge) => {
+                        const badgeColor = getBadgeColorConfig(badge);
+
+                        return (
+                          <Chip
+                            key={badge}
+                            size="small"
+                            label={`#${formatarBadgeLabel(badge)}`}
+                            variant="filled"
+                            onDelete={salvandoBadge ? undefined : () => void handleRemoverBadgeFotoAtual(badge)}
+                            sx={{
+                              color: badgeColor.color,
+                              backgroundColor: badgeColor.backgroundColor,
+                              border: `1px solid ${badgeColor.borderColor}`,
+                              boxShadow: `0 0 10px ${badgeColor.glow}`,
+                              "& .MuiChip-deleteIcon": {
+                                color: badgeColor.color,
+                                opacity: 0.88,
+                              },
+                              "& .MuiChip-deleteIcon:hover": {
+                                opacity: 1,
+                              },
+                            }}
+                          />
+                        );
+                      })}
                     </Stack>
 
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
