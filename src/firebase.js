@@ -4,6 +4,7 @@ import {
   arrayUnion,
   addDoc,
   collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -11,6 +12,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   updateDoc,
   where,
 } from "firebase/firestore";
@@ -115,6 +117,22 @@ export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl) {
     }),
   });
 
+  // Mantem a colecao fotos sincronizada com a galeria para permitir
+  // marcacao de marcos e timeline ordenada por data_registro.
+  await setDoc(
+    doc(db, "fotos", fotoId),
+    {
+      planta_id: plantaId,
+      url: imagemUrl,
+      origem: "scanner",
+      badges: [],
+      data_captura: new Date().toISOString(),
+      data_registro: serverTimestamp(),
+      data_registro_local: dataHoraLocalBr,
+    },
+    { merge: true },
+  );
+
   return { id: fotoId };
 }
 
@@ -195,16 +213,38 @@ export async function setMarcoFoto(fotoId, tipoMarco) {
     throw new Error("Foto invalida para aplicar marco");
   }
 
-  if (!tiposPermitidos.includes(tipoMarco)) {
+  const removendoMarco = tipoMarco === null || typeof tipoMarco === "undefined";
+
+  if (!removendoMarco && !tiposPermitidos.includes(tipoMarco)) {
     throw new Error("Tipo de marco invalido");
   }
 
   const fotoRef = doc(db, "fotos", fotoId);
-  await updateDoc(fotoRef, {
-    marco: tipoMarco,
-  });
+  try {
+    await updateDoc(fotoRef, {
+      marco: removendoMarco ? deleteField() : tipoMarco,
+    });
+  } catch (error) {
+    if (error?.code !== "not-found") {
+      throw error;
+    }
 
-  return { fotoId, marco: tipoMarco };
+    // Registro legado sem documento na colecao fotos.
+    // Se estiver removendo marco, nao ha nada para apagar.
+    if (removendoMarco) {
+      return { fotoId, marco: null };
+    }
+
+    await setDoc(
+      fotoRef,
+      {
+        marco: tipoMarco,
+      },
+      { merge: true },
+    );
+  }
+
+  return { fotoId, marco: removendoMarco ? null : tipoMarco };
 }
 
 export async function atualizarBadgesFoto(plantaId, fotoId, badges) {

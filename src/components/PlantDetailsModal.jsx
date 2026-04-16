@@ -20,6 +20,8 @@ import {
   Stack,
   Slider,
   Switch,
+  ToggleButton,
+  ToggleButtonGroup,
   Tab,
   Tabs,
   TextField,
@@ -33,11 +35,6 @@ import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import CloseIcon from "@mui/icons-material/Close";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import ChildCareIcon from "@mui/icons-material/ChildCare";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import LocalFloristIcon from "@mui/icons-material/LocalFlorist";
-import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
 import { QRCode } from "react-qr-code";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -48,7 +45,6 @@ import CameraScanner from "./CameraScanner";
 import {
   adicionarFotoGaleriaPlanta,
   adicionarNotaManual,
-  atualizarBadgesFoto,
   getHistoricoFotos,
   getHistoricoPlanta,
   setMarcoFoto,
@@ -206,42 +202,64 @@ function normalizarTipoMarco(valor) {
   return String(valor ?? "").trim().toLowerCase();
 }
 
-const OPCOES_MARCO_RAPIDO = [
-  {
-    tipo: "nascimento",
-    label: "Nascimento",
-    Icone: ChildCareIcon,
-    color: "info.main",
-  },
-  {
-    tipo: "crescimento",
-    label: "Crescimento",
-    Icone: TrendingUpIcon,
-    color: "success.main",
-  },
-  {
-    tipo: "floracao",
-    label: "Floracao",
-    Icone: LocalFloristIcon,
-    color: "secondary.main",
-  },
-  {
-    tipo: "memorial",
-    label: "Memorial",
-    Icone: HistoryEduIcon,
-    color: "error.main",
-  },
-];
+function getVitalidadeFrameConfig(vitalidadeAtual) {
+  if (vitalidadeAtual === "prosperando") {
+    return {
+      borderColor: "#58D68D",
+      glow: "rgba(88, 214, 141, 0.55)",
+      label: "Prosperando",
+    };
+  }
 
-function FotoMiniaturaHud({
-  foto,
-  ativa,
-  menuAberto,
-  bloqueado,
-  onSelecionar,
-  onToggleMenu,
-  onSelecionarMarco,
-}) {
+  if (vitalidadeAtual === "recuperacao") {
+    return {
+      borderColor: "#E2A72E",
+      glow: "rgba(226, 167, 46, 0.5)",
+      label: "Recuperacao",
+    };
+  }
+
+  if (vitalidadeAtual === "critico") {
+    return {
+      borderColor: "#EB4E5A",
+      glow: "rgba(235, 78, 90, 0.58)",
+      label: "Critico",
+    };
+  }
+
+  return {
+    borderColor: "#7EC3F1",
+    glow: "rgba(126, 195, 241, 0.48)",
+    label: "Estavel",
+  };
+}
+
+function getMarcoFrameConfig(marcoAtual) {
+  if (marcoAtual === "nascimento") {
+    return {
+      borderColor: "#7EC3F1",
+      glow: "rgba(126, 195, 241, 0.56)",
+    };
+  }
+
+  if (marcoAtual === "crescimento") {
+    return {
+      borderColor: "#5FC88A",
+      glow: "rgba(95, 200, 138, 0.56)",
+    };
+  }
+
+  if (marcoAtual === "memorial") {
+    return {
+      borderColor: "#D39A2C",
+      glow: "rgba(211, 154, 44, 0.56)",
+    };
+  }
+
+  return null;
+}
+
+function FotoMiniaturaHud({ foto, ativa, onSelecionar, corVitalidade, brilhoVitalidade }) {
   const marcoFoto = normalizarTipoMarco(foto?.marco);
   const ehNascimento = marcoFoto === "nascimento";
   const ehMemorial = marcoFoto === "memorial";
@@ -265,16 +283,9 @@ function FotoMiniaturaHud({
         overflow: "hidden",
         transition: "border-color 180ms ease, transform 180ms ease",
         transform: ativa ? "translateY(-1px)" : "none",
+        boxShadow: ativa ? `0 0 10px ${brilhoVitalidade}` : "none",
         "&:hover": {
           borderColor: "info.main",
-        },
-        "&:hover .hud-speed-dial": {
-          opacity: 1,
-          transform: "translateY(0)",
-          pointerEvents: "auto",
-        },
-        "&:hover .hud-menu-trigger": {
-          opacity: 1,
         },
       }}
     >
@@ -308,126 +319,20 @@ function FotoMiniaturaHud({
         </Box>
       )}
 
-      <Button
-        className="hud-menu-trigger"
-        onClick={(event) => {
-          event.stopPropagation();
-          onToggleMenu();
-        }}
-        disabled={bloqueado}
+      <Box
         sx={{
           position: "absolute",
-          top: 2,
-          right: 2,
-          zIndex: 3,
-          minWidth: 24,
-          width: 24,
-          height: 24,
-          p: 0,
-          borderRadius: 0,
-          opacity: menuAberto ? 1 : 0.18,
-          color: "#E8EEF5",
-          border: "1px solid rgba(126,195,241,0.5)",
-          backgroundColor: "rgba(8, 16, 23, 0.66)",
-          "&:hover": {
-            backgroundColor: "rgba(8, 16, 23, 0.92)",
-          },
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 4,
+          backgroundColor: corVitalidade,
+          boxShadow: `0 0 10px ${brilhoVitalidade}`,
+          zIndex: 2,
         }}
-      >
-        <MoreHorizIcon sx={{ fontSize: 16 }} />
-      </Button>
-
-      <Stack
-        className="hud-speed-dial"
-        direction="row"
-        spacing={0.4}
-        sx={{
-          position: "absolute",
-          left: 4,
-          right: 4,
-          bottom: 4,
-          zIndex: 3,
-          justifyContent: "center",
-          opacity: menuAberto ? 1 : 0,
-          transform: menuAberto ? "translateY(0)" : "translateY(4px)",
-          pointerEvents: menuAberto ? "auto" : "none",
-          transition: "opacity 150ms ease, transform 150ms ease",
-        }}
-      >
-        {OPCOES_MARCO_RAPIDO.map((opcao) => (
-          <Button
-            key={opcao.tipo}
-            onClick={(event) => {
-              event.stopPropagation();
-              onSelecionarMarco(opcao.tipo);
-            }}
-            disabled={bloqueado}
-            sx={{
-              minWidth: 22,
-              width: 22,
-              height: 22,
-              p: 0,
-              borderRadius: 0,
-              border: "1px solid rgba(126,195,241,0.58)",
-              color: opcao.color,
-              backgroundColor: "rgba(7, 13, 19, 0.88)",
-            }}
-            title={opcao.label}
-            aria-label={opcao.label}
-          >
-            <opcao.Icone sx={{ fontSize: 13 }} />
-          </Button>
-        ))}
-      </Stack>
+      />
     </Box>
   );
-}
-
-function getBadgeColorConfig(badgeSlug) {
-  const badge = normalizarBadgeSlug(badgeSlug);
-
-  if (badge === "poda") {
-    return {
-      color: "#2A1704",
-      backgroundColor: "#E2A72E",
-      borderColor: "rgba(255, 235, 198, 0.62)",
-      glow: "rgba(226, 167, 46, 0.45)",
-    };
-  }
-
-  if (badge === "transplante") {
-    return {
-      color: "#06202D",
-      backgroundColor: "#60C7F2",
-      borderColor: "rgba(215, 246, 255, 0.72)",
-      glow: "rgba(96, 199, 242, 0.45)",
-    };
-  }
-
-  if (badge === "praga") {
-    return {
-      color: "#2D0407",
-      backgroundColor: "#EB4E5A",
-      borderColor: "rgba(255, 207, 212, 0.65)",
-      glow: "rgba(235, 78, 90, 0.42)",
-    };
-  }
-
-  if (badge === "nascimento") {
-    return {
-      color: "#0A141B",
-      backgroundColor: "#7EC3F1",
-      borderColor: "rgba(255, 255, 255, 0.38)",
-      glow: "rgba(126, 195, 241, 0.45)",
-    };
-  }
-
-  return {
-    color: "#EAF4FF",
-    backgroundColor: "rgba(15, 30, 42, 0.82)",
-    borderColor: "rgba(126, 195, 241, 0.48)",
-    glow: "rgba(126, 195, 241, 0.26)",
-  };
 }
 
 function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
@@ -468,11 +373,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const [velocidadeTimelapse, setVelocidadeTimelapse] = useState(1400);
   const [erroFoto, setErroFoto] = useState("");
   const [filtroBadgeAtivo, setFiltroBadgeAtivo] = useState("todas");
-  const [badgeNovoInput, setBadgeNovoInput] = useState("");
-  const [salvandoBadge, setSalvandoBadge] = useState(false);
-  const [erroBadge, setErroBadge] = useState("");
-  const [menuMarcoFotoId, setMenuMarcoFotoId] = useState("");
-  const [salvandoMarcoFotoId, setSalvandoMarcoFotoId] = useState("");
+  const [salvandoMarco, setSalvandoMarco] = useState(false);
   const [erroMarco, setErroMarco] = useState("");
   const vitalidadeAtualConfig =
     vitalidadeConfig[vitalidade] ?? vitalidadeConfig.estavel;
@@ -506,6 +407,9 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     statusEmocionalAtual === "nascimento" ||
     marcoAtualFoto === "nascimento";
   const ehMemorialAtual = marcoAtualFoto === "memorial";
+  const frameVitalidadeConfig = getVitalidadeFrameConfig(vitalidade);
+  const frameMarcoConfig = getMarcoFrameConfig(marcoAtualFoto);
+  const framePrincipalConfig = frameMarcoConfig ?? frameVitalidadeConfig;
 
   useEffect(() => {
     setNotificarWhatsapp(Boolean(planta?.notificar));
@@ -528,11 +432,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     setAutoplayAtivo(false);
     setVelocidadeTimelapse(1400);
     setFiltroBadgeAtivo("todas");
-    setBadgeNovoInput("");
-    setSalvandoBadge(false);
-    setErroBadge("");
-    setMenuMarcoFotoId("");
-    setSalvandoMarcoFotoId("");
+    setSalvandoMarco(false);
     setErroMarco("");
     setGaleriaFotos(
       Array.isArray(planta?.galeria_fotos)
@@ -629,10 +529,6 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
       setAutoplayAtivo(false);
     }
   }, [abaAtiva]);
-
-  useEffect(() => {
-    setMenuMarcoFotoId("");
-  }, [indexFoto, filtroBadgeAtivo]);
 
   useEffect(() => {
     if (!autoplayAtivo || fotosTimelapseVisiveis.length <= 1) {
@@ -897,15 +793,6 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     }
   };
 
-  const atualizarBadgesEmMemoria = (fotoId, badgesAtualizados) => {
-    setFotosTimelapse((prev) =>
-      prev.map((foto) => (foto.id === fotoId ? { ...foto, badges: badgesAtualizados } : foto)),
-    );
-    setGaleriaFotos((prev) =>
-      prev.map((foto) => (foto.id === fotoId ? { ...foto, badges: badgesAtualizados } : foto)),
-    );
-  };
-
   const atualizarMarcoEmMemoria = (fotoId, tipoMarco) => {
     setFotosTimelapse((prev) =>
       prev.map((foto) => (foto.id === fotoId ? { ...foto, marco: tipoMarco } : foto)),
@@ -915,74 +802,28 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     );
   };
 
-  const handleDefinirMarcoFoto = async (fotoId, tipoMarco) => {
-    if (!fotoId || !tipoMarco || !planta?.id) {
+  const handleToggleMarco = async (novoMarco) => {
+    if (!fotoAtualTimelapse?.id || !planta?.id) {
       return;
     }
 
-    const tipoMarcoNormalizado = normalizarTipoMarco(tipoMarco);
-    const marcoAnterior =
-      normalizarTipoMarco(fotosTimelapse.find((foto) => foto.id === fotoId)?.marco) || "";
+    const fotoId = fotoAtualTimelapse.id;
+    const tipoMarcoNormalizado = novoMarco ? normalizarTipoMarco(novoMarco) : null;
+    const marcoAnterior = normalizarTipoMarco(fotoAtualTimelapse?.marco) || null;
 
     setErroMarco("");
-    setSalvandoMarcoFotoId(fotoId);
+    setSalvandoMarco(true);
     atualizarMarcoEmMemoria(fotoId, tipoMarcoNormalizado);
 
     try {
       await setMarcoFoto(fotoId, tipoMarcoNormalizado);
-      setMenuMarcoFotoId("");
     } catch (error) {
       console.error("Erro ao definir marco da foto:", error);
       atualizarMarcoEmMemoria(fotoId, marcoAnterior);
-      setErroMarco("Falha ao aplicar marco rapido nesta foto.");
+      setErroMarco("Falha ao aplicar marco tatico nesta foto.");
     } finally {
-      setSalvandoMarcoFotoId("");
+      setSalvandoMarco(false);
     }
-  };
-
-  const persistirBadgesFotoAtual = async (badgesAtualizados) => {
-    if (!planta?.id || !fotoAtualTimelapse?.id) {
-      return;
-    }
-
-    const badgesAnteriores = badgesFotoAtual;
-    setErroBadge("");
-    setSalvandoBadge(true);
-    atualizarBadgesEmMemoria(fotoAtualTimelapse.id, badgesAtualizados);
-
-    try {
-      await atualizarBadgesFoto(planta.id, fotoAtualTimelapse.id, badgesAtualizados);
-    } catch (error) {
-      console.error("Erro ao atualizar badges da foto:", error);
-      atualizarBadgesEmMemoria(fotoAtualTimelapse.id, badgesAnteriores);
-      setErroBadge("Falha ao salvar badges desta foto.");
-    } finally {
-      setSalvandoBadge(false);
-    }
-  };
-
-  const handleAdicionarBadgeFotoAtual = async () => {
-    if (!fotoAtualTimelapse?.id) {
-      return;
-    }
-
-    const badgeNormalizado = normalizarBadgeSlug(badgeNovoInput);
-    if (!badgeNormalizado) {
-      return;
-    }
-
-    const badgesAtualizados = [...new Set([...badgesFotoAtual, badgeNormalizado])];
-    setBadgeNovoInput("");
-    await persistirBadgesFotoAtual(badgesAtualizados);
-  };
-
-  const handleRemoverBadgeFotoAtual = async (badgeParaRemover) => {
-    if (!fotoAtualTimelapse?.id) {
-      return;
-    }
-
-    const badgesAtualizados = badgesFotoAtual.filter((badge) => badge !== badgeParaRemover);
-    await persistirBadgesFotoAtual(badgesAtualizados);
   };
 
   return (
@@ -1575,13 +1416,44 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                     maxWidth: 520,
                     mx: "auto",
                     position: "relative",
-                    border: "1px solid",
-                    borderColor: ehMemorialAtual ? "secondary.main" : "rgba(126, 195, 241, 0.4)",
+                    border: "2px solid",
+                    borderColor: framePrincipalConfig.borderColor,
                     overflow: "hidden",
+                    boxShadow: `0 0 0 1px rgba(8, 15, 20, 0.9), 0 0 18px ${framePrincipalConfig.glow}`,
                     clipPath:
                       "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      inset: 0,
+                      zIndex: 2,
+                      pointerEvents: "none",
+                      border: ehMemorialAtual ? "1px solid" : "1px solid transparent",
+                      borderColor: ehMemorialAtual ? "secondary.main" : "transparent",
+                      opacity: ehMemorialAtual ? 0.95 : 0,
+                    },
                   }}
                 >
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      left: 8,
+                      bottom: 8,
+                      zIndex: 2,
+                      px: 1,
+                      py: 0.4,
+                      border: "1px solid rgba(232,224,213,0.34)",
+                      backgroundColor: "rgba(7, 11, 15, 0.72)",
+                      color: frameVitalidadeConfig.borderColor,
+                      fontFamily: '"Share Tech Mono", monospace',
+                      fontSize: "0.7rem",
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Sinal Vital: {frameVitalidadeConfig.label}
+                  </Box>
+
                   {ehNascimentoAtual && (
                     <Chip
                       label="NASCIMENTO"
@@ -1637,6 +1509,79 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                   />
                 </Box>
 
+                <ToggleButtonGroup
+                  exclusive
+                  value={marcoAtualFoto || null}
+                  onChange={(_event, novoMarco) => {
+                    void handleToggleMarco(novoMarco);
+                  }}
+                  sx={{
+                    width: "100%",
+                    maxWidth: 520,
+                    mx: "auto",
+                    mt: 0.8,
+                    mb: 0.2,
+                    borderRadius: 0,
+                    "& .MuiToggleButtonGroup-grouped": {
+                      borderRadius: "0 !important",
+                      borderColor: "rgba(126, 195, 241, 0.45)",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      letterSpacing: "0.03em",
+                      fontSize: { xs: "0.68rem", sm: "0.76rem" },
+                      color: "rgba(221, 233, 242, 0.88)",
+                      backgroundColor: "rgba(7, 14, 20, 0.56)",
+                      flex: 1,
+                      minHeight: 40,
+                    },
+                  }}
+                >
+                  <ToggleButton
+                    value="nascimento"
+                    disabled={salvandoMarco}
+                    sx={{
+                      "&.Mui-selected": {
+                        color: "#06141E",
+                        backgroundColor: "#7EC3F1",
+                      },
+                      "&.Mui-selected:hover": {
+                        backgroundColor: "#8FCEF5",
+                      },
+                    }}
+                  >
+                    [♦ NASCIMENTO]
+                  </ToggleButton>
+                  <ToggleButton
+                    value="crescimento"
+                    disabled={salvandoMarco}
+                    sx={{
+                      "&.Mui-selected": {
+                        color: "#072212",
+                        backgroundColor: "#5FC88A",
+                      },
+                      "&.Mui-selected:hover": {
+                        backgroundColor: "#72D599",
+                      },
+                    }}
+                  >
+                    [↗ CRESCIMENTO]
+                  </ToggleButton>
+                  <ToggleButton
+                    value="memorial"
+                    disabled={salvandoMarco}
+                    sx={{
+                      "&.Mui-selected": {
+                        color: "#231005",
+                        backgroundColor: "#D39A2C",
+                      },
+                      "&.Mui-selected:hover": {
+                        backgroundColor: "#DEAA48",
+                      },
+                    }}
+                  >
+                    [† MEMORIAL]
+                  </ToggleButton>
+                </ToggleButtonGroup>
+
                 {fotosTimelapseVisiveis.length > 1 && (
                   <Stack
                     direction="row"
@@ -1655,22 +1600,11 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                         key={foto.id ?? `${foto.url}-${indice}`}
                         foto={foto}
                         ativa={indice === indexFoto}
-                        menuAberto={menuMarcoFotoId === (foto.id ?? "")}
-                        bloqueado={Boolean(salvandoMarcoFotoId)}
+                        corVitalidade={frameVitalidadeConfig.borderColor}
+                        brilhoVitalidade={frameVitalidadeConfig.glow}
                         onSelecionar={() => {
                           setIndexFoto(indice);
                           setAutoplayAtivo(false);
-                        }}
-                        onToggleMenu={() => {
-                          const fotoId = foto.id ?? "";
-                          setMenuMarcoFotoId((valorAtual) => (valorAtual === fotoId ? "" : fotoId));
-                        }}
-                        onSelecionarMarco={(tipoMarco) => {
-                          if (!foto?.id) {
-                            return;
-                          }
-
-                          void handleDefinirMarcoFoto(foto.id, tipoMarco);
                         }}
                       />
                     ))}
