@@ -33,6 +33,11 @@ import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import CloseIcon from "@mui/icons-material/Close";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import ChildCareIcon from "@mui/icons-material/ChildCare";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import LocalFloristIcon from "@mui/icons-material/LocalFlorist";
+import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
 import { QRCode } from "react-qr-code";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -46,6 +51,7 @@ import {
   atualizarBadgesFoto,
   getHistoricoFotos,
   getHistoricoPlanta,
+  setMarcoFoto,
 } from "../firebase";
 
 const placeholderFantasma =
@@ -159,8 +165,10 @@ function normalizarBadgeSlug(valor) {
 }
 
 function obterBadgesFoto(foto) {
+  const marcoComoBadge = normalizarTipoMarco(foto?.marco);
+
   if (Array.isArray(foto?.badges) && foto.badges.length > 0) {
-    return [
+    const badges = [
       ...new Set(
         foto.badges
           .filter((badge) => typeof badge === "string")
@@ -168,10 +176,22 @@ function obterBadgesFoto(foto) {
           .filter(Boolean),
       ),
     ];
+
+    if (marcoComoBadge && !badges.includes(marcoComoBadge)) {
+      badges.push(marcoComoBadge);
+    }
+
+    return badges;
   }
 
   const badgeLegado = normalizarBadgeSlug(foto?.status_emocional ?? foto?.statusEmocional ?? "");
-  return badgeLegado ? [badgeLegado] : [];
+  const badges = badgeLegado ? [badgeLegado] : [];
+
+  if (marcoComoBadge && !badges.includes(marcoComoBadge)) {
+    badges.push(marcoComoBadge);
+  }
+
+  return badges;
 }
 
 function formatarBadgeLabel(badgeSlug) {
@@ -180,6 +200,187 @@ function formatarBadgeLabel(badgeSlug) {
     .filter(Boolean)
     .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1))
     .join(" ");
+}
+
+function normalizarTipoMarco(valor) {
+  return String(valor ?? "").trim().toLowerCase();
+}
+
+const OPCOES_MARCO_RAPIDO = [
+  {
+    tipo: "nascimento",
+    label: "Nascimento",
+    Icone: ChildCareIcon,
+    color: "info.main",
+  },
+  {
+    tipo: "crescimento",
+    label: "Crescimento",
+    Icone: TrendingUpIcon,
+    color: "success.main",
+  },
+  {
+    tipo: "floracao",
+    label: "Floracao",
+    Icone: LocalFloristIcon,
+    color: "secondary.main",
+  },
+  {
+    tipo: "memorial",
+    label: "Memorial",
+    Icone: HistoryEduIcon,
+    color: "error.main",
+  },
+];
+
+function FotoMiniaturaHud({
+  foto,
+  ativa,
+  menuAberto,
+  bloqueado,
+  onSelecionar,
+  onToggleMenu,
+  onSelecionarMarco,
+}) {
+  const marcoFoto = normalizarTipoMarco(foto?.marco);
+  const ehNascimento = marcoFoto === "nascimento";
+  const ehMemorial = marcoFoto === "memorial";
+
+  return (
+    <Box
+      onClick={onSelecionar}
+      sx={{
+        position: "relative",
+        width: { xs: 86, sm: 96 },
+        height: { xs: 86, sm: 96 },
+        border: "1px solid",
+        borderColor: ehMemorial
+          ? "secondary.main"
+          : ativa
+            ? "info.main"
+            : "rgba(126, 195, 241, 0.34)",
+        clipPath:
+          "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
+        cursor: "pointer",
+        overflow: "hidden",
+        transition: "border-color 180ms ease, transform 180ms ease",
+        transform: ativa ? "translateY(-1px)" : "none",
+        "&:hover": {
+          borderColor: "info.main",
+        },
+        "&:hover .hud-speed-dial": {
+          opacity: 1,
+          transform: "translateY(0)",
+          pointerEvents: "auto",
+        },
+        "&:hover .hud-menu-trigger": {
+          opacity: 1,
+        },
+      }}
+    >
+      <Box
+        component="img"
+        src={foto?.url}
+        alt="Miniatura tática da galeria"
+        sx={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          filter: ativa ? "none" : "saturate(0.85) contrast(1.02)",
+        }}
+      />
+
+      {ehNascimento && (
+        <Box
+          component="span"
+          sx={{
+            position: "absolute",
+            top: 6,
+            left: 8,
+            zIndex: 3,
+            color: "info.main",
+            fontSize: "0.92rem",
+            lineHeight: 1,
+            textShadow: "0 0 8px rgba(126, 195, 241, 0.65)",
+          }}
+        >
+          ♦
+        </Box>
+      )}
+
+      <Button
+        className="hud-menu-trigger"
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggleMenu();
+        }}
+        disabled={bloqueado}
+        sx={{
+          position: "absolute",
+          top: 2,
+          right: 2,
+          zIndex: 3,
+          minWidth: 24,
+          width: 24,
+          height: 24,
+          p: 0,
+          borderRadius: 0,
+          opacity: menuAberto ? 1 : 0.18,
+          color: "#E8EEF5",
+          border: "1px solid rgba(126,195,241,0.5)",
+          backgroundColor: "rgba(8, 16, 23, 0.66)",
+          "&:hover": {
+            backgroundColor: "rgba(8, 16, 23, 0.92)",
+          },
+        }}
+      >
+        <MoreHorizIcon sx={{ fontSize: 16 }} />
+      </Button>
+
+      <Stack
+        className="hud-speed-dial"
+        direction="row"
+        spacing={0.4}
+        sx={{
+          position: "absolute",
+          left: 4,
+          right: 4,
+          bottom: 4,
+          zIndex: 3,
+          justifyContent: "center",
+          opacity: menuAberto ? 1 : 0,
+          transform: menuAberto ? "translateY(0)" : "translateY(4px)",
+          pointerEvents: menuAberto ? "auto" : "none",
+          transition: "opacity 150ms ease, transform 150ms ease",
+        }}
+      >
+        {OPCOES_MARCO_RAPIDO.map((opcao) => (
+          <Button
+            key={opcao.tipo}
+            onClick={(event) => {
+              event.stopPropagation();
+              onSelecionarMarco(opcao.tipo);
+            }}
+            disabled={bloqueado}
+            sx={{
+              minWidth: 22,
+              width: 22,
+              height: 22,
+              p: 0,
+              borderRadius: 0,
+              border: "1px solid rgba(126,195,241,0.58)",
+              color: opcao.color,
+              backgroundColor: "rgba(7, 13, 19, 0.88)",
+            }}
+            title={opcao.label}
+            aria-label={opcao.label}
+          >
+            <opcao.Icone sx={{ fontSize: 13 }} />
+          </Button>
+        ))}
+      </Stack>
+    </Box>
+  );
 }
 
 function getBadgeColorConfig(badgeSlug) {
@@ -270,6 +471,9 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   const [badgeNovoInput, setBadgeNovoInput] = useState("");
   const [salvandoBadge, setSalvandoBadge] = useState(false);
   const [erroBadge, setErroBadge] = useState("");
+  const [menuMarcoFotoId, setMenuMarcoFotoId] = useState("");
+  const [salvandoMarcoFotoId, setSalvandoMarcoFotoId] = useState("");
+  const [erroMarco, setErroMarco] = useState("");
   const vitalidadeAtualConfig =
     vitalidadeConfig[vitalidade] ?? vitalidadeConfig.estavel;
   const ultimaFotoReferenciaUrl =
@@ -296,8 +500,12 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   )
     .trim()
     .toLowerCase();
+  const marcoAtualFoto = normalizarTipoMarco(fotoAtualTimelapse?.marco);
   const ehNascimentoAtual =
-    badgesFotoAtual.includes("nascimento") || statusEmocionalAtual === "nascimento";
+    badgesFotoAtual.includes("nascimento") ||
+    statusEmocionalAtual === "nascimento" ||
+    marcoAtualFoto === "nascimento";
+  const ehMemorialAtual = marcoAtualFoto === "memorial";
 
   useEffect(() => {
     setNotificarWhatsapp(Boolean(planta?.notificar));
@@ -323,6 +531,9 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     setBadgeNovoInput("");
     setSalvandoBadge(false);
     setErroBadge("");
+    setMenuMarcoFotoId("");
+    setSalvandoMarcoFotoId("");
+    setErroMarco("");
     setGaleriaFotos(
       Array.isArray(planta?.galeria_fotos)
         ? planta.galeria_fotos
@@ -418,6 +629,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
       setAutoplayAtivo(false);
     }
   }, [abaAtiva]);
+
+  useEffect(() => {
+    setMenuMarcoFotoId("");
+  }, [indexFoto, filtroBadgeAtivo]);
 
   useEffect(() => {
     if (!autoplayAtivo || fotosTimelapseVisiveis.length <= 1) {
@@ -689,6 +904,40 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     setGaleriaFotos((prev) =>
       prev.map((foto) => (foto.id === fotoId ? { ...foto, badges: badgesAtualizados } : foto)),
     );
+  };
+
+  const atualizarMarcoEmMemoria = (fotoId, tipoMarco) => {
+    setFotosTimelapse((prev) =>
+      prev.map((foto) => (foto.id === fotoId ? { ...foto, marco: tipoMarco } : foto)),
+    );
+    setGaleriaFotos((prev) =>
+      prev.map((foto) => (foto.id === fotoId ? { ...foto, marco: tipoMarco } : foto)),
+    );
+  };
+
+  const handleDefinirMarcoFoto = async (fotoId, tipoMarco) => {
+    if (!fotoId || !tipoMarco || !planta?.id) {
+      return;
+    }
+
+    const tipoMarcoNormalizado = normalizarTipoMarco(tipoMarco);
+    const marcoAnterior =
+      normalizarTipoMarco(fotosTimelapse.find((foto) => foto.id === fotoId)?.marco) || "";
+
+    setErroMarco("");
+    setSalvandoMarcoFotoId(fotoId);
+    atualizarMarcoEmMemoria(fotoId, tipoMarcoNormalizado);
+
+    try {
+      await setMarcoFoto(fotoId, tipoMarcoNormalizado);
+      setMenuMarcoFotoId("");
+    } catch (error) {
+      console.error("Erro ao definir marco da foto:", error);
+      atualizarMarcoEmMemoria(fotoId, marcoAnterior);
+      setErroMarco("Falha ao aplicar marco rapido nesta foto.");
+    } finally {
+      setSalvandoMarcoFotoId("");
+    }
   };
 
   const persistirBadgesFotoAtual = async (badgesAtualizados) => {
@@ -1285,65 +1534,15 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </Button>
             </Stack>
 
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ mb: 2, flexWrap: "wrap", rowGap: 1 }}
-              useFlexGap
-            >
-              <Chip
-                label="Todos"
-                clickable
-                onClick={() => {
-                  setFiltroBadgeAtivo("todas");
-                  setIndexFoto(0);
-                  setAutoplayAtivo(false);
-                }}
-                variant={filtroBadgeAtivo === "todas" ? "filled" : "outlined"}
-                sx={{
-                  fontFamily: '"Share Tech Mono", monospace',
-                  letterSpacing: "0.03em",
-                }}
-              />
-
-              {badgesDisponiveis.map((badge) => (
-                (() => {
-                  const badgeColor = getBadgeColorConfig(badge);
-                  const estaAtivo = filtroBadgeAtivo === badge;
-
-                  return (
-                <Chip
-                  key={badge}
-                  label={`#${formatarBadgeLabel(badge)}`}
-                  clickable
-                  onClick={() => {
-                    setFiltroBadgeAtivo(badge);
-                    setIndexFoto(0);
-                    setAutoplayAtivo(false);
-                  }}
-                  variant={estaAtivo ? "filled" : "outlined"}
-                  sx={{
-                    fontFamily: '"Share Tech Mono", monospace',
-                    letterSpacing: "0.03em",
-                    color: estaAtivo ? badgeColor.color : "#DCE8F0",
-                    backgroundColor: estaAtivo ? badgeColor.backgroundColor : "rgba(8, 14, 20, 0.38)",
-                    borderColor: badgeColor.borderColor,
-                    boxShadow: estaAtivo ? `0 0 14px ${badgeColor.glow}` : "none",
-                    "&:hover": {
-                      backgroundColor: estaAtivo
-                        ? badgeColor.backgroundColor
-                        : "rgba(15, 25, 34, 0.7)",
-                    },
-                  }}
-                />
-                  );
-                })()
-              ))}
-            </Stack>
-
             {erroFoto && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {erroFoto}
+              </Alert>
+            )}
+
+            {erroMarco && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {erroMarco}
               </Alert>
             )}
 
@@ -1376,9 +1575,11 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                     maxWidth: 520,
                     mx: "auto",
                     position: "relative",
-                    border: "1px solid rgba(100, 70, 40, 0.28)",
-                    backgroundColor: "rgba(0,0,0,0.38)",
+                    border: "1px solid",
+                    borderColor: ehMemorialAtual ? "secondary.main" : "rgba(126, 195, 241, 0.4)",
                     overflow: "hidden",
+                    clipPath:
+                      "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
                   }}
                 >
                   {ehNascimentoAtual && (
@@ -1436,6 +1637,46 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                   />
                 </Box>
 
+                {fotosTimelapseVisiveis.length > 1 && (
+                  <Stack
+                    direction="row"
+                    spacing={0.9}
+                    sx={{
+                      maxWidth: 520,
+                      mx: "auto",
+                      width: "100%",
+                      overflowX: "auto",
+                      pb: 0.2,
+                      pr: 0.2,
+                    }}
+                  >
+                    {fotosTimelapseVisiveis.map((foto, indice) => (
+                      <FotoMiniaturaHud
+                        key={foto.id ?? `${foto.url}-${indice}`}
+                        foto={foto}
+                        ativa={indice === indexFoto}
+                        menuAberto={menuMarcoFotoId === (foto.id ?? "")}
+                        bloqueado={Boolean(salvandoMarcoFotoId)}
+                        onSelecionar={() => {
+                          setIndexFoto(indice);
+                          setAutoplayAtivo(false);
+                        }}
+                        onToggleMenu={() => {
+                          const fotoId = foto.id ?? "";
+                          setMenuMarcoFotoId((valorAtual) => (valorAtual === fotoId ? "" : fotoId));
+                        }}
+                        onSelecionarMarco={(tipoMarco) => {
+                          if (!foto?.id) {
+                            return;
+                          }
+
+                          void handleDefinirMarcoFoto(foto.id, tipoMarco);
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                )}
+
                 <Typography
                   variant="caption"
                   sx={{
@@ -1466,103 +1707,20 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                     Marco de Nascimento registrado
                   </Typography>
                 )}
-
-                {fotoAtualTimelapse?.id && (
-                  <Box
+                {marcoAtualFoto && marcoAtualFoto !== "nascimento" && (
+                  <Typography
+                    variant="caption"
                     sx={{
-                      p: 1.3,
-                      border: "1px solid rgba(126, 195, 241, 0.58)",
-                      background:
-                        "linear-gradient(160deg, rgba(8, 18, 26, 0.94) 0%, rgba(6, 15, 22, 0.92) 45%, rgba(14, 26, 38, 0.9) 100%)",
-                      boxShadow:
-                        "0 0 0 1px rgba(0,0,0,0.52), inset 0 1px 0 rgba(180, 226, 250, 0.14), 0 14px 30px rgba(3, 8, 14, 0.42)",
-                      backdropFilter: "blur(6px)",
+                      color: "rgba(216, 229, 241, 0.86)",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      letterSpacing: "0.05em",
+                      textAlign: "center",
+                      textTransform: "uppercase",
+                      display: "block",
                     }}
                   >
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: "#EAF6FF",
-                        fontFamily: '"Share Tech Mono", monospace',
-                        letterSpacing: "0.05em",
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        display: "block",
-                        mb: 0.8,
-                        textShadow: "0 1px 0 rgba(0,0,0,0.42)",
-                      }}
-                    >
-                      Badges desta foto
-                    </Typography>
-
-                    <Stack direction="row" spacing={0.8} useFlexGap sx={{ flexWrap: "wrap", mb: 1.1 }}>
-                      {badgesFotoAtual.length === 0 && (
-                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                          Nenhum badge definido.
-                        </Typography>
-                      )}
-
-                      {badgesFotoAtual.map((badge) => {
-                        const badgeColor = getBadgeColorConfig(badge);
-
-                        return (
-                          <Chip
-                            key={badge}
-                            size="small"
-                            label={`#${formatarBadgeLabel(badge)}`}
-                            variant="filled"
-                            onDelete={salvandoBadge ? undefined : () => void handleRemoverBadgeFotoAtual(badge)}
-                            sx={{
-                              color: badgeColor.color,
-                              backgroundColor: badgeColor.backgroundColor,
-                              border: `1px solid ${badgeColor.borderColor}`,
-                              boxShadow: `0 0 10px ${badgeColor.glow}`,
-                              "& .MuiChip-deleteIcon": {
-                                color: badgeColor.color,
-                                opacity: 0.88,
-                              },
-                              "& .MuiChip-deleteIcon:hover": {
-                                opacity: 1,
-                              },
-                            }}
-                          />
-                        );
-                      })}
-                    </Stack>
-
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        label="Novo badge"
-                        value={badgeNovoInput}
-                        onChange={(event) => setBadgeNovoInput(event.target.value)}
-                        placeholder="Ex: poda, transplante, flora"
-                        disabled={salvandoBadge}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            void handleAdicionarBadgeFotoAtual();
-                          }
-                        }}
-                      />
-                      <Button
-                        variant="outlined"
-                        color="info"
-                        onClick={() => void handleAdicionarBadgeFotoAtual()}
-                        disabled={salvandoBadge || !normalizarBadgeSlug(badgeNovoInput)}
-                        sx={{ minWidth: { xs: "100%", sm: 170 } }}
-                      >
-                        {salvandoBadge ? "Salvando..." : "Adicionar Badge"}
-                      </Button>
-                    </Stack>
-
-                    {erroBadge && (
-                      <Alert severity="error" sx={{ mt: 1 }}>
-                        {erroBadge}
-                      </Alert>
-                    )}
-                  </Box>
+                    Marco ativo: {formatarBadgeLabel(marcoAtualFoto)}
+                  </Typography>
                 )}
 
                 {fotosTimelapseVisiveis.length > 1 && (

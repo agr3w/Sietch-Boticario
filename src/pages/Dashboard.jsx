@@ -337,6 +337,7 @@ function Dashboard() {
         data_registro: serverTimestamp(),
         data_registro_local: dataHoraLocalBr,
         nota: "Foto de despedida antes do arquivamento da planta.",
+        marco: "memorial",
         status_emocional: "memorial",
         badges: ["memorial"],
         origem: "memorial",

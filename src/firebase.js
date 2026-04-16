@@ -139,6 +139,7 @@ export async function cadastrarPlantaComFoto(dados, fotoBase64) {
     data_registro: serverTimestamp(),
     data_registro_local: dataHoraLocalBr,
     nota: "Primeiro registro morfologico da planta.",
+    marco: "nascimento",
     status_emocional: "nascimento",
     badges: ["nascimento"],
     origem: "cadastro",
@@ -177,6 +178,7 @@ export async function getHistoricoFotos(plantaId) {
       data_registro: fotoData.data_registro ?? null,
       data_registro_local: fotoData.data_registro_local ?? "",
       nota: fotoData.nota ?? "",
+      marco: fotoData.marco ?? "",
       status_emocional: fotoData.status_emocional ?? "",
       origem: fotoData.origem ?? "",
       badges: Array.isArray(fotoData.badges)
@@ -184,6 +186,25 @@ export async function getHistoricoFotos(plantaId) {
         : [],
     };
   });
+}
+
+export async function setMarcoFoto(fotoId, tipoMarco) {
+  const tiposPermitidos = ["nascimento", "crescimento", "floracao", "memorial"];
+
+  if (!fotoId) {
+    throw new Error("Foto invalida para aplicar marco");
+  }
+
+  if (!tiposPermitidos.includes(tipoMarco)) {
+    throw new Error("Tipo de marco invalido");
+  }
+
+  const fotoRef = doc(db, "fotos", fotoId);
+  await updateDoc(fotoRef, {
+    marco: tipoMarco,
+  });
+
+  return { fotoId, marco: tipoMarco };
 }
 
 export async function atualizarBadgesFoto(plantaId, fotoId, badges) {
