@@ -1,7 +1,6 @@
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
+  AppBar,
+  Avatar,
   Box,
   Button,
   Card,
@@ -9,289 +8,321 @@ import {
   Container,
   Grid,
   Stack,
+  Toolbar,
   Typography,
 } from '@mui/material';
-import WaterDropIcon from '@mui/icons-material/WaterDrop';
-import CameraAltIcon from '@mui/icons-material/CameraAlt';
-import QrCode2Icon from '@mui/icons-material/QrCode2';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import RadarOutlinedIcon from '@mui/icons-material/RadarOutlined';
+import CameraAltOutlinedIcon from '@mui/icons-material/CameraAltOutlined';
+import QrCode2OutlinedIcon from '@mui/icons-material/QrCode2Outlined';
 import { Link as RouterLink } from 'react-router-dom';
 import mascot from '../assets/mascote.png';
-import { globalSx } from '../theme/styles';
+import heroPreview from '../assets/hero.png';
 
 const featureCards = [
   {
-    title: 'Monitoramento Hidrico',
+    title: 'TELEMETRIA HIDRICA',
     description:
-      'Registre rega, acompanhe intervalos criticos e mantenha cada especie na faixa ideal de sobrevivencia.',
-    icon: WaterDropIcon,
+      'Monitoramento de secas com alertas de precisão antes que a planta atinja nível crítico.',
+    icon: RadarOutlinedIcon,
+    iconColor: '#62B8F0',
   },
   {
-    title: 'Camera Morfologica (Timelapse)',
+    title: 'SCANNER MORFOLOGICO',
     description:
-      'Capture ciclos de crescimento, recupere a memoria visual da planta e compare fases com inteligencia tatica.',
-    icon: CameraAltIcon,
+      'Câmera fantasma que cria uma linha do tempo perfeita da evolução da sua planta.',
+    icon: CameraAltOutlinedIcon,
+    iconColor: '#58D68D',
   },
   {
-    title: 'Identificacao por QR Code',
+    title: 'RASTREIO BIOMETRICO',
     description:
-      'Acesse prontuarios com leitura instantanea e leve o historico completo para qualquer frente de cultivo.',
-    icon: QrCode2Icon,
+      'Gere plaquetas táticas para escanear e acessar o prontuário da planta instantaneamente no jardim.',
+    icon: QrCode2OutlinedIcon,
+    iconColor: '#E2A72E',
   },
 ];
 
 function Home() {
   return (
     <Box
-      sx={[
-        globalSx.pageTexture,
-        {
-          minHeight: '100vh',
-          pb: 8,
-          background:
-            'radial-gradient(circle at 10% 5%, rgba(211, 154, 44, 0.18) 0%, transparent 35%), radial-gradient(circle at 90% 20%, rgba(27, 128, 196, 0.14) 0%, transparent 44%), linear-gradient(180deg, #080F13 0%, #0D161B 100%)',
-          '&::before': {
-            content: '""',
-            position: 'fixed',
-            inset: 0,
-            pointerEvents: 'none',
-            opacity: 0.08,
-            backgroundImage:
-              'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'160\' height=\'160\' viewBox=\'0 0 160 160\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'2\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'160\' height=\'160\' filter=\'url(%23n)\' opacity=\'0.55\'/%3E%3C/svg%3E")',
-            backgroundRepeat: 'repeat',
-            zIndex: 0,
-          },
+      sx={{
+        minHeight: '100vh',
+        background:
+          'radial-gradient(circle at 12% 10%, rgba(211, 154, 44, 0.2) 0%, transparent 34%), radial-gradient(circle at 88% 20%, rgba(27, 128, 196, 0.16) 0%, transparent 42%), linear-gradient(180deg, #090F13 0%, #0E171C 100%)',
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'fixed',
+          inset: 0,
+          pointerEvents: 'none',
+          opacity: 0.08,
+          backgroundImage:
+            'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'160\' height=\'160\' viewBox=\'0 0 160 160\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.92\' numOctaves=\'2\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'160\' height=\'160\' filter=\'url(%23n)\' opacity=\'0.55\'/%3E%3C/svg%3E")',
+          backgroundRepeat: 'repeat',
+          zIndex: 0,
         },
-      ]}
+      }}
     >
-      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1, pt: { xs: 8, md: 11 } }}>
-        <Box sx={{ minHeight: { xs: '78vh', md: '86vh' }, display: 'flex', alignItems: 'center' }}>
-          <Grid container spacing={5} alignItems="center">
-            <Grid size={{ xs: 12, md: 7 }}>
-              <Stack spacing={3}>
-                <Typography
-                  component="h1"
-                  sx={{
-                    fontFamily: 'Rajdhani, sans-serif',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    lineHeight: 0.95,
-                    color: 'text.primary',
-                    fontSize: { xs: '2.2rem', sm: '3.4rem', md: '4.4rem' },
-                  }}
-                >
-                  Domine a ecologia do seu espaco
-                </Typography>
-                <Typography
-                  sx={{
-                    color: 'rgba(245, 242, 235, 0.88)',
-                    fontSize: { xs: '1rem', md: '1.15rem' },
-                    maxWidth: 760,
-                    letterSpacing: '0.01em',
-                    lineHeight: 1.55,
-                  }}
-                >
-                  O Sietch Boticario e um sistema Fremen de telemetria e memoria botanica.
-                  Transforme suas plantas em sobreviventes.
-                </Typography>
-                <Box>
-                  <Button
-                    component={RouterLink}
-                    to="/login"
-                    variant="contained"
-                    size="large"
-                    sx={{
-                      minWidth: { xs: '100%', sm: 320 },
-                      py: 1.5,
-                      fontSize: '1rem',
-                      background: 'linear-gradient(135deg, #0D6FA8 0%, #1B80C4 60%, #62B8F0 100%)',
-                      boxShadow: '0 0 26px rgba(27, 128, 196, 0.45)',
-                    }}
-                  >
-                    [ Ingressar no Sietch ]
-                  </Button>
-                </Box>
-              </Stack>
-            </Grid>
+      <AppBar
+        position="fixed"
+        elevation={0}
+        sx={{
+          background: 'rgba(20, 20, 20, 0.6)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(211, 154, 44, 0.32)',
+        }}
+      >
+        <Toolbar sx={{ minHeight: 72 }}>
+          <Container
+            maxWidth="lg"
+            sx={{
+              px: '0 !important',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Stack direction="row" spacing={1.2} alignItems="center">
+              <Avatar src={mascot} alt="Mascote do Sietch" sx={{ width: 42, height: 42 }} />
+              <Typography
+                sx={{
+                  fontFamily: 'Rajdhani, sans-serif',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'text.primary',
+                }}
+              >
+                SIETCH BOTICÁRIO
+              </Typography>
+            </Stack>
 
-            <Grid size={{ xs: 12, md: 5 }}>
+            <Button
+              component={RouterLink}
+              to="/login"
+              variant="outlined"
+              sx={{
+                color: 'text.primary',
+                borderColor: 'rgba(245, 242, 235, 0.55)',
+                px: 2.2,
+                '&:hover': {
+                  borderColor: '#7EC3F1',
+                  backgroundColor: 'rgba(126, 195, 241, 0.14)',
+                },
+              }}
+            >
+              Entrar
+            </Button>
+          </Container>
+        </Toolbar>
+      </AppBar>
+
+      <Container
+        maxWidth="lg"
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          pt: { xs: 12, md: 14 },
+          pb: { xs: 6, md: 8 },
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        <Grid container spacing={{ xs: 5, md: 6 }} alignItems="center">
+          <Grid size={{ xs: 12, md: 7 }}>
+            <Stack spacing={3}>
+              <Typography
+                component="h1"
+                sx={{
+                  fontFamily: 'Rajdhani, sans-serif',
+                  fontWeight: 800,
+                  lineHeight: 0.9,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  color: 'text.primary',
+                  fontSize: { xs: '2.5rem', sm: '3.8rem', md: '5.3rem' },
+                }}
+              >
+                A Água é a Medida da Vida
+              </Typography>
+
+              <Typography
+                variant="h5"
+                sx={{
+                  color: 'rgba(224, 231, 237, 0.9)',
+                  fontWeight: 500,
+                  lineHeight: 1.4,
+                  maxWidth: 760,
+                  fontSize: { xs: '1.08rem', sm: '1.35rem' },
+                }}
+              >
+                Domine a ecologia do seu espaço com telemetria, biometria e histórico de saúde botânica.
+              </Typography>
+
+              <Box sx={{ pt: 0.8 }}>
+                <Button
+                  component={RouterLink}
+                  to="/login"
+                  variant="contained"
+                  size="large"
+                  sx={{
+                    minWidth: { xs: '100%', sm: 380 },
+                    py: 1.7,
+                    fontSize: '1rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.06em',
+                    background: 'linear-gradient(135deg, #0D6FA8 0%, #1B80C4 58%, #71C2F5 100%)',
+                    boxShadow: '0 0 0 1px rgba(245, 242, 235, 0.18) inset, 0 0 30px rgba(27, 128, 196, 0.56)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #0F79B6 0%, #2A90D3 58%, #87D1FA 100%)',
+                      boxShadow: '0 0 0 1px rgba(245, 242, 235, 0.3) inset, 0 0 36px rgba(27, 128, 196, 0.7)',
+                    },
+                  }}
+                >
+                  Iniciar Meu Sietch Grátis
+                </Button>
+              </Box>
+            </Stack>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 5 }}>
+            <Box
+              sx={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: 480,
+                mx: { xs: 'auto', md: 0 },
+                animation: 'heroLevitate 3600ms ease-in-out infinite',
+                '@keyframes heroLevitate': {
+                  '0%': { transform: 'translateY(0px)' },
+                  '50%': { transform: 'translateY(-10px)' },
+                  '100%': { transform: 'translateY(0px)' },
+                },
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  inset: '-8% -4% auto -4%',
+                  height: '65%',
+                  background:
+                    'radial-gradient(circle at 50% 40%, rgba(27, 128, 196, 0.42) 0%, rgba(27, 128, 196, 0) 70%)',
+                  filter: 'blur(16px)',
+                  pointerEvents: 'none',
+                  zIndex: -1,
+                },
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: '-8%',
+                  left: '-18%',
+                  width: '34%',
+                  height: '120%',
+                  background:
+                    'linear-gradient(90deg, rgba(126, 195, 241, 0) 0%, rgba(126, 195, 241, 0.22) 48%, rgba(126, 195, 241, 0) 100%)',
+                  filter: 'blur(1px)',
+                  pointerEvents: 'none',
+                  animation: 'hudSweep 4200ms ease-in-out infinite',
+                },
+                '@keyframes hudSweep': {
+                  '0%': { transform: 'translateX(-35%) skewX(-8deg)', opacity: 0 },
+                  '20%': { opacity: 0.65 },
+                  '50%': { opacity: 0.42 },
+                  '100%': { transform: 'translateX(305%) skewX(-8deg)', opacity: 0 },
+                },
+              }}
+            >
               <Box
                 sx={{
-                  display: 'flex',
-                  justifyContent: { xs: 'center', md: 'flex-end' },
+                  p: 1,
+                  border: '1px solid rgba(126, 195, 241, 0.52)',
+                  background:
+                    'linear-gradient(180deg, rgba(16, 27, 34, 0.94) 0%, rgba(11, 20, 26, 0.94) 100%)',
+                  clipPath:
+                    'polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px)',
+                  boxShadow: '0 20px 42px rgba(0, 0, 0, 0.44), 0 0 22px rgba(27, 128, 196, 0.36)',
                 }}
               >
                 <Box
                   component="img"
-                  src={mascot}
-                  alt="Muad'Dib, mascote do Sietch Boticario"
+                  src={heroPreview}
+                  alt="Prévia do painel Sietch Boticário"
                   sx={{
-                    width: { xs: 220, sm: 280, md: 340 },
-                    maxWidth: '100%',
-                    filter: 'drop-shadow(0 0 28px rgba(98, 184, 240, 0.65))',
-                    animation: 'mascotPulse 2800ms ease-in-out infinite',
-                    '@keyframes mascotPulse': {
-                      '0%': { transform: 'translateY(0px) scale(1)' },
-                      '50%': { transform: 'translateY(-6px) scale(1.02)' },
-                      '100%': { transform: 'translateY(0px) scale(1)' },
-                    },
+                    width: '100%',
+                    height: { xs: 250, sm: 300, md: 330 },
+                    objectFit: 'cover',
+                    clipPath:
+                      'polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)',
+                    border: '1px solid rgba(245, 242, 235, 0.25)',
+                    filter: 'contrast(1.08) saturate(1.04)',
                   }}
                 />
               </Box>
-            </Grid>
+            </Box>
           </Grid>
-        </Box>
+        </Grid>
+      </Container>
 
-        <Box sx={{ py: { xs: 6, md: 9 } }}>
+      <Box sx={{ py: 10, position: 'relative', zIndex: 1 }}>
+        <Container maxWidth="lg">
           <Typography
+            align="center"
             sx={{
               fontFamily: 'Rajdhani, sans-serif',
-              fontWeight: 700,
+              fontWeight: 800,
               textTransform: 'uppercase',
-              letterSpacing: '0.07em',
+              letterSpacing: '0.08em',
               color: 'text.primary',
-              mb: 3,
-              fontSize: { xs: '1.8rem', md: '2.4rem' },
+              mb: 5,
+              fontSize: { xs: '1.8rem', md: '2.6rem' },
             }}
           >
-            Arsenal de Sobrevivencia
+            Tecnologia de Sobrevivência
           </Typography>
 
-          <Grid container spacing={2.2}>
-            {featureCards.map(({ title, description, icon: Icon }) => (
-              <Grid size={{ xs: 12, md: 4 }} key={title}>
+          <Grid container spacing={4}>
+            {featureCards.map(({ title, description, icon: Icon, iconColor }) => (
+              <Grid key={title} size={{ xs: 12, md: 4 }}>
                 <Card
                   sx={{
                     minHeight: '100%',
-                    border: '1px solid rgba(211, 154, 44, 0.48)',
-                    background:
-                      'linear-gradient(180deg, rgba(23, 30, 33, 0.9) 0%, rgba(17, 24, 27, 0.84) 100%)',
+                    background: 'rgba(30, 58, 47, 0.4)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(211, 154, 44, 0.54)',
+                    clipPath:
+                      'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)',
+                    boxShadow: '0 14px 28px rgba(0, 0, 0, 0.34)',
                   }}
                 >
-                  <CardContent sx={{ p: 3 }}>
+                  <CardContent sx={{ p: 3.2 }}>
                     <Stack spacing={2}>
-                      <Icon sx={{ fontSize: 46, color: 'info.main' }} />
-                      <Typography sx={{ fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                      <Icon sx={{ fontSize: '2.2rem', color: iconColor }} />
+                      <Typography
+                        sx={{
+                          fontFamily: 'Rajdhani, sans-serif',
+                          fontWeight: 800,
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase',
+                          color: 'text.primary',
+                        }}
+                      >
                         {title}
                       </Typography>
-                      <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>{description}</Typography>
+                      <Typography
+                        sx={{
+                          color: 'rgba(245, 242, 235, 0.86)',
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        {description}
+                      </Typography>
                     </Stack>
                   </CardContent>
                 </Card>
               </Grid>
             ))}
           </Grid>
-        </Box>
-
-        <Box sx={{ py: { xs: 6, md: 9 } }}>
-          <Typography
-            sx={{
-              fontFamily: 'Rajdhani, sans-serif',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.07em',
-              color: 'text.primary',
-              mb: 3,
-              fontSize: { xs: '1.8rem', md: '2.4rem' },
-            }}
-          >
-            Tributo de Agua
-          </Typography>
-
-          <Grid container spacing={2.2}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Card sx={{ border: '1px solid rgba(126, 195, 241, 0.5)' }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Stack spacing={1.8}>
-                    <Typography sx={{ color: 'secondary.main', textTransform: 'uppercase', fontWeight: 700 }}>
-                      Plano Forasteiro
-                    </Typography>
-                    <Typography sx={{ fontSize: '2rem', fontWeight: 700 }}>Gratis</Typography>
-                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>Ate 5 plantas por nucleo</Typography>
-                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>Diario basico de rega e historico</Typography>
-                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>Acesso ao scanner e QR tatico</Typography>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Card
-                sx={{
-                  border: '1px solid rgba(211, 154, 44, 0.62)',
-                  background:
-                    'linear-gradient(165deg, rgba(31, 46, 50, 0.94) 0%, rgba(22, 31, 35, 0.9) 100%)',
-                }}
-              >
-                <CardContent sx={{ p: 3 }}>
-                  <Stack spacing={1.8}>
-                    <Typography sx={{ color: 'secondary.main', textTransform: 'uppercase', fontWeight: 700 }}>
-                      Plano Fremen (Pro)
-                    </Typography>
-                    <Typography sx={{ fontSize: '2rem', fontWeight: 700 }}>Em breve</Typography>
-                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>Plantas ilimitadas e celulas de cultivo</Typography>
-                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>Alertas automaticos de sobrevivencia</Typography>
-                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>Integracao com sensores IoT e telemetria</Typography>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </Box>
-
-        <Box sx={{ py: { xs: 6, md: 9 } }}>
-          <Typography
-            sx={{
-              fontFamily: 'Rajdhani, sans-serif',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.07em',
-              color: 'text.primary',
-              mb: 2.4,
-              fontSize: { xs: '1.8rem', md: '2.4rem' },
-            }}
-          >
-            FAQ
-          </Typography>
-
-          <Stack spacing={1.2}>
-            <Accordion disableGutters>
-              <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.primary' }} />}>
-                <Typography sx={{ fontWeight: 700 }}>Preciso instalar algo nas plantas?</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Typography sx={{ color: 'rgba(245, 242, 235, 0.82)' }}>
-                  Nao. O plano gratuito funciona com registro manual e camera. Sensores IoT entram no plano
-                  Fremen Pro.
-                </Typography>
-              </AccordionDetails>
-            </Accordion>
-
-            <Accordion disableGutters>
-              <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.primary' }} />}>
-                <Typography sx={{ fontWeight: 700 }}>Posso usar no celular durante o cultivo?</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Typography sx={{ color: 'rgba(245, 242, 235, 0.82)' }}>
-                  Sim. O fluxo foi pensado para operacao movel com scanner, timelapse e prontuario por QR.
-                </Typography>
-              </AccordionDetails>
-            </Accordion>
-
-            <Accordion disableGutters>
-              <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.primary' }} />}>
-                <Typography sx={{ fontWeight: 700 }}>Meus dados ficam isolados?</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Typography sx={{ color: 'rgba(245, 242, 235, 0.82)' }}>
-                  Sim. Cada Sietch e isolado por UID no Firebase, com regras de acesso por usuario.
-                </Typography>
-              </AccordionDetails>
-            </Accordion>
-          </Stack>
-        </Box>
-      </Container>
+        </Container>
+      </Box>
     </Box>
   );
 }
