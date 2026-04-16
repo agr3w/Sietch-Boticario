@@ -5,7 +5,6 @@ import {
   AccordionSummary,
   Box,
   Button,
-  Card,
   CardContent,
   Container,
   Grid,
@@ -21,6 +20,7 @@ import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SensorsIcon from '@mui/icons-material/Sensors';
 import { useNavigate } from 'react-router-dom';
+import SietchCard from '../components/ui/SietchCard';
 
 const primeirosPassos = [
   {
@@ -157,7 +157,7 @@ function Support() {
             </Typography>
             <Grid container spacing={2} sx={{ mt: 0.2 }}>
               <Grid size={{ xs: 12, md: 4 }}>
-                <Card sx={{ height: '100%', backgroundColor: 'background.paper', border: '1px solid rgba(61, 40, 16, 0.1)' }}>
+                <SietchCard sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
                       <QrCode2Icon sx={{ color: 'secondary.main' }} />
@@ -167,10 +167,10 @@ function Support() {
                       Rastreio fisico imediato. Escaneie a plaqueta e acesse o prontuario sem navegar pelo app.
                     </Typography>
                   </CardContent>
-                </Card>
+                </SietchCard>
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
-                <Card sx={{ height: '100%', backgroundColor: 'background.paper', border: '1px solid rgba(61, 40, 16, 0.1)' }}>
+                <SietchCard sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
                       <CameraAltIcon sx={{ color: 'secondary.main' }} />
@@ -180,10 +180,10 @@ function Support() {
                       Alinhamento visual de fotos para comparar mudancas reais da planta ao longo das semanas.
                     </Typography>
                   </CardContent>
-                </Card>
+                </SietchCard>
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
-                <Card sx={{ height: '100%', backgroundColor: 'background.paper', border: '1px solid rgba(61, 40, 16, 0.1)' }}>
+                <SietchCard sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
                       <WaterDropIcon sx={{ color: 'secondary.main' }} />
@@ -193,7 +193,7 @@ function Support() {
                       Leitura do medidor de agua com base no intervalo registrado para reduzir excesso e escassez.
                     </Typography>
                   </CardContent>
-                </Card>
+                </SietchCard>
               </Grid>
             </Grid>
           </Box>
@@ -210,7 +210,7 @@ function Support() {
               SECAO 2 · TRATADO DE BOTANICA BASICA
             </Typography>
             <Stack spacing={1.2} sx={{ mt: 0.5 }}>
-              <Card sx={{ backgroundColor: 'background.paper', border: '1px solid rgba(61, 40, 16, 0.1)' }}>
+              <SietchCard>
                 <CardContent>
                   <Typography sx={{ fontFamily: 'Rajdhani', fontWeight: 700, color: 'primary.main' }}>
                     Jiboia (Epipremnum aureum)
@@ -219,8 +219,8 @@ function Support() {
                     A sobrevivente. Luz indireta, rega quando a terra secar totalmente.
                   </Typography>
                 </CardContent>
-              </Card>
-              <Card sx={{ backgroundColor: 'background.paper', border: '1px solid rgba(61, 40, 16, 0.1)' }}>
+              </SietchCard>
+              <SietchCard>
                 <CardContent>
                   <Typography sx={{ fontFamily: 'Rajdhani', fontWeight: 700, color: 'primary.main' }}>
                     Espada de Sao Jorge (Sansevieria)
@@ -229,7 +229,7 @@ function Support() {
                     A guardia. Extremamente resistente a seca, ideal para cantos com pouca luz.
                   </Typography>
                 </CardContent>
-              </Card>
+              </SietchCard>
             </Stack>
           </Box>
 
@@ -244,7 +244,7 @@ function Support() {
             >
               SECAO 3 · PROTOCOLOS FUTUROS (VERSAO 1.1)
             </Typography>
-            <Card sx={{ mt: 0.5, backgroundColor: 'background.paper', border: '1px solid rgba(61, 40, 16, 0.1)' }}>
+            <SietchCard sx={{ mt: 0.5 }}>
               <CardContent>
                 <Stack spacing={1.4}>
                   <Stack direction="row" spacing={1} alignItems="center">
@@ -268,17 +268,15 @@ function Support() {
                   </Typography>
                 </Stack>
               </CardContent>
-            </Card>
+            </SietchCard>
           </Box>
 
           <Grid container spacing={3}>
             {primeirosPassos.map((item) => (
               <Grid size={{ xs: 12, md: 4 }} key={item.title}>
-                <Card
+                <SietchCard
                   sx={{
                     height: '100%',
-                    backgroundColor: 'background.paper',
-                    border: '1px solid rgba(61, 40, 16, 0.1)',
                     boxShadow: '0 8px 18px rgba(61, 40, 16, 0.08)',
                   }}
                 >
@@ -299,7 +297,7 @@ function Support() {
                       {item.description}
                     </Typography>
                   </CardContent>
-                </Card>
+                </SietchCard>
               </Grid>
             ))}
           </Grid>

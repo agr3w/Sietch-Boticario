@@ -5,7 +5,6 @@ import {
   Typography,
   Button,
   Grid,
-  Card,
   Chip,
   Stack,
   Accordion,
@@ -25,6 +24,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import mascote from '../assets/mascote.png';
 import heroImg from '../assets/hero.jpg';
+import SietchCard from '../components/ui/SietchCard';
 
 const Home = () => {
   const MotionDiv = motion.div;
@@ -297,15 +297,13 @@ const Home = () => {
               },
             ].map((feature, i) => (
               <Grid size={{ xs: 12, md: 4 }} key={i}>
-                <Card
+                <SietchCard
+                  highlightColor={theme.palette.secondary.main}
                   sx={{
                     p: 4,
                     height: '100%',
                     backgroundColor: 'rgba(255, 255, 255, 0.4)',
                     backdropFilter: 'blur(10px)',
-                    borderRadius: 0,
-                    border: '1px solid rgba(61, 40, 16, 0.1)',
-                    borderLeft: `4px solid ${theme.palette.secondary.main}`,
                   }}
                 >
                   <Box sx={{ mb: 2 }}>{feature.icon}</Box>
@@ -315,7 +313,7 @@ const Home = () => {
                   <Typography variant="body1" color="text.secondary">
                     {feature.desc}
                   </Typography>
-                </Card>
+                </SietchCard>
               </Grid>
             ))}
           </Grid>
@@ -481,14 +479,13 @@ const Home = () => {
                       }}
                     />
 
-                    <Card
+                    <SietchCard
+                      highlightColor={index === 2 ? '#62C19A' : theme.palette.secondary.main}
                       sx={{
                         flex: 1,
                         p: 3.5,
-                        borderRadius: 0,
                         backgroundColor: 'rgba(255, 255, 255, 0.45)',
-                        border: '1px solid rgba(61, 40, 16, 0.1)',
-                        borderLeft: `3px solid ${index === 2 ? '#62C19A' : theme.palette.secondary.main}`,
+                        borderLeftWidth: '3px',
                       }}
                     >
                       <Typography
@@ -505,7 +502,7 @@ const Home = () => {
                       <Typography variant="h6" color="text.secondary" sx={{ lineHeight: 1.5 }}>
                         {item.desc}
                       </Typography>
-                    </Card>
+                    </SietchCard>
                   </Stack>
                 </MotionDiv>
               ))}

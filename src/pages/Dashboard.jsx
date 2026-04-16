@@ -46,6 +46,7 @@ import PlantCard from "../components/PlantCard";
 import AddPlantModal from "../components/AddPlantModal";
 import CameraScanner from "../components/CameraScanner";
 import { climateSx, feedbackSx, globalSx, layoutSx } from "../theme/styles";
+import SietchCard from "../components/ui/SietchCard";
 
 function gerarDataHoraLocalBr() {
   return new Date().toLocaleString("pt-BR", {
@@ -634,7 +635,7 @@ function Dashboard() {
         </Button>
       </Stack>
 
-      <Card elevation={4} sx={climateSx.card}>
+      <SietchCard sx={climateSx.card}>
         <CardContent>
           <Typography variant="h6" sx={climateSx.title}>
             Painel Climático • Curitiba
@@ -677,9 +678,9 @@ function Dashboard() {
             </Grid>
           )}
         </CardContent>
-      </Card>
+      </SietchCard>
 
-      <Card elevation={3} sx={{ mb: 4 }}>
+      <SietchCard sx={{ mb: 4 }}>
         <CardContent sx={{ py: 1.8, "&:last-child": { pb: 1.8 } }}>
           <Box
             sx={{
@@ -746,7 +747,7 @@ function Dashboard() {
             </Stack>
           </Box>
         </CardContent>
-      </Card>
+      </SietchCard>
 
       <Menu
         anchorEl={notificacoesAnchorEl}
@@ -839,7 +840,7 @@ function Dashboard() {
         ))}
       </Box>
 
-      <Card elevation={3} sx={{ mb: 3 }}>
+      <SietchCard sx={{ mb: 3 }}>
         <CardContent sx={{ py: 1.4, "&:last-child": { pb: 1.4 } }}>
           <Tabs
             value={abaPainel}
@@ -868,7 +869,7 @@ function Dashboard() {
             <Tab label={`Arquivo Morto (${arquivoMorto.length})`} />
           </Tabs>
         </CardContent>
-      </Card>
+      </SietchCard>
 
       {abaPainel === 0 && (
         <Grid
