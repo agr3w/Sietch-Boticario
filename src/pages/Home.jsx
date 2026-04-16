@@ -6,6 +6,7 @@ import {
   Button,
   Grid,
   Card,
+  Chip,
   Stack,
   Accordion,
   AccordionSummary,
@@ -19,6 +20,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import mascote from '../assets/mascote.png';
@@ -129,6 +131,49 @@ const Home = () => {
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               style={{ position: 'relative' }}
             >
+              <MotionDiv
+                initial={{ opacity: 0, y: -20, scale: 0.94 }}
+                animate={{ opacity: 1, y: [-20, 0, -8, 0], scale: 1 }}
+                transition={{ delay: 2, duration: 0.9, times: [0, 0.62, 0.82, 1], ease: 'easeOut' }}
+                style={{
+                  position: 'absolute',
+                  top: 18,
+                  left: -28,
+                  zIndex: 3,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: { xs: 220, sm: 250 },
+                    p: 1.2,
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(242, 248, 244, 0.96)',
+                    border: '1px solid rgba(0,0,0,0.12)',
+                    boxShadow: '0 14px 34px rgba(0,0,0,0.38)',
+                  }}
+                >
+                  <Stack direction="row" spacing={1.2} alignItems="flex-start">
+                    <WhatsAppIcon sx={{ color: '#25D366', mt: 0.1 }} />
+                    <Box>
+                      <Typography
+                        sx={{
+                          color: '#111',
+                          fontFamily: 'Rajdhani',
+                          fontWeight: 700,
+                          lineHeight: 1.1,
+                          letterSpacing: '0.03em',
+                        }}
+                      >
+                        Sietch Alerta
+                      </Typography>
+                      <Typography sx={{ color: '#223', fontSize: '0.82rem', lineHeight: 1.3 }}>
+                        A umidade da Jiboia caiu para 15%. Forneca agua imediatamente.
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+              </MotionDiv>
+
               <Box
                 sx={{
                   width: 280,
@@ -273,21 +318,25 @@ const Home = () => {
             {[
               {
                 title: 'INICIAÇÃO',
-                desc: 'Cadastre a espécie e capture o primeiro registro morfológico (O Dia Zero).',
+                desc: 'O registro do Dia Zero utiliza processamento de imagem para criar a base da sua linha do tempo.',
+                tags: ['Firebase Storage', 'Bio-Scanner'],
               },
               {
                 title: 'SINCRONIA',
-                desc: 'Acompanhe a drenagem do medidor tático e receba alertas exatos de quando fornecer água.',
+                desc: 'Cérebro automatizado que envia telemetria vital e alertas de rega diretamente para o seu comunicador (WhatsApp).',
+                tags: ['n8n Automation', 'WhatsApp Gateway'],
               },
               {
                 title: 'EVOLUÇÃO',
-                desc: 'Escaneie a plaqueta de rastreio para atualizar o prontuário visual e expandir a linha do tempo da planta.',
+                desc: 'Identificação física via QR Code e arquitetura preparada para recepção de dados via sensores de solo externos.',
+                tags: ['QR Protocol', 'ESP32/IoT Ready'],
               },
             ].map((step, index) => (
               <MotionDiv
                 key={step.title}
                 initial={{ opacity: 0, x: -50 }}
                 whileInView={{ opacity: 1, x: 0 }}
+                whileHover="hover"
                 transition={{ delay: index * 0.3, duration: 0.5 }}
                 viewport={{ once: true, amount: 0.35 }}
               >
@@ -312,10 +361,137 @@ const Home = () => {
                   <Typography variant="h5" color="text.secondary" sx={{ lineHeight: 1.5 }}>
                     {step.desc}
                   </Typography>
+
+                  <Stack direction="row" spacing={1.5} mt={3} flexWrap="wrap" useFlexGap>
+                    {step.tags.map((tag) => (
+                      <MotionDiv
+                        key={tag}
+                        variants={{
+                          hover: {
+                            y: -2,
+                            boxShadow: `0 0 16px ${theme.palette.primary.main}80`,
+                          },
+                        }}
+                        transition={{ duration: 0.25 }}
+                        style={{ borderRadius: 999 }}
+                      >
+                        <Chip
+                          label={tag}
+                          sx={{
+                            borderRadius: 999,
+                            border: `1px solid ${theme.palette.primary.main}99`,
+                            backgroundColor: 'rgba(11,95,123,0.12)',
+                            color: theme.palette.text.primary,
+                            fontWeight: 600,
+                            letterSpacing: '0.02em',
+                          }}
+                        />
+                      </MotionDiv>
+                    ))}
+                  </Stack>
                 </Box>
               </MotionDiv>
             ))}
           </Stack>
+        </Container>
+      </Box>
+
+      <Box sx={{ py: 15 }}>
+        <Container maxWidth="md">
+          <Typography
+            variant="h3"
+            textAlign="center"
+            sx={{ fontFamily: 'Rajdhani', mb: 2, fontWeight: 700 }}
+          >
+            CICLO DE CRESCIMENTO
+          </Typography>
+          <Typography textAlign="center" color="text.secondary" sx={{ mb: 8 }}>
+            Roadmap vivo do sistema, da fundacao operacional ate a maturidade autonoma.
+          </Typography>
+
+          <Box sx={{ position: 'relative', pl: { xs: 0, sm: 10 } }}>
+            <Box
+              aria-hidden
+              sx={{
+                position: 'absolute',
+                left: { xs: 10, sm: 34 },
+                top: 0,
+                bottom: 0,
+                width: '4px',
+                borderRadius: 999,
+                background:
+                  'linear-gradient(to top, rgba(28,28,28,0.95) 0%, rgba(30,58,47,0.9) 58%, rgba(98,193,154,0.95) 100%)',
+              }}
+            />
+
+            <Stack spacing={5}>
+              {[
+                {
+                  phase: 'RAÍZES (CONCLUÍDO)',
+                  desc: 'Gestão Hídrica, Galeria de Fotos e Autenticação.',
+                },
+                {
+                  phase: 'CAULE (EM DESENVOLVIMENTO)',
+                  desc: 'Sincronização com sensores físicos de umidade e temperatura.',
+                },
+                {
+                  phase: 'FOLHAGEM (FUTURO)',
+                  desc: 'IA para diagnóstico de pragas via foto e automação de sistemas de irrigação via hardware.',
+                },
+              ].map((item, index) => (
+                <MotionDiv
+                  key={item.phase}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.18, duration: 0.45 }}
+                  viewport={{ once: true, amount: 0.4 }}
+                >
+                  <Stack direction="row" spacing={3} alignItems="flex-start">
+                    <Box
+                      sx={{
+                        mt: 1,
+                        ml: { xs: 0.7, sm: 0 },
+                        minWidth: 18,
+                        width: 18,
+                        height: 18,
+                        borderRadius: '50%',
+                        backgroundColor: index === 0 ? '#2A2A2A' : index === 1 ? '#2E5443' : '#62C19A',
+                        boxShadow:
+                          index === 2
+                            ? '0 0 14px rgba(98,193,154,0.75)'
+                            : '0 0 8px rgba(30,58,47,0.35)',
+                      }}
+                    />
+
+                    <Card
+                      sx={{
+                        flex: 1,
+                        p: 3.5,
+                        borderRadius: 0,
+                        backgroundColor: 'rgba(17,17,17,0.75)',
+                        borderLeft: `3px solid ${index === 2 ? '#62C19A' : theme.palette.secondary.main}`,
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontFamily: 'Rajdhani',
+                          fontWeight: 700,
+                          letterSpacing: '0.06em',
+                          textTransform: 'uppercase',
+                          mb: 1,
+                        }}
+                      >
+                        {item.phase}
+                      </Typography>
+                      <Typography variant="h6" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+                        {item.desc}
+                      </Typography>
+                    </Card>
+                  </Stack>
+                </MotionDiv>
+              ))}
+            </Stack>
+          </Box>
         </Container>
       </Box>
 
