@@ -1,14 +1,21 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { useAuth } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import WaterDropOutlinedIcon from '@mui/icons-material/WaterDropOutlined';
+import TopbarSietch from './components/TopbarSietch';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const PlantView = lazy(() => import('./pages/PlantView'));
 const Login = lazy(() => import('./pages/Login'));
+const Home = lazy(() => import('./pages/Home'));
 
-function LoadingSietch({ message = 'VERIFICANDO CREDENCIAIS BIOMETRICAS...' }) {
+const routeStateText = {
+  authCheck: 'VERIFICANDO CREDENCIAIS BIOMETRICAS...',
+  routeSync: 'SINCRONIZANDO NUCLEO DO SIETCH...',
+};
+
+function LoadingSietch({ message = routeStateText.authCheck }) {
   return (
     <Box
       sx={{
@@ -78,24 +85,33 @@ function PrivateRoute({ children }) {
   const { currentUser, loading } = useAuth();
 
   if (loading) {
-    return <LoadingSietch message="VERIFICANDO CREDENCIAIS BIOMETRICAS..." />;
+    return <LoadingSietch message={routeStateText.authCheck} />;
   }
 
   if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  return (
+    <Box>
+      <TopbarSietch />
+      {children}
+    </Box>
+  );
 }
 
-function App() {
+function AppRoutes() {
   const { currentUser } = useAuth();
 
   return (
-    <Suspense fallback={<LoadingSietch message="SINCRONIZANDO COM O SIETCH..." />}>
+    <Suspense fallback={<LoadingSietch message={routeStateText.routeSync} />}>
       <Routes>
         <Route
           path="/"
+          element={currentUser ? <Navigate to="/dashboard" replace /> : <Home />}
+        />
+        <Route
+          path="/dashboard"
           element={(
             <PrivateRoute>
               <Dashboard />
@@ -104,7 +120,7 @@ function App() {
         />
         <Route
           path="/login"
-          element={currentUser ? <Navigate to="/" replace /> : <Login />}
+          element={currentUser ? <Navigate to="/dashboard" replace /> : <Login />}
         />
         <Route
           path="/planta/:id"
@@ -114,9 +130,17 @@ function App() {
             </PrivateRoute>
           )}
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to={currentUser ? '/dashboard' : '/'} replace />} />
       </Routes>
     </Suspense>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   );
 }
 

@@ -28,7 +28,7 @@ function Login() {
 
   useEffect(() => {
     if (currentUser) {
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [currentUser, navigate]);
 
@@ -50,7 +50,7 @@ function Login() {
       } else {
         await cadastrarComEmail(emailLimpo, senha);
       }
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       const codigoErro = String(error?.code ?? "");
 
@@ -76,7 +76,7 @@ function Login() {
 
     try {
       await loginComGoogle();
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch {
       setErro("Falha na autenticação genética via Google.");
     } finally {
@@ -202,7 +202,7 @@ function Login() {
               }}
             >
               {carregando
-                ? "Processando..."
+                ? "Sincronizando acesso..."
                 : isLogin
                   ? "Entrar"
                   : "Cadastrar"}

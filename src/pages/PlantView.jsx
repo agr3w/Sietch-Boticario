@@ -167,7 +167,7 @@ function PlantView() {
     const carregarFotos = async () => {
       try {
         setCarregandoFotos(true);
-        const historicoFotos = await getHistoricoFotos(planta.id);
+        const historicoFotos = await getHistoricoFotos(planta.id, planta.userId);
         if (!ativo) {
           return;
         }

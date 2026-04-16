@@ -236,6 +236,11 @@ function CameraScanner({ open, onClose, ultimaFotoUrl, onCapture }) {
                 fontWeight: 600,
                 letterSpacing: "0.02em",
               },
+              "& .MuiSwitch-switchBase.Mui-focusVisible .MuiSwitch-thumb": {
+                outline: "2px solid #7EC3F1",
+                outlineOffset: 2,
+                boxShadow: "0 0 0 2px rgba(7, 14, 20, 0.92)",
+              },
             }}
             control={
               <Switch
@@ -273,6 +278,11 @@ function CameraScanner({ open, onClose, ultimaFotoUrl, onCapture }) {
                 fontWeight: 600,
                 letterSpacing: "0.02em",
               },
+              "& .MuiSwitch-switchBase.Mui-focusVisible .MuiSwitch-thumb": {
+                outline: "2px solid #7EC3F1",
+                outlineOffset: 2,
+                boxShadow: "0 0 0 2px rgba(7, 14, 20, 0.92)",
+              },
             }}
             control={
               <Switch
@@ -309,6 +319,11 @@ function CameraScanner({ open, onClose, ultimaFotoUrl, onCapture }) {
                 fontSize: "0.82rem",
                 fontWeight: 600,
                 letterSpacing: "0.02em",
+              },
+              "& .MuiSwitch-switchBase.Mui-focusVisible .MuiSwitch-thumb": {
+                outline: "2px solid #7EC3F1",
+                outlineOffset: 2,
+                boxShadow: "0 0 0 2px rgba(7, 14, 20, 0.92)",
               },
             }}
             control={
@@ -355,6 +370,12 @@ function CameraScanner({ open, onClose, ultimaFotoUrl, onCapture }) {
             "&:hover": {
               backgroundColor: "rgba(0,0,0,0.62)",
             },
+            "&:focus-visible": {
+              outline: "3px solid #7EC3F1",
+              outlineOffset: 2,
+              borderColor: "rgba(126,195,241,0.95)",
+              boxShadow: "0 0 0 2px rgba(0,0,0,0.8), 0 0 0 5px rgba(126,195,241,0.55)",
+            },
           }}
         >
           <CloseIcon />
@@ -392,6 +413,11 @@ function CameraScanner({ open, onClose, ultimaFotoUrl, onCapture }) {
               px: 2,
               "&:hover": {
                 backgroundColor: "#166EA8",
+              },
+              "&:focus-visible": {
+                outline: "3px solid #7EC3F1",
+                outlineOffset: 3,
+                boxShadow: "0 0 0 2px rgba(5, 10, 14, 0.95), 0 0 0 6px rgba(126,195,241,0.42)",
               },
             }}
           >

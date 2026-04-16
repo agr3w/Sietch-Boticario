@@ -283,7 +283,16 @@ function FotoMiniaturaHud({ foto, ativa, onSelecionar }) {
 
   return (
     <Box
+      role="button"
+      tabIndex={0}
+      aria-label="Selecionar foto da linha do tempo"
       onClick={onSelecionar}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelecionar?.();
+        }
+      }}
       sx={{
         position: "relative",
         width: { xs: 86, sm: 96 },
@@ -303,6 +312,12 @@ function FotoMiniaturaHud({ foto, ativa, onSelecionar }) {
         boxShadow: ativa ? `0 0 10px ${hexParaRgba(vitalidadeMiniaturaConfig.cor, 0.52)}` : "none",
         "&:hover": {
           borderColor: "info.main",
+        },
+        "&:focus-visible": {
+          outline: "3px solid #7EC3F1",
+          outlineOffset: 2,
+          borderColor: "#7EC3F1",
+          boxShadow: "0 0 0 2px rgba(5,10,14,0.86), 0 0 0 5px rgba(126,195,241,0.55)",
         },
       }}
     >
@@ -497,7 +512,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   }, [badgesDisponiveis, filtroBadgeAtivo]);
 
   useEffect(() => {
-    if (!open || !planta?.id) {
+    if (!open || !planta?.id || !planta?.userId) {
       setFotosTimelapse([]);
       return;
     }
@@ -507,7 +522,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     const carregarHistoricoFotos = async () => {
       try {
         setCarregandoFotos(true);
-        const fotosHistorico = await getHistoricoFotos(planta.id);
+        const fotosHistorico = await getHistoricoFotos(planta.id, planta.userId);
         if (!ativo) {
           return;
         }
@@ -534,7 +549,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     return () => {
       ativo = false;
     };
-  }, [open, planta?.id, galeriaFotos]);
+  }, [open, planta?.id, planta?.userId, galeriaFotos]);
 
   useEffect(() => {
     setIndexFoto((valorAtual) => {
@@ -574,7 +589,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
   }, [planta?.id]);
 
   useEffect(() => {
-    if (!open || !planta?.id) {
+    if (!open || !planta?.id || !planta?.userId) {
       setHistorico([]);
       return;
     }
@@ -584,7 +599,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     const carregarHistorico = async () => {
       try {
         setCarregandoHistorico(true);
-        const mensagens = await getHistoricoPlanta(planta.id);
+        const mensagens = await getHistoricoPlanta(planta.id, planta.userId);
 
         if (ativo) {
           setHistorico(mensagens);
@@ -606,7 +621,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     return () => {
       ativo = false;
     };
-  }, [open, planta?.id]);
+  }, [open, planta?.id, planta?.userId]);
 
   const resumoRega = useMemo(() => {
     const intervalo = Number(planta?.intervalo_rega_dias ?? 0);
@@ -682,7 +697,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
         planta?.nome_apelido ?? "Planta",
         planta?.userId,
       );
-      const historicoAtualizado = await getHistoricoPlanta(planta.id);
+      const historicoAtualizado = await getHistoricoPlanta(planta.id, planta.userId);
       setHistorico(historicoAtualizado);
     } catch (error) {
       console.error("Erro ao adicionar nota manual:", error);
@@ -905,6 +920,12 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               backgroundColor: "rgba(7, 10, 12, 0.56)",
               borderColor: "rgba(232,224,213,0.56)",
             },
+            "&:focus-visible": {
+              outline: "3px solid #7EC3F1",
+              outlineOffset: 2,
+              borderColor: "#7EC3F1",
+              boxShadow: "0 0 0 2px rgba(7,10,12,0.92), 0 0 0 5px rgba(126,195,241,0.52)",
+            },
           }}
         >
           <CloseIcon fontSize="small" />
@@ -956,6 +977,19 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               fontSize: { xs: "0.74rem", sm: "0.82rem" },
               px: { xs: 1.1, sm: 1.8 },
               whiteSpace: "nowrap",
+              color: "rgba(245, 242, 235, 0.9)",
+              "&:hover": {
+                color: "#F5F2EB",
+                backgroundColor: "rgba(126, 195, 241, 0.12)",
+              },
+              "&:focus-visible": {
+                outline: "3px solid #7EC3F1",
+                outlineOffset: -2,
+                backgroundColor: "rgba(126, 195, 241, 0.16)",
+              },
+            },
+            "& .Mui-selected": {
+              color: "#7EC3F1 !important",
             },
           }}
         >
@@ -1121,6 +1155,17 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                       fontWeight: 700,
                       letterSpacing: "0.03em",
                       textTransform: "none",
+                      "&:hover": {
+                        backgroundColor:
+                          vitalidade === value
+                            ? config.cor
+                            : hexParaRgba(config.cor, 0.16),
+                      },
+                      "&:focus-visible": {
+                        outline: "3px solid #7EC3F1",
+                        outlineOffset: 2,
+                        boxShadow: "0 0 0 2px rgba(7, 13, 18, 0.84)",
+                      },
                     }}
                   />
                 ))}
@@ -1592,6 +1637,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                       "&.Mui-selected:hover": {
                         backgroundColor: "#8FCEF5",
                       },
+                      "&:focus-visible": {
+                        outline: "3px solid #7EC3F1",
+                        outlineOffset: -2,
+                      },
                     }}
                   >
                     [♦ NASCIMENTO]
@@ -1607,6 +1656,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                       "&.Mui-selected:hover": {
                         backgroundColor: "#72D599",
                       },
+                      "&:focus-visible": {
+                        outline: "3px solid #7EC3F1",
+                        outlineOffset: -2,
+                      },
                     }}
                   >
                     [↗ CRESCIMENTO]
@@ -1621,6 +1674,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                       },
                       "&.Mui-selected:hover": {
                         backgroundColor: "#DEAA48",
+                      },
+                      "&:focus-visible": {
+                        outline: "3px solid #7EC3F1",
+                        outlineOffset: -2,
                       },
                     }}
                   >
@@ -1807,6 +1864,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                     abaAtiva === 0 ? "#90CEF5" : "rgba(18, 26, 33, 0.82)",
                   borderColor: "rgba(126, 195, 241, 0.85)",
                 },
+                  "&:focus-visible": {
+                    outline: "3px solid #7EC3F1",
+                    outlineOffset: 2,
+                  },
               }}
             >
               Geral
@@ -1831,6 +1892,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                     abaAtiva === 1 ? "#90CEF5" : "rgba(18, 26, 33, 0.82)",
                   borderColor: "rgba(126, 195, 241, 0.85)",
                 },
+                  "&:focus-visible": {
+                    outline: "3px solid #7EC3F1",
+                    outlineOffset: 2,
+                  },
               }}
             >
               Diario
@@ -1855,6 +1920,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                     abaAtiva === 2 ? "#90CEF5" : "rgba(18, 26, 33, 0.82)",
                   borderColor: "rgba(126, 195, 241, 0.85)",
                 },
+                  "&:focus-visible": {
+                    outline: "3px solid #7EC3F1",
+                    outlineOffset: 2,
+                  },
               }}
             >
               ID
@@ -1879,6 +1948,10 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                     abaAtiva === 3 ? "#90CEF5" : "rgba(18, 26, 33, 0.82)",
                   borderColor: "rgba(126, 195, 241, 0.85)",
                 },
+                  "&:focus-visible": {
+                    outline: "3px solid #7EC3F1",
+                    outlineOffset: 2,
+                  },
               }}
             >
               Galeria

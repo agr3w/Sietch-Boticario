@@ -561,7 +561,7 @@ function Dashboard() {
       : n8nStatus === "inativa"
         ? "Inativa"
         : n8nStatus === "verificando"
-          ? "Verificando..."
+          ? "Sincronizando..."
           : "Não validada";
 
   const n8nStatusCor =
@@ -626,7 +626,7 @@ function Dashboard() {
 
           {!climaErro && !climaAtual && (
             <Typography variant="body2" sx={climateSx.loadingText}>
-              Carregando dados meteorológicos...
+              Sincronizando dados climáticos...
             </Typography>
           )}
 
@@ -684,8 +684,27 @@ function Dashboard() {
                 color="primary"
                 onClick={(event) => setNotificacoesAnchorEl(event.currentTarget)}
                 aria-label="Abrir notificações"
+                sx={{
+                  color: "text.primary",
+                  border: "1px solid rgba(245, 242, 235, 0.28)",
+                  backgroundColor: "rgba(11, 18, 21, 0.52)",
+                  "&:hover": {
+                    backgroundColor: "rgba(21, 33, 38, 0.78)",
+                  },
+                }}
               >
-                <Badge badgeContent={badgeCount} color="error">
+                <Badge
+                  badgeContent={badgeCount}
+                  color="error"
+                  sx={{
+                    "& .MuiBadge-badge": {
+                      color: "#FFFFFF",
+                      fontWeight: 800,
+                      backgroundColor: "#B3261E",
+                      border: "1px solid rgba(255,255,255,0.55)",
+                    },
+                  }}
+                >
                   <NotificationsIcon />
                 </Badge>
               </IconButton>
@@ -695,7 +714,7 @@ function Dashboard() {
                 onClick={validarIntegracaoN8n}
                 disabled={validandoN8n}
               >
-                {validandoN8n ? "Validando..." : "Validar Integração"}
+                {validandoN8n ? "Sincronizando..." : "Validar Integração"}
               </Button>
               <Button
                 variant="outlined"
@@ -717,9 +736,18 @@ function Dashboard() {
         onClose={() => setNotificacoesAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
+        PaperProps={{
+          sx: {
+            border: "1px solid rgba(211, 154, 44, 0.45)",
+            background:
+              "linear-gradient(180deg, rgba(13, 20, 24, 0.98) 0%, rgba(10, 16, 20, 0.96) 100%)",
+            color: "text.primary",
+            minWidth: 340,
+          },
+        }}
       >
         {notificacoes.length === 0 ? (
-          <MenuItem disabled sx={{ minWidth: 320 }}>
+          <MenuItem disabled sx={{ minWidth: 320, color: "rgba(245, 242, 235, 0.7)" }}>
             Nenhuma notificação não lida.
           </MenuItem>
         ) : (
@@ -738,11 +766,20 @@ function Dashboard() {
                   alignItems: "flex-start",
                   gap: 1,
                   whiteSpace: "normal",
+                  color: "text.primary",
                 }}
               >
                 <ListItemText
                   primary={mensagem.planta_nome ?? "Planta"}
-                  secondary={<Box component="span" sx={mentatNumberSx}>{formatarDataEnvio(mensagem.data_envio)}</Box>}
+                  primaryTypographyProps={{
+                    fontWeight: 700,
+                    color: "text.primary",
+                  }}
+                  secondary={(
+                    <Box component="span" sx={[mentatNumberSx, { color: "rgba(245, 242, 235, 0.84)" }]}>
+                      {formatarDataEnvio(mensagem.data_envio)}
+                    </Box>
+                  )}
                 />
                 <IconButton
                   size="small"
@@ -795,12 +832,17 @@ function Dashboard() {
             sx={{
               "& .MuiTabs-indicator": { backgroundColor: "#7EC3F1", height: 3 },
               "& .MuiTab-root": {
-                color: "rgba(232,224,213,0.82)",
+                color: "rgba(245,242,235,0.88)",
                 fontWeight: 700,
                 letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                minHeight: 48,
               },
               "& .Mui-selected": {
                 color: "#7EC3F1 !important",
+              },
+              "& .MuiTabs-scrollButtons": {
+                color: "text.primary",
               },
             }}
           >
@@ -838,9 +880,10 @@ function Dashboard() {
               key={registro.id}
               elevation={4}
               sx={{
-                border: "1px solid rgba(217, 72, 65, 0.34)",
+                border: "1px solid rgba(247, 170, 176, 0.42)",
                 background:
-                  "linear-gradient(160deg, rgba(32, 11, 13, 0.88) 0%, rgba(24, 10, 12, 0.86) 100%)",
+                  "linear-gradient(160deg, rgba(43, 14, 17, 0.94) 0%, rgba(26, 11, 13, 0.94) 100%)",
+                color: "text.primary",
               }}
             >
               <CardContent>
@@ -863,9 +906,9 @@ function Dashboard() {
                       label="Memorial"
                       sx={{
                         alignSelf: { xs: "flex-start", sm: "center" },
-                        color: "#2D0407",
-                        backgroundColor: "#EB4E5A",
-                        border: "1px solid rgba(255, 214, 218, 0.55)",
+                        color: "#FFEDEE",
+                        backgroundColor: "#7A0E1A",
+                        border: "1px solid rgba(255, 214, 218, 0.7)",
                         fontWeight: 800,
                         letterSpacing: "0.04em",
                       }}
@@ -893,7 +936,7 @@ function Dashboard() {
                   <Typography variant="body2" sx={{ color: "rgba(248, 231, 231, 0.88)" }}>
                     Arquivada em: {formatarDataEnvio(registro.data_arquivamento)}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "rgba(248, 231, 231, 0.7)" }}>
+                  <Typography variant="body2" sx={{ color: "rgba(248, 231, 231, 0.86)" }}>
                     Localização: {registro.localizacao ?? "Não informada"}
                   </Typography>
 

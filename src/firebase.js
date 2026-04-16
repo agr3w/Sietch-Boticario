@@ -84,10 +84,15 @@ export async function getNotificacoesNaoLidas(userId) {
   }));
 }
 
-export async function getHistoricoPlanta(plantaId) {
+export async function getHistoricoPlanta(plantaId, userId) {
+  if (!plantaId || !userId) {
+    return [];
+  }
+
   const mensagensRef = collection(db, "mensagens");
   const historicoQuery = query(
     mensagensRef,
+    where("userId", "==", userId),
     where("planta_id", "==", plantaId),
     orderBy("data_envio", "desc"),
   );
@@ -235,10 +240,15 @@ export async function cadastrarPlantaComFoto(dados, fotoBase64) {
   return { id: plantaRef.id };
 }
 
-export async function getHistoricoFotos(plantaId) {
+export async function getHistoricoFotos(plantaId, userId) {
+  if (!plantaId || !userId) {
+    return [];
+  }
+
   const fotosRef = collection(db, "fotos");
   const historicoQuery = query(
     fotosRef,
+    where("userId", "==", userId),
     where("planta_id", "==", plantaId),
     orderBy("data_registro", "asc"),
   );

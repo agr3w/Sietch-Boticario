@@ -81,7 +81,7 @@ function AddPlantModal({ open, onClose, onAdd }) {
         <DialogTitle sx={addPlantModalSx.title}>
           Cadastrar Nova Planta
         </DialogTitle>
-        <Divider />
+        <Divider sx={addPlantModalSx.divider} />
         <DialogContent sx={addPlantModalSx.form}>
           <TextField
             label="Nome/Apelido"
@@ -138,6 +138,7 @@ function AddPlantModal({ open, onClose, onAdd }) {
             onClick={() => setScannerOpen(true)}
             disabled={isSaving}
             fullWidth
+            sx={addPlantModalSx.captureButton}
           >
             {fotoIniciacao ? "Recapturar Foto de Iniciacao" : "Capturar Foto de Iniciacao"}
           </Button>
@@ -155,19 +156,13 @@ function AddPlantModal({ open, onClose, onAdd }) {
                 component="img"
                 src={fotoIniciacao}
                 alt="Miniatura da foto de iniciacao"
-                sx={{
-                  width: "100%",
-                  maxWidth: 240,
-                  height: 170,
-                  objectFit: "cover",
-                  border: "1px solid rgba(126, 166, 194, 0.45)",
-                }}
+                sx={addPlantModalSx.previewImage}
               />
             </Box>
           )}
         </DialogContent>
         <DialogActions sx={addPlantModalSx.actions}>
-          <Button color="secondary" onClick={onClose} disabled={isSaving}>
+          <Button color="secondary" onClick={onClose} disabled={isSaving} sx={addPlantModalSx.cancelButton}>
             Cancelar
           </Button>
           <Button
@@ -175,6 +170,7 @@ function AddPlantModal({ open, onClose, onAdd }) {
             variant="contained"
             color="primary"
             disabled={isSaving}
+            sx={addPlantModalSx.submitButton}
           >
             {isSaving ? "Salvando..." : "Salvar Planta"}
           </Button>
