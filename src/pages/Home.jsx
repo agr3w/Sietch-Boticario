@@ -1,4 +1,7 @@
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   AppBar,
   Avatar,
   Box,
@@ -11,6 +14,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RadarOutlinedIcon from '@mui/icons-material/RadarOutlined';
 import CameraAltOutlinedIcon from '@mui/icons-material/CameraAltOutlined';
 import QrCode2OutlinedIcon from '@mui/icons-material/QrCode2Outlined';
@@ -321,6 +325,238 @@ function Home() {
               </Grid>
             ))}
           </Grid>
+        </Container>
+      </Box>
+
+      <Box sx={{ py: 10, position: 'relative', zIndex: 1 }}>
+        <Container maxWidth="lg">
+          <Typography
+            align="center"
+            sx={{
+              fontFamily: 'Rajdhani, sans-serif',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: 'text.primary',
+              mb: 5,
+              fontSize: { xs: '1.8rem', md: '2.6rem' },
+            }}
+          >
+            O Custo da Água
+          </Typography>
+
+          <Grid container spacing={4} justifyContent="center">
+            <Grid size={{ xs: 12, md: 5 }}>
+              <Card
+                sx={{
+                  minHeight: '100%',
+                  background: 'rgba(26, 32, 36, 0.78)',
+                  border: '1px solid rgba(186, 193, 200, 0.3)',
+                  clipPath:
+                    'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)',
+                }}
+              >
+                <CardContent sx={{ p: 3.2 }}>
+                  <Stack spacing={2.1}>
+                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.88)', fontWeight: 700 }}>
+                      Plano Forasteiro
+                    </Typography>
+                    <Typography sx={{ fontSize: '2.2rem', fontWeight: 800, color: 'text.primary' }}>
+                      Gratuito
+                    </Typography>
+                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>
+                      Até 5 plantas sob monitoramento tático.
+                    </Typography>
+                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>
+                      Acesso ao diário fotográfico e linha do tempo da saúde botânica.
+                    </Typography>
+                    <Button
+                      component={RouterLink}
+                      to="/login"
+                      variant="outlined"
+                      sx={{
+                        mt: 1,
+                        borderColor: 'rgba(190, 198, 206, 0.62)',
+                        color: 'rgba(232, 238, 244, 0.94)',
+                        '&:hover': {
+                          borderColor: 'rgba(218, 225, 232, 0.95)',
+                          backgroundColor: 'rgba(186, 193, 200, 0.1)',
+                        },
+                      }}
+                    >
+                      Começar sem custo
+                    </Button>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 5 }}>
+              <Card
+                sx={{
+                  minHeight: '100%',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  background: 'rgba(20, 42, 56, 0.72)',
+                  border: '1px solid rgba(126, 195, 241, 0.55)',
+                  clipPath:
+                    'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)',
+                  boxShadow: '0 0 18px rgba(27, 128, 196, 0.45)',
+                  animation: 'proPulse 1900ms ease-in-out infinite',
+                  '@keyframes proPulse': {
+                    '0%': { boxShadow: '0 0 14px rgba(27, 128, 196, 0.36)' },
+                    '50%': { boxShadow: '0 0 28px rgba(27, 128, 196, 0.76)' },
+                    '100%': { boxShadow: '0 0 14px rgba(27, 128, 196, 0.36)' },
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 16,
+                    right: -38,
+                    px: 5,
+                    py: 0.45,
+                    transform: 'rotate(90deg)',
+                    background: 'linear-gradient(90deg, #1B80C4 0%, #62B8F0 100%)',
+                    color: '#EAF5FF',
+                    fontWeight: 800,
+                    letterSpacing: '0.06em',
+                    fontSize: '0.72rem',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Recomendado
+                </Box>
+
+                <CardContent sx={{ p: 3.2 }}>
+                  <Stack spacing={2.1}>
+                    <Typography sx={{ color: '#BFE7FF', fontWeight: 700 }}>
+                      Plano Fremen Pro
+                    </Typography>
+                    <Typography sx={{ fontSize: '2.2rem', fontWeight: 800, color: 'text.primary' }}>
+                      Em breve
+                    </Typography>
+                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.88)' }}>
+                      Plantas ilimitadas para células de cultivo avançadas.
+                    </Typography>
+                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.88)' }}>
+                      Alertas no n8n via WhatsApp e integração total com sensores IoT.
+                    </Typography>
+                    <Button
+                      component={RouterLink}
+                      to="/login"
+                      variant="contained"
+                      sx={{
+                        mt: 1,
+                        background: 'linear-gradient(135deg, #0F79B6 0%, #2F6F4E 100%)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #1488CA 0%, #3C8A60 100%)',
+                        },
+                      }}
+                    >
+                      Entrar na lista Pro
+                    </Button>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+
+      <Box sx={{ pb: 7, position: 'relative', zIndex: 1 }}>
+        <Container maxWidth="lg">
+          <Box
+            sx={{
+              p: { xs: 2.2, md: 3.2 },
+              background: 'rgba(22, 30, 34, 0.52)',
+              border: '1px solid rgba(211, 154, 44, 0.3)',
+              backdropFilter: 'blur(10px)',
+              clipPath:
+                'polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)',
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: 'Rajdhani, sans-serif',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.07em',
+                color: 'text.primary',
+                mb: 2,
+                fontSize: { xs: '1.35rem', md: '1.8rem' },
+              }}
+            >
+              Perguntas Frequentes
+            </Typography>
+
+            <Stack spacing={1.1}>
+              <Accordion disableGutters sx={{ background: 'rgba(12, 19, 22, 0.7)' }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.primary' }} />}>
+                  <Typography sx={{ fontWeight: 700, color: 'text.primary' }}>
+                    Preciso instalar sensores?
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>
+                    Não no plano inicial. Você já opera com scanner e diário fotográfico. Sensores entram no
+                    Fremen Pro.
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+
+              <Accordion disableGutters sx={{ background: 'rgba(12, 19, 22, 0.7)' }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.primary' }} />}>
+                  <Typography sx={{ fontWeight: 700, color: 'text.primary' }}>
+                    A câmera fantasma funciona em qualquer celular?
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>
+                    Funciona na maioria dos navegadores móveis modernos com permissão de câmera ativa.
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              mt: 3.2,
+              pt: 2.2,
+              borderTop: '1px solid rgba(211, 154, 44, 0.25)',
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              justifyContent: 'space-between',
+              gap: 1.4,
+            }}
+          >
+            <Typography sx={{ color: 'rgba(245, 242, 235, 0.74)' }}>
+              © 2026 Sietch Boticário. Todos os direitos reservados.
+            </Typography>
+            <Stack direction="row" spacing={2}>
+              <Button
+                component="a"
+                href="mailto:suporte@sietchboticario.com"
+                variant="text"
+                sx={{ color: '#B8E5FF', p: 0, minWidth: 'auto' }}
+              >
+                Suporte
+              </Button>
+              <Button
+                component="a"
+                href="https://wa.me/34644462188"
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="text"
+                sx={{ color: '#B8E5FF', p: 0, minWidth: 'auto' }}
+              >
+                WhatsApp
+              </Button>
+            </Stack>
+          </Box>
         </Container>
       </Box>
     </Box>
