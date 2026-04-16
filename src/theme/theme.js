@@ -2,29 +2,35 @@ import { createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
   palette: {
-    mode: "dark",
+    mode: "light",
     primary: {
-      main: "#1E3A2F",
+      main: "#0D3028",
     },
     secondary: {
-      main: "#D35400",
+      main: "#A64D13",
     },
     success: {
-      main: "#2F6F4E",
+      main: "#345A14",
+    },
+    warning: {
+      main: "#C48A31",
+    },
+    error: {
+      main: "#9E3D22",
     },
     info: {
       main: "#1B80C4",
     },
     background: {
-      default: "#0A0A0A",
-      paper: "#141414",
+      default: "#F5ECD7",
+      paper: "#EEF0E8",
     },
     text: {
-      primary: "#F5F2EB",
-      secondary: "rgba(245, 242, 235, 0.7)",
+      primary: "#3D2810",
+      secondary: "#6E553B",
     },
   },
-  sandGradient: "linear-gradient(135deg,#1E3A2F,#D35400,#E8E0D5)",
+  sandGradient: "linear-gradient(135deg,#F5ECD7,#0D3028,#A64D13)",
   shape: {
     borderRadius: 0,
   },
@@ -61,28 +67,26 @@ const theme = createTheme({
       textTransform: "uppercase",
     },
     subtitle1: {
-      color: "#D39A2C",
+      color: "#6E553B",
     },
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          background: "linear-gradient(180deg,#11181C,#0B0F12)",
-          color: "#F5F2EB",
+          background: "#F5ECD7",
+          color: "#3D2810",
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          color: "#F5F2EB",
+          color: "#3D2810",
           borderRadius: 0,
-          backgroundColor: "rgba(30, 58, 47, 0.6)",
-          backdropFilter: "blur(10px)",
-          border: "1px solid rgba(211, 84, 0, 0.4)",
-          boxShadow:
-            "inset 0 1px 0 rgba(232, 224, 213, 0.22), inset 0 -1px 0 rgba(211, 84, 0, 0.35), 0 14px 30px rgba(16, 24, 20, 0.24)",
+          backgroundColor: "#EEF0E8",
+          border: "1px solid rgba(61, 40, 16, 0.1)",
+          boxShadow: "0 10px 30px rgba(61, 40, 16, 0.08)",
         },
       },
     },
@@ -92,7 +96,7 @@ const theme = createTheme({
       },
       styleOverrides: {
         root: {
-          color: "#F5F2EB",
+          color: "#3D2810",
           borderRadius: 0,
           textTransform: "uppercase",
           fontWeight: 700,
@@ -108,11 +112,10 @@ const theme = createTheme({
           },
         },
         contained: {
-          color: "#F5F2EB",
+          color: "#F5ECD7",
         },
         outlined: {
-          color: "#F5F2EB",
-          borderColor: "rgba(245, 242, 235, 0.5)",
+          borderColor: "rgba(61, 40, 16, 0.3)",
         },
       },
     },
@@ -120,24 +123,23 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           "& .MuiInputBase-root": {
-            color: "#F5F2EB",
-            backgroundColor: "rgba(9, 16, 19, 0.58)",
-            backdropFilter: "blur(6px)",
+            color: "#3D2810",
+            backgroundColor: "rgba(255, 255, 255, 0.4)",
           },
           "& .MuiInputLabel-root": {
-            color: "#D39A2C",
+            color: "#6E553B",
           },
           "& .MuiInputLabel-root.Mui-focused": {
-            color: "#F5F2EB",
+            color: "#6E553B",
           },
           "& .MuiOutlinedInput-notchedOutline": {
-            borderColor: "rgba(245, 242, 235, 0.38)",
+            borderColor: "rgba(61, 40, 16, 0.2)",
           },
           "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
-            borderColor: "rgba(245, 242, 235, 0.62)",
+            borderColor: "rgba(61, 40, 16, 0.3)",
           },
           "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-            borderColor: "#F5F2EB",
+            borderColor: "rgba(61, 40, 16, 0.2)",
           },
         },
       },

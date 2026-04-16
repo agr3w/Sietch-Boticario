@@ -37,13 +37,13 @@ const Home = () => {
         backgroundColor: theme.palette.background.default,
         minHeight: '100vh',
         backgroundImage:
-          'radial-gradient(circle at 20% 30%, rgba(30, 58, 47, 0.15) 0%, transparent 70%)',
+          'radial-gradient(circle at 20% 30%, rgba(52, 90, 20, 0.08) 0%, transparent 70%)',
       }}
     >
       <AppBar
         position="fixed"
         sx={{
-          background: 'rgba(10, 10, 10, 0.7)',
+          background: 'rgba(245, 236, 215, 0.7)',
           backdropFilter: 'blur(15px)',
           borderBottom: `1px solid ${theme.palette.divider}`,
         }}
@@ -92,6 +92,7 @@ const Home = () => {
                 sx={{
                   fontFamily: 'Rajdhani',
                   fontWeight: 900,
+                  color: 'text.primary',
                   fontSize: { xs: '3.5rem', md: '5rem' },
                   lineHeight: 0.9,
                   mb: 3,
@@ -178,11 +179,12 @@ const Home = () => {
                 sx={{
                   width: 280,
                   height: 580,
-                  backgroundColor: '#111',
+                  backgroundColor: '#E9E3D3',
                   borderRadius: '40px',
-                  border: '8px solid #222',
+                  border: '8px solid rgba(61, 40, 16, 0.22)',
                   overflow: 'hidden',
-                  boxShadow: `0 50px 100px rgba(0,0,0,0.8), 0 0 20px ${theme.palette.secondary.main}30`,
+                  boxShadow:
+                    '0 28px 60px rgba(61, 40, 16, 0.24), 0 0 14px rgba(166, 77, 19, 0.16)',
                   position: 'relative',
                 }}
               >
@@ -252,7 +254,7 @@ const Home = () => {
         </Container>
       </Box>
 
-      <Box sx={{ py: 15, backgroundColor: 'rgba(0,0,0,0.3)' }}>
+      <Box sx={{ py: 15, backgroundColor: '#EEF0E8' }}>
         <Container maxWidth="lg">
           <Typography
             variant="h3"
@@ -284,9 +286,10 @@ const Home = () => {
                   sx={{
                     p: 4,
                     height: '100%',
-                    backgroundColor: 'rgba(30, 58, 47, 0.4)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.4)',
                     backdropFilter: 'blur(10px)',
                     borderRadius: 0,
+                    border: '1px solid rgba(61, 40, 16, 0.1)',
                     borderLeft: `4px solid ${theme.palette.secondary.main}`,
                   }}
                 >
@@ -304,7 +307,7 @@ const Home = () => {
         </Container>
       </Box>
 
-      <Box sx={{ py: 15, backgroundColor: 'rgba(255,255,255,0.02)' }}>
+      <Box sx={{ py: 15, backgroundColor: 'rgba(61, 40, 16, 0.03)' }}>
         <Container maxWidth="md">
           <Typography
             variant="h3"
@@ -420,7 +423,7 @@ const Home = () => {
                 width: '4px',
                 borderRadius: 999,
                 background:
-                  'linear-gradient(to top, rgba(28,28,28,0.95) 0%, rgba(30,58,47,0.9) 58%, rgba(98,193,154,0.95) 100%)',
+                  'linear-gradient(to top, rgba(61,40,16,0.18) 0%, rgba(52,90,20,0.38) 58%, rgba(98,193,154,0.92) 100%)',
               }}
             />
 
@@ -455,11 +458,11 @@ const Home = () => {
                         width: 18,
                         height: 18,
                         borderRadius: '50%',
-                        backgroundColor: index === 0 ? '#2A2A2A' : index === 1 ? '#2E5443' : '#62C19A',
+                        backgroundColor: index === 0 ? '#8B6F4E' : index === 1 ? '#4F7A49' : '#62C19A',
                         boxShadow:
                           index === 2
                             ? '0 0 14px rgba(98,193,154,0.75)'
-                            : '0 0 8px rgba(30,58,47,0.35)',
+                            : '0 0 8px rgba(61,40,16,0.24)',
                       }}
                     />
 
@@ -468,7 +471,8 @@ const Home = () => {
                         flex: 1,
                         p: 3.5,
                         borderRadius: 0,
-                        backgroundColor: 'rgba(17,17,17,0.75)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.45)',
+                        border: '1px solid rgba(61, 40, 16, 0.1)',
                         borderLeft: `3px solid ${index === 2 ? '#62C19A' : theme.palette.secondary.main}`,
                       }}
                     >
@@ -507,10 +511,10 @@ const Home = () => {
               p: { xs: 5, md: 8 },
               borderRadius: 0,
               textAlign: 'center',
-              background: 'radial-gradient(circle at center, #1E3A2F 0%, #0A0A0A 100%)',
+              background: 'radial-gradient(circle at center, #DCEBDD 0%, #EEF0E8 55%, #E6DCC4 100%)',
               borderTop: `2px solid ${theme.palette.secondary.main}`,
               borderBottom: `2px solid ${theme.palette.secondary.main}`,
-              boxShadow: '0 24px 60px rgba(0,0,0,0.45)',
+              boxShadow: '0 20px 44px rgba(61, 40, 16, 0.16)',
             }}
           >
             <Stack spacing={4} alignItems="center">
@@ -561,7 +565,7 @@ const Home = () => {
           sx={{
             backgroundColor: 'transparent',
             backgroundImage: 'none',
-            borderBottom: '1px solid #333',
+            borderBottom: '1px solid rgba(61, 40, 16, 0.2)',
           }}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon color="secondary" />}>
