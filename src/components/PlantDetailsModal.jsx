@@ -680,6 +680,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
         planta.id,
         textoLimpo,
         planta?.nome_apelido ?? "Planta",
+        planta?.userId,
       );
       const historicoAtualizado = await getHistoricoPlanta(planta.id);
       setHistorico(historicoAtualizado);

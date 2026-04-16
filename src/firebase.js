@@ -64,10 +64,15 @@ function gerarDataHoraLocalBr() {
   });
 }
 
-export async function getNotificacoesNaoLidas() {
+export async function getNotificacoesNaoLidas(userId) {
+  if (!userId) {
+    return [];
+  }
+
   const mensagensRef = collection(db, "mensagens");
   const mensagensQuery = query(
     mensagensRef,
+    where("userId", "==", userId),
     where("lida", "==", false),
     orderBy("data_envio", "desc"),
   );
@@ -94,8 +99,8 @@ export async function getHistoricoPlanta(plantaId) {
   }));
 }
 
-export async function getMensagensNaoLidas() {
-  return getNotificacoesNaoLidas();
+export async function getMensagensNaoLidas(userId) {
+  return getNotificacoesNaoLidas(userId);
 }
 
 export async function marcarMensagemComoLida(mensagemId) {
@@ -105,8 +110,13 @@ export async function marcarMensagemComoLida(mensagemId) {
   });
 }
 
-export async function adicionarNotaManual(plantaId, texto, plantaNome) {
+export async function adicionarNotaManual(plantaId, texto, plantaNome, userId) {
+  if (!userId) {
+    throw new Error("userId e obrigatorio para adicionar nota manual");
+  }
+
   await addDoc(collection(db, "mensagens"), {
+    userId,
     planta_id: plantaId,
     planta_nome: plantaNome,
     mensagem: texto,
@@ -123,12 +133,26 @@ export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl, vitalidade
   }
 
   const plantaRef = doc(db, "plantas", plantaId);
+  const plantaSnapshot = await getDoc(plantaRef);
+
+  if (!plantaSnapshot.exists()) {
+    throw new Error("Planta nao encontrada para adicionar foto na galeria");
+  }
+
+  const plantaData = plantaSnapshot.data();
+  const userId = plantaData?.userId;
+
+  if (!userId) {
+    throw new Error("Planta sem userId. Nao e possivel salvar foto com privacidade");
+  }
+
   const dataHoraLocalBr = gerarDataHoraLocalBr();
   const fotoId = `foto-${Date.now()}`;
 
   await updateDoc(plantaRef, {
     galeria_fotos: arrayUnion({
       id: fotoId,
+      userId,
       url: imagemUrl,
       origem: "scanner",
       badges: [],
@@ -144,6 +168,7 @@ export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl, vitalidade
     doc(db, "fotos", fotoId),
     {
       planta_id: plantaId,
+      userId,
       url: imagemUrl,
       origem: "scanner",
       badges: [],
@@ -159,6 +184,10 @@ export async function adicionarFotoGaleriaPlanta(plantaId, imagemUrl, vitalidade
 }
 
 export async function cadastrarPlantaComFoto(dados, fotoBase64) {
+  if (!dados?.userId) {
+    throw new Error("userId e obrigatorio para cadastrar planta");
+  }
+
   const vitalidadeInicial = dados?.vitalidade ?? "estavel";
   const dadosPlanta = {
     ...dados,
@@ -177,6 +206,7 @@ export async function cadastrarPlantaComFoto(dados, fotoBase64) {
 
   await addDoc(collection(db, "fotos"), {
     planta_id: plantaRef.id,
+    userId: dados.userId,
     url: fotoBase64,
     data_registro: serverTimestamp(),
     data_registro_local: dataHoraLocalBr,
@@ -191,6 +221,7 @@ export async function cadastrarPlantaComFoto(dados, fotoBase64) {
   await updateDoc(doc(db, "plantas", plantaRef.id), {
     galeria_fotos: arrayUnion({
       id: `foto-${Date.now()}`,
+      userId: dados.userId,
       url: fotoBase64,
       origem: "nascimento",
       status_emocional: "nascimento",
@@ -256,19 +287,12 @@ export async function setMarcoFoto(fotoId, tipoMarco) {
       throw error;
     }
 
-    // Registro legado sem documento na colecao fotos.
-    // Se estiver removendo marco, nao ha nada para apagar.
     if (removendoMarco) {
       return { fotoId, marco: null };
     }
 
-    await setDoc(
-      fotoRef,
-      {
-        marco: tipoMarco,
-      },
-      { merge: true },
-    );
+    // Bloqueia criacao de documento parcial legado (sem userId/planta_id/url).
+    throw new Error("Foto nao encontrada para aplicar marco");
   }
 
   return { fotoId, marco: removendoMarco ? null : tipoMarco };

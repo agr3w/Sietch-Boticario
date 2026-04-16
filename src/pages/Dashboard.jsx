@@ -6,8 +6,10 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   serverTimestamp,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import {
   Alert,
@@ -38,6 +40,7 @@ import {
   getNotificacoesNaoLidas,
   marcarMensagemComoLida,
 } from "../firebase";
+import { useAuth } from "../contexts/AuthContext";
 import PlantCard from "../components/PlantCard";
 import AddPlantModal from "../components/AddPlantModal";
 import CameraScanner from "../components/CameraScanner";
@@ -61,6 +64,7 @@ function obterUltimaFotoReferenciaPlanta(planta) {
 }
 
 function Dashboard() {
+  const { currentUser } = useAuth();
   const mentatNumberSx = {
     fontFamily: '"Share Tech Mono", monospace',
     letterSpacing: '0.03em',
@@ -139,8 +143,14 @@ function Dashboard() {
   };
 
   const carregarNotificacoesNaoLidas = useCallback(async () => {
+    if (!currentUser?.uid) {
+      setNotificacoes([]);
+      setBadgeCount(0);
+      return;
+    }
+
     try {
-      const notificacoesNaoLidas = await getNotificacoesNaoLidas();
+      const notificacoesNaoLidas = await getNotificacoesNaoLidas(currentUser.uid);
       setNotificacoes(notificacoesNaoLidas);
       setBadgeCount(notificacoesNaoLidas.length);
     } catch {
@@ -148,10 +158,19 @@ function Dashboard() {
       setBadgeCount(0);
       exibirFeedback("Não foi possível carregar as notificações.", "error");
     }
-  }, [exibirFeedback]);
+  }, [currentUser?.uid, exibirFeedback]);
 
   const carregarPlantas = async () => {
-    const querySnapshot = await getDocs(collection(db, "plantas"));
+    if (!currentUser?.uid) {
+      setPlantas([]);
+      return;
+    }
+
+    const plantasQuery = query(
+      collection(db, "plantas"),
+      where("userId", "==", currentUser.uid),
+    );
+    const querySnapshot = await getDocs(plantasQuery);
     const listaPlantas = [];
 
     querySnapshot.forEach((plantaDoc) => {
@@ -162,7 +181,16 @@ function Dashboard() {
   };
 
   const carregarArquivoMorto = async () => {
-    const querySnapshot = await getDocs(collection(db, "arquivo_morto"));
+    if (!currentUser?.uid) {
+      setArquivoMorto([]);
+      return;
+    }
+
+    const arquivoQuery = query(
+      collection(db, "arquivo_morto"),
+      where("userId", "==", currentUser.uid),
+    );
+    const querySnapshot = await getDocs(arquivoQuery);
     const listaArquivo = [];
 
     querySnapshot.forEach((arquivoDoc) => {
@@ -185,11 +213,17 @@ function Dashboard() {
   };
 
   useEffect(() => {
+    if (!currentUser?.uid) {
+      setPlantas([]);
+      setArquivoMorto([]);
+      return;
+    }
+
     void (async () => {
       await carregarPlantas();
       await carregarArquivoMorto();
     })();
-  }, []);
+  }, [currentUser?.uid]);
 
   useEffect(() => {
     void carregarNotificacoesNaoLidas();
@@ -318,6 +352,11 @@ function Dashboard() {
       return;
     }
 
+    if (!currentUser?.uid) {
+      exibirFeedback("Sessão inválida para arquivamento memorial.", "error");
+      return;
+    }
+
     setProcessandoMemorial(true);
 
     try {
@@ -333,6 +372,7 @@ function Dashboard() {
 
       await addDoc(collection(db, "fotos"), {
         planta_id: fluxoAtual.id,
+        userId: currentUser.uid,
         url: fotoMemorialBase64,
         data_registro: serverTimestamp(),
         data_registro_local: dataHoraLocalBr,
@@ -345,6 +385,7 @@ function Dashboard() {
 
       await addDoc(collection(db, "arquivo_morto"), {
         ...plantaData,
+        userId: currentUser.uid,
         planta_id_original: fluxoAtual.id,
         data_arquivamento: serverTimestamp(),
         data_arquivamento_local: dataHoraLocalBr,
@@ -374,6 +415,11 @@ function Dashboard() {
       return;
     }
 
+    if (!currentUser?.uid) {
+      exibirFeedback("Sessão inválida para restauração.", "error");
+      return;
+    }
+
     setRestaurandoArquivoId(arquivoId);
 
     try {
@@ -396,6 +442,7 @@ function Dashboard() {
 
       await addDoc(collection(db, "plantas"), {
         ...dadosPlantaRestaurada,
+        userId: currentUser.uid,
         restaurada_em: serverTimestamp(),
       });
 
@@ -411,8 +458,19 @@ function Dashboard() {
   };
 
   const adicionarPlanta = async (dadosPlanta, fotoNascimentoBase64) => {
+    if (!currentUser?.uid) {
+      exibirFeedback("Sessão inválida para cadastro de planta.", "error");
+      return;
+    }
+
     try {
-      await cadastrarPlantaComFoto(dadosPlanta, fotoNascimentoBase64);
+      await cadastrarPlantaComFoto(
+        {
+          ...dadosPlanta,
+          userId: currentUser.uid,
+        },
+        fotoNascimentoBase64,
+      );
 
       await carregarPlantas();
       setIsAddModalOpen(false);

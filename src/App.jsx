@@ -1,98 +1,84 @@
-import Dashboard from './pages/Dashboard';
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import PlantView from './pages/PlantView';
-import Login from './pages/Login';
 import { useAuth } from './contexts/AuthContext';
 import { Box, CircularProgress, Typography } from '@mui/material';
+import WaterDropOutlinedIcon from '@mui/icons-material/WaterDropOutlined';
 
-function PrivateRoute({ children }) {
-  const { currentUser, loading } = useAuth();
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const PlantView = lazy(() => import('./pages/PlantView'));
+const Login = lazy(() => import('./pages/Login'));
 
-  if (loading) {
-    return (
+function LoadingSietch({ message = 'VERIFICANDO CREDENCIAIS BIOMETRICAS...' }) {
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#05090A',
+        backgroundImage:
+          'radial-gradient(circle at 20% 15%, rgba(31, 58, 44, 0.28), transparent 42%), radial-gradient(circle at 82% 85%, rgba(0, 150, 214, 0.18), transparent 46%), repeating-linear-gradient(135deg, rgba(220, 232, 240, 0.03) 0px, rgba(220, 232, 240, 0.03) 1px, transparent 1px, transparent 12px)',
+        px: 2,
+      }}
+    >
       <Box
         sx={{
-          minHeight: '100vh',
+          width: 'min(92vw, 560px)',
+          border: '1px solid rgba(140, 180, 160, 0.45)',
+          bgcolor: 'rgba(6, 18, 16, 0.78)',
+          backdropFilter: 'blur(8px)',
+          py: 5,
+          px: 3,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'column',
           gap: 2,
-          backgroundColor: '#000000',
-          position: 'relative',
-          overflow: 'hidden',
-          animation: 'routeAuthFadeIn 320ms ease-out',
-          '@keyframes routeAuthFadeIn': {
-            from: {
-              opacity: 0,
-            },
-            to: {
-              opacity: 1,
-            },
-          },
-          '@keyframes routeAuthSweep': {
-            from: {
-              transform: 'translateY(-120%)',
-            },
-            to: {
-              transform: 'translateY(120%)',
-            },
-          },
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '32%',
-            background:
-              'linear-gradient(180deg, rgba(0, 180, 255, 0.18) 0%, rgba(0, 180, 255, 0) 100%)',
-            animation: 'routeAuthSweep 1400ms ease-out 120ms 1 both',
-            pointerEvents: 'none',
+          boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.35) inset, 0 16px 38px rgba(0, 0, 0, 0.42)',
+          animation: 'loadingFadeIn 260ms ease-out',
+          '@keyframes loadingFadeIn': {
+            from: { opacity: 0, transform: 'translateY(8px)' },
+            to: { opacity: 1, transform: 'translateY(0)' },
           },
         }}
       >
-        <CircularProgress
-          color="info"
+        <WaterDropOutlinedIcon
           sx={{
-            animation: 'routeAuthPulse 1400ms ease-in-out infinite',
-            '@keyframes routeAuthPulse': {
-              '0%': {
-                opacity: 0.7,
-                transform: 'scale(0.98)',
-              },
-              '50%': {
-                opacity: 1,
-                transform: 'scale(1.04)',
-              },
-              '100%': {
-                opacity: 0.7,
-                transform: 'scale(0.98)',
-              },
+            color: 'info.main',
+            fontSize: 44,
+            animation: 'loadingPulse 1300ms ease-in-out infinite',
+            '@keyframes loadingPulse': {
+              '0%': { opacity: 0.65, transform: 'scale(0.9)' },
+              '50%': { opacity: 1, transform: 'scale(1.08)' },
+              '100%': { opacity: 0.65, transform: 'scale(0.9)' },
             },
           }}
         />
+        <CircularProgress size={22} color="info" thickness={5} />
         <Typography
           sx={{
             color: '#DCE8F0',
-            fontFamily: '"Share Tech Mono", monospace',
-            letterSpacing: '0.05em',
+            fontFamily: 'Rajdhani, sans-serif',
+            fontWeight: 700,
             textTransform: 'uppercase',
-            animation: 'routeAuthTextBlink 1200ms steps(2, end) infinite',
-            '@keyframes routeAuthTextBlink': {
-              '0%': {
-                opacity: 0.6,
-              },
-              '100%': {
-                opacity: 1,
-              },
-            },
+            letterSpacing: '0.08em',
+            textAlign: 'center',
+            fontSize: { xs: '0.9rem', sm: '1.02rem' },
           }}
         >
-          VERIFICANDO CREDENCIAIS...
+          {message}
         </Typography>
       </Box>
-    );
+    </Box>
+  );
+}
+
+function PrivateRoute({ children }) {
+  const { currentUser, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingSietch message="VERIFICANDO CREDENCIAIS BIOMETRICAS..." />;
   }
 
   if (!currentUser) {
@@ -106,29 +92,31 @@ function App() {
   const { currentUser } = useAuth();
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={(
-          <PrivateRoute>
-            <Dashboard />
-          </PrivateRoute>
-        )}
-      />
-      <Route
-        path="/login"
-        element={currentUser ? <Navigate to="/" replace /> : <Login />}
-      />
-      <Route
-        path="/planta/:id"
-        element={(
-          <PrivateRoute>
-            <PlantView />
-          </PrivateRoute>
-        )}
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Suspense fallback={<LoadingSietch message="SINCRONIZANDO COM O SIETCH..." />}>
+      <Routes>
+        <Route
+          path="/"
+          element={(
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          )}
+        />
+        <Route
+          path="/login"
+          element={currentUser ? <Navigate to="/" replace /> : <Login />}
+        />
+        <Route
+          path="/planta/:id"
+          element={(
+            <PrivateRoute>
+              <PlantView />
+            </PrivateRoute>
+          )}
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 

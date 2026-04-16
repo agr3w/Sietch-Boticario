@@ -422,6 +422,11 @@ function PlantView() {
       return;
     }
 
+    if (!planta?.userId) {
+      setErroFoto("Planta sem userId. Nao foi possivel salvar com seguranca.");
+      return;
+    }
+
     setErroFoto("");
     setSalvandoFoto(true);
 
@@ -442,6 +447,7 @@ function PlantView() {
     try {
       await addDoc(collection(db, "fotos"), {
         planta_id: planta.id,
+        userId: planta.userId,
         url: fotoBase64,
         data_registro: serverTimestamp(),
         data_registro_local: dataHoraLocalBr,
