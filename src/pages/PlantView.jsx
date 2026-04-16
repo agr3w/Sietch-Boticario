@@ -15,6 +15,15 @@ import {
   Typography,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import WbSunnyIcon from "@mui/icons-material/WbSunny";
@@ -29,6 +38,7 @@ import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import CameraScanner from "../components/CameraScanner";
 import SietchCard from "../components/ui/SietchCard";
 import { adicionarFotoGaleriaPlanta, db, getHistoricoFotos } from "../firebase";
+import { calcularHP } from "../utils/telemetria";
 
 function parseUltimaRegaDate(ultimaRega) {
   if (!ultimaRega) {
@@ -206,7 +216,7 @@ function PlantView() {
     return () => {
       ativo = false;
     };
-  }, [planta?.id, planta?.galeria_fotos, planta?.galeriaFotos]);
+  }, [planta?.id, planta?.userId, planta?.galeria_fotos, planta?.galeriaFotos]);
 
   useEffect(() => {
     setIndexFoto((valorAtual) => {
@@ -352,40 +362,37 @@ function PlantView() {
     };
   }, [necessidadeLuz]);
 
-  const tendencia24h = useMemo(() => {
-    const clamp = (valor, min, max) => Math.min(max, Math.max(min, valor));
-    const assinatura = String(planta?.id ?? "")
-      .split("")
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const ajusteVitalidade =
-      vitalidadeAtual === "prosperando"
-        ? 6
-        : vitalidadeAtual === "estavel"
-          ? 2
-          : vitalidadeAtual === "recuperacao"
-            ? -4
-            : -8;
+  const dadosGraficoVitalidade = useMemo(() => {
+    const fotosOrdenadas = ordenarFotosPorDataAsc(fotos);
+    const dados = fotosOrdenadas.map((foto, index) => {
+      const dataRegistro = extrairDataRegistro(foto?.data_registro ?? foto?.data_captura);
+      const dataFormatada = dataRegistro
+        ? dataRegistro.toLocaleDateString("pt-BR", {
+            timeZone: "America/Sao_Paulo",
+            day: "2-digit",
+            month: "2-digit",
+          })
+        : "--/--";
+      const plantaSimulada = {
+        ...planta,
+        vitalidade: foto?.vitalidade ?? planta?.vitalidade,
+        ultima_rega: foto?.data_registro ?? foto?.data_captura ?? planta?.ultima_rega,
+      };
 
-    const base = clamp(Math.round(sinaisVitais.porcentagemAgua) + ajusteVitalidade, 6, 96);
-
-    const pontos = Array.from({ length: 8 }, (_, index) => {
-      const oscilacao = ((assinatura + index * 7) % 9) - 4;
-      const tendencia = (index - 3.5) * (vitalidadeAtual === "critico" ? -2.1 : -1.1);
-      return clamp(Math.round(base + oscilacao + tendencia), 3, 99);
+      return {
+        data: dataFormatada,
+        saude: calcularHP(plantaSimulada, fotosOrdenadas.slice(0, index + 1)),
+      };
     });
 
-    const largura = 196;
-    const altura = 58;
-    const pontosSvg = pontos
-      .map((valor, index) => {
-        const x = (index / (pontos.length - 1)) * largura;
-        const y = altura - (valor / 100) * altura;
-        return `${x},${y}`;
-      })
-      .join(" ");
+    if (dados.length === 0) {
+      return [{ data: "Agora", saude: calcularHP(planta ?? {}, fotosOrdenadas) }];
+    }
 
-    return { pontos, pontosSvg, largura, altura };
-  }, [planta?.id, sinaisVitais.porcentagemAgua, vitalidadeAtual]);
+    return dados.slice(-6);
+  }, [fotos, planta]);
+  const hpAtual = useMemo(() => calcularHP(planta ?? {}, fotos), [planta, fotos]);
+  const hpCorAtual = hpAtual >= 75 ? "#345A14" : hpAtual >= 40 ? "#C48A31" : "#9E3D22";
 
   const auraColor =
     sinaisVitais.statusTelemetrico === "Seca Critica"
@@ -647,6 +654,47 @@ function PlantView() {
                       </Typography>
                     </Stack>
 
+                    <Box sx={{ mt: 1.1 }}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="baseline">
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "text.secondary",
+                            fontFamily: '"Share Tech Mono", monospace',
+                            letterSpacing: "0.06em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Nivel de sobrevivencia (HP)
+                        </Typography>
+                        <Typography
+                          sx={{
+                            color: hpCorAtual,
+                            fontFamily: '"Share Tech Mono", monospace',
+                            fontSize: "1.12rem",
+                            fontWeight: 700,
+                            lineHeight: 1,
+                          }}
+                        >
+                          {hpAtual}/100
+                        </Typography>
+                      </Stack>
+                      <LinearProgress
+                        variant="determinate"
+                        value={hpAtual}
+                        sx={{
+                          mt: 0.7,
+                          height: 10,
+                          borderRadius: 0,
+                          backgroundColor: "rgba(61, 40, 16, 0.12)",
+                          border: "1px solid rgba(61, 40, 16, 0.2)",
+                          "& .MuiLinearProgress-bar": {
+                            backgroundColor: hpCorAtual,
+                          },
+                        }}
+                      />
+                    </Box>
+
                     <Box sx={{ mt: 1.2 }}>
                       <Typography
                         variant="caption"
@@ -657,20 +705,50 @@ function PlantView() {
                           textTransform: "uppercase",
                         }}
                       >
-                        Evolucao nas ultimas 24h (simulada)
+                        Historico de vitalidade (compacto)
                       </Typography>
-                      <Box
-                        component="svg"
-                        viewBox={`0 0 ${tendencia24h.largura} ${tendencia24h.altura}`}
-                        sx={{ width: "100%", mt: 0.7 }}
-                      >
-                        <polyline
-                          points={tendencia24h.pontosSvg}
-                          fill="none"
-                          stroke={estadoVisual.cor}
-                          strokeWidth="2.2"
-                          strokeLinecap="square"
-                        />
+                      <Box sx={{ width: "100%", height: 78, mt: 0.7 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={dadosGraficoVitalidade} margin={{ top: 4, right: 2, left: 2, bottom: 0 }}>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              stroke="rgba(61, 40, 16, 0.12)"
+                              vertical={false}
+                            />
+                            <XAxis
+                              dataKey="data"
+                              stroke="#6E553B"
+                              fontSize={10}
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <YAxis domain={[0, 100]} hide />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "#EEF0E8",
+                                borderColor: "rgba(61, 40, 16, 0.2)",
+                                borderRadius: "4px",
+                                color: "#3D2810",
+                              }}
+                              formatter={(value) => {
+                                const hp = Number.isFinite(Number(value))
+                                  ? Math.round(Number(value))
+                                  : 0;
+                                return [`Nivel de Sobrevivencia: ${hp}/100`];
+                              }}
+                              labelFormatter={(label) => `Registro: ${label}`}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="saude"
+                              stroke="#0D3028"
+                              strokeWidth={2.2}
+                              dot={{ r: 2.8, fill: "#A64D13", strokeWidth: 1.5, stroke: "#EEF0E8" }}
+                              activeDot={{ r: 4.5, fill: "#345A14" }}
+                              animationDuration={900}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
                       </Box>
                     </Box>
                   </SietchCard>
@@ -971,14 +1049,73 @@ function PlantView() {
                 </Stack>
               )}
 
-              <Typography
+              <SietchCard
+                highlightColor="#1B80C4"
                 sx={{
-                  color: "text.primary",
-                  fontFamily: '"Share Tech Mono", monospace',
+                  p: 1.2,
+                  borderLeftWidth: "2px",
+                  backgroundColor: "rgba(255, 255, 255, 0.5)",
                 }}
               >
-                Clima: {climaAtual ? `${climaAtual.temperatura}°C / ${climaAtual.umidade}%` : "Sinal indisponível"}
-              </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                    fontFamily: '"Share Tech Mono", monospace',
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Condicoes climaticas locais
+                </Typography>
+
+                {climaAtual ? (
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1}
+                    sx={{ mt: 1, justifyContent: "space-between" }}
+                  >
+                    <Stack direction="row" spacing={0.8} alignItems="center">
+                      <WbSunnyIcon sx={{ color: "#C48A31", fontSize: 20 }} />
+                      <Typography
+                        sx={{
+                          color: "#3D2810",
+                          fontFamily: '"Share Tech Mono", monospace',
+                          fontWeight: 700,
+                          fontSize: "1rem",
+                        }}
+                      >
+                        {Number(climaAtual.temperatura).toFixed(1)} C
+                      </Typography>
+                    </Stack>
+
+                    <Stack direction="row" spacing={0.8} alignItems="center">
+                      <WaterDropIcon sx={{ color: "#1B80C4", fontSize: 20 }} />
+                      <Typography
+                        sx={{
+                          color: "#3D2810",
+                          fontFamily: '"Share Tech Mono", monospace',
+                          fontWeight: 700,
+                          fontSize: "1rem",
+                        }}
+                      >
+                        {Math.round(Number(climaAtual.umidade))}% UR
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                ) : (
+                  <Typography
+                    sx={{
+                      mt: 1,
+                      color: "text.secondary",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      fontSize: "0.88rem",
+                    }}
+                  >
+                    Sinal climatico indisponivel
+                  </Typography>
+                )}
+              </SietchCard>
 
               {erroFoto && (
                 <Alert severity="error" sx={{ textAlign: "left" }}>

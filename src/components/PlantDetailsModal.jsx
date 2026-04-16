@@ -259,31 +259,6 @@ function getVitalidadeFrameConfig(vitalidadeAtual) {
   };
 }
 
-function getMarcoFrameConfig(marcoAtual) {
-  if (marcoAtual === "nascimento") {
-    return {
-      borderColor: "#7EC3F1",
-      glow: "rgba(126, 195, 241, 0.56)",
-    };
-  }
-
-  if (marcoAtual === "crescimento") {
-    return {
-      borderColor: "#5FC88A",
-      glow: "rgba(95, 200, 138, 0.56)",
-    };
-  }
-
-  if (marcoAtual === "memorial") {
-    return {
-      borderColor: "#D39A2C",
-      glow: "rgba(211, 154, 44, 0.56)",
-    };
-  }
-
-  return null;
-}
-
 function FotoMiniaturaHud({ foto, ativa, onSelecionar }) {
   const marcoFoto = normalizarTipoMarco(foto?.marco);
   const ehNascimento = marcoFoto === "nascimento";
@@ -1195,6 +1170,13 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                         borderRadius: "4px",
                         color: "#3D2810",
                       }}
+                      formatter={(value) => {
+                        const hp = Number.isFinite(Number(value))
+                          ? Math.round(Number(value))
+                          : 0;
+                        return [`Saúde: ${hp}/100`];
+                      }}
+                      labelFormatter={(label) => `Registro: ${label}`}
                     />
                     <Line
                       type="monotone"
