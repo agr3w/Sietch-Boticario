@@ -60,7 +60,8 @@ const Home = () => {
             />
             <Typography
               variant="h6"
-              sx={{ fontFamily: 'Rajdhani', fontWeight: 700, letterSpacing: '0.1em' }}
+              
+              sx={{ fontFamily: 'Rajdhani', fontWeight: 700, letterSpacing: '0.1em', color: "text.primary" }}
             >
               SIETCH BOTICÁRIO
             </Typography>

@@ -15,6 +15,7 @@ import GoogleIcon from "@mui/icons-material/Google";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { globalSx } from "../theme/styles";
+import mascote from "../assets/mascote.png";
 
 function Login() {
   const navigate = useNavigate();
@@ -95,25 +96,7 @@ function Login() {
           alignItems: "center",
           justifyContent: "center",
           py: 4,
-          position: "relative",
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            inset: 0,
-            zIndex: -2,
-            background:
-              "radial-gradient(circle at 20% 10%, rgba(211,84,0,0.16) 0%, transparent 48%), radial-gradient(circle at 85% 80%, rgba(126,195,241,0.14) 0%, transparent 44%), linear-gradient(180deg, #1A2425 0%, #12191B 100%)",
-          },
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            inset: 0,
-            zIndex: -1,
-            opacity: 0.08,
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E\")",
-            backgroundRepeat: "repeat",
-          },
+          backgroundColor: "background.default",
         },
       ]}
     >
@@ -121,19 +104,27 @@ function Login() {
         sx={{
           width: "100%",
           borderRadius: 0,
-          border: "1px solid rgba(211,154,44,0.72)",
-          backgroundColor: "rgba(30, 58, 47, 0.7)",
-          backdropFilter: "blur(12px)",
-          boxShadow: "0 16px 36px rgba(0,0,0,0.45)",
+          border: "1px solid rgba(61, 40, 16, 0.1)",
+          backgroundColor: "background.paper",
+          boxShadow: "0 10px 30px rgba(61, 40, 16, 0.08)",
         }}
       >
         <CardContent sx={{ p: { xs: 2.2, sm: 3 } }}>
           <Stack component="form" spacing={2} onSubmit={handleSubmitEmail}>
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 0.5 }}>
+              <Box
+                component="img"
+                src={mascote}
+                alt="Mascote Muad'Dib"
+                sx={{ width: 80, height: 80, objectFit: "cover" }}
+              />
+            </Box>
+
             <Box>
               <Typography
                 variant="h5"
                 sx={{
-                  color: "#E8E0D5",
+                  color: "text.primary",
                   fontFamily: '"Rajdhani", sans-serif',
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
@@ -145,7 +136,7 @@ function Login() {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "rgba(232,224,213,0.78)",
+                  color: "text.secondary",
                   mt: 0.4,
                 }}
               >
@@ -166,9 +157,12 @@ function Login() {
               fullWidth
               disabled={carregando}
               sx={{
+                "& .MuiInputLabel-root": {
+                  color: "#6E553B",
+                },
                 "& .MuiInputBase-root": {
                   borderRadius: 0,
-                  backgroundColor: "rgba(10,16,18,0.35)",
+                  backgroundColor: "rgba(255, 255, 255, 0.4)",
                 },
               }}
             />
@@ -182,9 +176,12 @@ function Login() {
               fullWidth
               disabled={carregando}
               sx={{
+                "& .MuiInputLabel-root": {
+                  color: "#6E553B",
+                },
                 "& .MuiInputBase-root": {
                   borderRadius: 0,
-                  backgroundColor: "rgba(10,16,18,0.35)",
+                  backgroundColor: "rgba(255, 255, 255, 0.4)",
                 },
               }}
             />
@@ -198,7 +195,12 @@ function Login() {
                 py: 1.2,
                 fontWeight: 700,
                 letterSpacing: "0.06em",
-                background: "linear-gradient(135deg, #1B80C4 0%, #2F6F4E 100%)",
+                backgroundColor: isLogin ? "primary.main" : "secondary.main",
+                color: "#F5ECD7",
+                "&:hover": {
+                  backgroundColor: isLogin ? "primary.main" : "secondary.main",
+                  filter: "brightness(0.95)",
+                },
               }}
             >
               {carregando
@@ -217,7 +219,7 @@ function Login() {
               }}
               sx={{
                 borderRadius: 0,
-                color: "#E8E0D5",
+                color: "secondary.main",
               }}
             >
               {isLogin
@@ -227,10 +229,10 @@ function Login() {
 
             <Divider
               sx={{
-                color: "rgba(232,224,213,0.9)",
-                borderColor: "rgba(211,154,44,0.32)",
+                color: "rgba(61, 40, 16, 0.7)",
+                borderColor: "rgba(61, 40, 16, 0.18)",
                 "&::before, &::after": {
-                  borderColor: "rgba(211,154,44,0.32)",
+                  borderColor: "rgba(61, 40, 16, 0.18)",
                 },
               }}
             >
@@ -245,13 +247,13 @@ function Login() {
               sx={{
                 borderRadius: 0,
                 py: 1.15,
-                borderColor: "rgba(126,195,241,0.7)",
-                color: "#DDEBF5",
+                borderColor: "rgba(13, 48, 40, 0.4)",
+                color: "primary.main",
                 letterSpacing: "0.04em",
                 fontWeight: 700,
                 "&:hover": {
-                  borderColor: "rgba(126,195,241,0.95)",
-                  backgroundColor: "rgba(27,128,196,0.12)",
+                  borderColor: "primary.main",
+                  backgroundColor: "rgba(13, 48, 40, 0.06)",
                 },
               }}
             >

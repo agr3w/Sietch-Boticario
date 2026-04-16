@@ -54,10 +54,10 @@ const placeholderFantasma =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Epipremnum_aureum_31082012.jpg/800px-Epipremnum_aureum_31082012.jpg";
 
 const vitalidadeConfig = {
-  prosperando: { cor: "#2F6F4E", label: "Prosperando" },
+  prosperando: { cor: "#345A14", label: "Prosperando" },
   estavel: { cor: "#1B80C4", label: "Estavel" },
-  recuperacao: { cor: "#D39A2C", label: "Em Recuperacao" },
-  critico: { cor: "#D94841", label: "Critico" },
+  recuperacao: { cor: "#C48A31", label: "Em Recuperacao" },
+  critico: { cor: "#9E3D22", label: "Critico" },
 };
 
 function formatarDataBr(dataEnvio) {
@@ -890,7 +890,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
           pb: 1.2,
           borderBottom: "4px solid",
           borderColor: vitalidadeAtualConfig.cor,
-          boxShadow: `inset 0 -15px 30px -15px ${vitalidadeAtualConfig.cor}60`,
+          boxShadow: `inset 0 -10px 22px -16px ${hexParaRgba(vitalidadeAtualConfig.cor, 0.2)}`,
           textTransform: "uppercase",
           fontFamily: '"Rajdhani", sans-serif',
           letterSpacing: "0.1em",
@@ -970,26 +970,33 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
             position: "sticky",
             top: 0,
             zIndex: 2,
-            backgroundColor: "background.paper",
-            borderBottom: "1px solid rgba(120, 120, 120, 0.22)",
+            backgroundColor: "#E8EDE4",
+            borderBottom: "1px solid rgba(61, 40, 16, 0.14)",
+            "& .MuiTabs-indicator": {
+              height: 3,
+              backgroundColor: "primary.main",
+            },
             "& .MuiTab-root": {
               minWidth: { xs: 126, sm: 140 },
               fontSize: { xs: "0.74rem", sm: "0.82rem" },
               px: { xs: 1.1, sm: 1.8 },
               whiteSpace: "nowrap",
-              color: "rgba(245, 242, 235, 0.9)",
+              fontFamily: '"Rajdhani", sans-serif',
+              fontWeight: 700,
+              letterSpacing: "0.03em",
+              color: "text.secondary",
               "&:hover": {
-                color: "#F5F2EB",
-                backgroundColor: "rgba(126, 195, 241, 0.12)",
+                color: "primary.main",
+                backgroundColor: "rgba(13, 48, 40, 0.08)",
               },
               "&:focus-visible": {
-                outline: "3px solid #7EC3F1",
+                outline: "3px solid #1B80C4",
                 outlineOffset: -2,
-                backgroundColor: "rgba(126, 195, 241, 0.16)",
+                backgroundColor: "rgba(27, 128, 196, 0.12)",
               },
             },
             "& .Mui-selected": {
-              color: "#7EC3F1 !important",
+              color: "#0D3028 !important",
             },
           }}
         >

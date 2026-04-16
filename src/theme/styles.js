@@ -240,47 +240,46 @@ export const plantCardSx = {
 export const addPlantModalSx = {
   dialogPaper: {
     borderRadius: 0,
-    background:
-      "linear-gradient(180deg, rgba(14, 22, 26, 0.98) 0%, rgba(11, 18, 22, 0.98) 100%)",
-    border: "1px solid rgba(211, 154, 44, 0.42)",
-    boxShadow: "0 22px 44px rgba(0, 0, 0, 0.48)",
-    color: "#F5F2EB",
+    background: "#EEF0E8",
+    border: "1px solid rgba(166, 77, 19, 0.2)",
+    boxShadow: "0 12px 28px rgba(61, 40, 16, 0.12)",
+    color: "#3D2810",
   },
   title: {
     pb: 1.1,
-    color: "#F5F2EB",
+    color: "#0D3028",
     fontFamily: '"Rajdhani", sans-serif',
     textTransform: "uppercase",
     fontWeight: 700,
     letterSpacing: "0.06em",
-    borderBottom: "1px solid rgba(126, 195, 241, 0.3)",
-    backgroundColor: "rgba(17, 29, 34, 0.56)",
+    borderBottom: "1px solid rgba(13, 48, 40, 0.16)",
+    backgroundColor: "#E0EDF5",
   },
   form: {
     display: "grid",
     gap: 2,
     pt: "10px !important",
     "& .MuiTextField-root .MuiInputBase-root": {
-      backgroundColor: "rgba(6, 14, 18, 0.72)",
-      color: "#F5F2EB",
+      backgroundColor: "rgba(255, 255, 255, 0.6)",
+      color: "#3D2810",
     },
     "& .MuiTextField-root .MuiInputLabel-root": {
-      color: "rgba(211, 154, 44, 0.92)",
+      color: "#6E553B",
     },
     "& .MuiTextField-root .MuiInputLabel-root.Mui-focused": {
-      color: "#F5F2EB",
+      color: "#345A14",
     },
     "& .MuiTextField-root .MuiOutlinedInput-notchedOutline": {
-      borderColor: "rgba(245, 242, 235, 0.32)",
+      borderColor: "rgba(61, 40, 16, 0.2)",
     },
     "& .MuiTextField-root .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
-      borderColor: "rgba(245, 242, 235, 0.62)",
+      borderColor: "rgba(61, 40, 16, 0.32)",
     },
     "& .MuiTextField-root .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-      borderColor: "#7EC3F1",
+      borderColor: "#345A14",
     },
     "& .MuiInputBase-input::placeholder": {
-      color: "rgba(245, 242, 235, 0.65)",
+      color: "rgba(61, 40, 16, 0.55)",
       opacity: 1,
     },
   },
@@ -320,10 +319,10 @@ export const addPlantModalSx = {
     },
   },
   submitButton: {
-    background: "linear-gradient(135deg, #1E3A2F 0%, #2F6F4E 100%)",
+    background: "linear-gradient(135deg, #345A14 0%, #4A7A1F 100%)",
     color: "#F5F2EB",
     "&:hover": {
-      background: "linear-gradient(135deg, #254A3B 0%, #38855D 100%)",
+      background: "linear-gradient(135deg, #2C4D11 0%, #3F691A 100%)",
     },
   },
 };

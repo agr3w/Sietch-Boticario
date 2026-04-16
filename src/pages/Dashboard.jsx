@@ -584,15 +584,15 @@ function Dashboard() {
             component="h1"
             gutterBottom
             align="center"
-            sx={{ color: "#E8E0D5" }}
+            sx={{ fontFamily: 'Rajdhani', fontWeight: 700, letterSpacing: '0.1em', color: "text.primary" }}
           >
-            Sietch Boticário 🌿
+            Sietch Boticário
           </Typography>
           <Typography
             variant="subtitle1"
             gutterBottom
             align="center"
-            sx={layoutSx.subtitle}
+            sx={layoutSx.subtitle, {color: "text.primary"}}
           >
             Painel Fremen para Gestão de Umidade e Controle Botânico
           </Typography>
