@@ -25,6 +25,7 @@ import mascote from '../assets/mascote.png';
 import heroImg from '../assets/hero.jpg';
 
 const Home = () => {
+  const MotionDiv = motion.div;
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -163,6 +164,49 @@ const Home = () => {
         </Grid>
       </Container>
 
+      <Box sx={{ py: 15 }}>
+        <Container maxWidth="md">
+          <MotionDiv
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true, amount: 0.5 }}
+          >
+            <Stack spacing={3} textAlign="center" alignItems="center">
+              <Typography
+                sx={{
+                  color: 'secondary.main',
+                  fontFamily: 'Rajdhani',
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                A DISCIPLINA DA ÁGUA
+              </Typography>
+
+              <Typography
+                variant="h3"
+                sx={{
+                  fontFamily: 'Rajdhani',
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  maxWidth: 920,
+                }}
+              >
+                A maioria das plantas não morre de sede. Elas afogam no excesso de cuidado ou secam no
+                esquecimento cego.
+              </Typography>
+
+              <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 820, lineHeight: 1.6 }}>
+                O Sietch Boticário remove a adivinhação da botânica. Através de telemetria precisa e
+                memória fotográfica, nós ensinamos você a ler os sinais de sobrevivência do seu jardim.
+              </Typography>
+            </Stack>
+          </MotionDiv>
+        </Container>
+      </Box>
+
       <Box sx={{ py: 15, backgroundColor: 'rgba(0,0,0,0.3)' }}>
         <Container maxWidth="lg">
           <Typography
@@ -214,6 +258,120 @@ const Home = () => {
           </Grid>
         </Container>
       </Box>
+
+      <Box sx={{ py: 15, backgroundColor: 'rgba(255,255,255,0.02)' }}>
+        <Container maxWidth="md">
+          <Typography
+            variant="h3"
+            textAlign="center"
+            sx={{ fontFamily: 'Rajdhani', mb: 10, fontWeight: 700 }}
+          >
+            PROTOCOLO DE INICIAÇÃO
+          </Typography>
+
+          <Stack spacing={6}>
+            {[
+              {
+                title: 'INICIAÇÃO',
+                desc: 'Cadastre a espécie e capture o primeiro registro morfológico (O Dia Zero).',
+              },
+              {
+                title: 'SINCRONIA',
+                desc: 'Acompanhe a drenagem do medidor tático e receba alertas exatos de quando fornecer água.',
+              },
+              {
+                title: 'EVOLUÇÃO',
+                desc: 'Escaneie a plaqueta de rastreio para atualizar o prontuário visual e expandir a linha do tempo da planta.',
+              },
+            ].map((step, index) => (
+              <MotionDiv
+                key={step.title}
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.3, duration: 0.5 }}
+                viewport={{ once: true, amount: 0.35 }}
+              >
+                <Box
+                  sx={{
+                    pl: { xs: 0, sm: 4 },
+                    borderLeft: { xs: 'none', sm: `2px solid ${theme.palette.secondary.main}66` },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: 'Rajdhani',
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      color: 'secondary.main',
+                      textTransform: 'uppercase',
+                      mb: 1,
+                    }}
+                  >
+                    {step.title}
+                  </Typography>
+                  <Typography variant="h5" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+                    {step.desc}
+                  </Typography>
+                </Box>
+              </MotionDiv>
+            ))}
+          </Stack>
+        </Container>
+      </Box>
+
+      <Container maxWidth="md" sx={{ py: 15 }}>
+        <MotionDiv
+          initial={{ scale: 0.9, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          <Card
+            sx={{
+              p: { xs: 5, md: 8 },
+              borderRadius: 0,
+              textAlign: 'center',
+              background: 'radial-gradient(circle at center, #1E3A2F 0%, #0A0A0A 100%)',
+              borderTop: `2px solid ${theme.palette.secondary.main}`,
+              borderBottom: `2px solid ${theme.palette.secondary.main}`,
+              boxShadow: '0 24px 60px rgba(0,0,0,0.45)',
+            }}
+          >
+            <Stack spacing={4} alignItems="center">
+              <Typography
+                variant="h2"
+                sx={{
+                  fontFamily: 'Rajdhani',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                }}
+              >
+                O DESERTO AGUARDA.
+              </Typography>
+
+              <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 700 }}>
+                Proteja a vida do seu espaço. Comece seu arquivo botânico hoje.
+              </Typography>
+
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => navigate('/login')}
+                sx={{
+                  minHeight: 72,
+                  px: { xs: 4, sm: 8 },
+                  borderRadius: 0,
+                  fontSize: { xs: '1rem', sm: '1.15rem' },
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                }}
+              >
+                ESTABELECER MEU SIETCH
+              </Button>
+            </Stack>
+          </Card>
+        </MotionDiv>
+      </Container>
 
       <Container maxWidth="md" sx={{ py: 15 }}>
         <Typography
