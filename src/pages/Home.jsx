@@ -1,326 +1,213 @@
+import React from 'react';
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  AppBar,
-  Avatar,
   Box,
-  Button,
-  Card,
-  CardContent,
   Container,
-  Grid,
-  Stack,
-  Toolbar,
   Typography,
+  Button,
+  Grid,
+  Card,
+  Stack,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  AppBar,
+  Toolbar,
+  Avatar,
+  useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import RadarOutlinedIcon from '@mui/icons-material/RadarOutlined';
-import CameraAltOutlinedIcon from '@mui/icons-material/CameraAltOutlined';
-import QrCode2OutlinedIcon from '@mui/icons-material/QrCode2Outlined';
-import { Link as RouterLink } from 'react-router-dom';
-import mascot from '../assets/mascote.png';
-import heroPreview from '../assets/hero.png';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import mascote from '../assets/mascote.png';
+import heroImg from '../assets/hero.jpg';
 
-const featureCards = [
-  {
-    title: 'TELEMETRIA HIDRICA',
-    description:
-      'Monitoramento de secas com alertas de precisão antes que a planta atinja nível crítico.',
-    icon: RadarOutlinedIcon,
-    iconColor: '#62B8F0',
-  },
-  {
-    title: 'SCANNER MORFOLOGICO',
-    description:
-      'Câmera fantasma que cria uma linha do tempo perfeita da evolução da sua planta.',
-    icon: CameraAltOutlinedIcon,
-    iconColor: '#58D68D',
-  },
-  {
-    title: 'RASTREIO BIOMETRICO',
-    description:
-      'Gere plaquetas táticas para escanear e acessar o prontuário da planta instantaneamente no jardim.',
-    icon: QrCode2OutlinedIcon,
-    iconColor: '#E2A72E',
-  },
-];
+const Home = () => {
+  const theme = useTheme();
+  const navigate = useNavigate();
 
-function Home() {
   return (
     <Box
       sx={{
+        backgroundColor: theme.palette.background.default,
         minHeight: '100vh',
-        background:
-          'radial-gradient(circle at 12% 10%, rgba(211, 154, 44, 0.2) 0%, transparent 34%), radial-gradient(circle at 88% 20%, rgba(27, 128, 196, 0.16) 0%, transparent 42%), linear-gradient(180deg, #090F13 0%, #0E171C 100%)',
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'fixed',
-          inset: 0,
-          pointerEvents: 'none',
-          opacity: 0.08,
-          backgroundImage:
-            'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'160\' height=\'160\' viewBox=\'0 0 160 160\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.92\' numOctaves=\'2\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'160\' height=\'160\' filter=\'url(%23n)\' opacity=\'0.55\'/%3E%3C/svg%3E")',
-          backgroundRepeat: 'repeat',
-          zIndex: 0,
-        },
+        backgroundImage:
+          'radial-gradient(circle at 20% 30%, rgba(30, 58, 47, 0.15) 0%, transparent 70%)',
       }}
     >
       <AppBar
         position="fixed"
-        elevation={0}
         sx={{
-          background: 'rgba(20, 20, 20, 0.6)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(211, 154, 44, 0.32)',
+          background: 'rgba(10, 10, 10, 0.7)',
+          backdropFilter: 'blur(15px)',
+          borderBottom: `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Toolbar sx={{ minHeight: 72 }}>
-          <Container
-            maxWidth="lg"
+        <Toolbar sx={{ justifyContent: 'space-between' }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Avatar
+              src={mascote}
+              sx={{
+                width: 40,
+                height: 40,
+                border: `1px solid ${theme.palette.secondary.main}`,
+              }}
+            />
+            <Typography
+              variant="h6"
+              sx={{ fontFamily: 'Rajdhani', fontWeight: 700, letterSpacing: '0.1em' }}
+            >
+              SIETCH BOTICÁRIO
+            </Typography>
+          </Stack>
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/login')}
             sx={{
-              px: '0 !important',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              borderRadius: 0,
+              borderColor: theme.palette.secondary.main,
+              color: theme.palette.secondary.main,
             }}
           >
-            <Stack direction="row" spacing={1.2} alignItems="center">
-              <Avatar src={mascot} alt="Mascote do Sietch" sx={{ width: 42, height: 42 }} />
-              <Typography
-                sx={{
-                  fontFamily: 'Rajdhani, sans-serif',
-                  fontWeight: 700,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  color: 'text.primary',
-                }}
-              >
-                SIETCH BOTICÁRIO
-              </Typography>
-            </Stack>
-
-            <Button
-              component={RouterLink}
-              to="/login"
-              variant="outlined"
-              sx={{
-                color: 'text.primary',
-                borderColor: 'rgba(245, 242, 235, 0.55)',
-                px: 2.2,
-                '&:hover': {
-                  borderColor: '#7EC3F1',
-                  backgroundColor: 'rgba(126, 195, 241, 0.14)',
-                },
-              }}
-            >
-              Entrar
-            </Button>
-          </Container>
+            IDENTIFICAR-SE
+          </Button>
         </Toolbar>
       </AppBar>
 
-      <Container
-        maxWidth="lg"
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          pt: { xs: 12, md: 14 },
-          pb: { xs: 6, md: 8 },
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
-        <Grid container spacing={{ xs: 5, md: 6 }} alignItems="center">
+      <Container maxWidth="lg" sx={{ pt: 20, pb: 10 }}>
+        <Grid container spacing={8} alignItems="center">
           <Grid size={{ xs: 12, md: 7 }}>
-            <Stack spacing={3}>
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+            >
               <Typography
-                component="h1"
+                variant="h1"
                 sx={{
-                  fontFamily: 'Rajdhani, sans-serif',
-                  fontWeight: 800,
+                  fontFamily: 'Rajdhani',
+                  fontWeight: 900,
+                  fontSize: { xs: '3.5rem', md: '5rem' },
                   lineHeight: 0.9,
-                  letterSpacing: '0.04em',
+                  mb: 3,
                   textTransform: 'uppercase',
-                  color: 'text.primary',
-                  fontSize: { xs: '2.5rem', sm: '3.8rem', md: '5.3rem' },
                 }}
               >
-                A Água é a Medida da Vida
+                A água é a <br />
+                <Box component="span" sx={{ color: theme.palette.secondary.main }}>
+                  medida da vida.
+                </Box>
               </Typography>
-
-              <Typography
-                variant="h5"
+              <Typography variant="h5" sx={{ mb: 6, color: 'text.secondary', maxWidth: '500px' }}>
+                Domine a ecologia do seu espaço com telemetria avançada, biometria fotográfica e o
+                instinto de sobrevivência de Arrakis.
+              </Typography>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => navigate('/login')}
                 sx={{
-                  color: 'rgba(224, 231, 237, 0.9)',
-                  fontWeight: 500,
-                  lineHeight: 1.4,
-                  maxWidth: 760,
-                  fontSize: { xs: '1.08rem', sm: '1.35rem' },
+                  height: 64,
+                  px: 6,
+                  fontSize: '1.2rem',
+                  borderRadius: 0,
+                  clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0% 30%)',
+                  boxShadow: `0 0 20px ${theme.palette.primary.main}60`,
                 }}
               >
-                Domine a ecologia do seu espaço com telemetria, biometria e histórico de saúde botânica.
-              </Typography>
-
-              <Box sx={{ pt: 0.8 }}>
-                <Button
-                  component={RouterLink}
-                  to="/login"
-                  variant="contained"
-                  size="large"
-                  sx={{
-                    minWidth: { xs: '100%', sm: 380 },
-                    py: 1.7,
-                    fontSize: '1rem',
-                    fontWeight: 800,
-                    letterSpacing: '0.06em',
-                    background: 'linear-gradient(135deg, #0D6FA8 0%, #1B80C4 58%, #71C2F5 100%)',
-                    boxShadow: '0 0 0 1px rgba(245, 242, 235, 0.18) inset, 0 0 30px rgba(27, 128, 196, 0.56)',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #0F79B6 0%, #2A90D3 58%, #87D1FA 100%)',
-                      boxShadow: '0 0 0 1px rgba(245, 242, 235, 0.3) inset, 0 0 36px rgba(27, 128, 196, 0.7)',
-                    },
-                  }}
-                >
-                  Iniciar Meu Sietch Grátis
-                </Button>
-              </Box>
-            </Stack>
+                INGRESSAR NO SIETCH
+              </Button>
+            </motion.div>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Box
-              sx={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: 480,
-                mx: { xs: 'auto', md: 0 },
-                animation: 'heroLevitate 3600ms ease-in-out infinite',
-                '@keyframes heroLevitate': {
-                  '0%': { transform: 'translateY(0px)' },
-                  '50%': { transform: 'translateY(-10px)' },
-                  '100%': { transform: 'translateY(0px)' },
-                },
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  inset: '-8% -4% auto -4%',
-                  height: '65%',
-                  background:
-                    'radial-gradient(circle at 50% 40%, rgba(27, 128, 196, 0.42) 0%, rgba(27, 128, 196, 0) 70%)',
-                  filter: 'blur(16px)',
-                  pointerEvents: 'none',
-                  zIndex: -1,
-                },
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  top: '-8%',
-                  left: '-18%',
-                  width: '34%',
-                  height: '120%',
-                  background:
-                    'linear-gradient(90deg, rgba(126, 195, 241, 0) 0%, rgba(126, 195, 241, 0.22) 48%, rgba(126, 195, 241, 0) 100%)',
-                  filter: 'blur(1px)',
-                  pointerEvents: 'none',
-                  animation: 'hudSweep 4200ms ease-in-out infinite',
-                },
-                '@keyframes hudSweep': {
-                  '0%': { transform: 'translateX(-35%) skewX(-8deg)', opacity: 0 },
-                  '20%': { opacity: 0.65 },
-                  '50%': { opacity: 0.42 },
-                  '100%': { transform: 'translateX(305%) skewX(-8deg)', opacity: 0 },
-                },
-              }}
+          <Grid size={{ xs: 12, md: 5 }} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <motion.div
+              animate={{ y: [0, -20, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ position: 'relative' }}
             >
               <Box
                 sx={{
-                  p: 1,
-                  border: '1px solid rgba(126, 195, 241, 0.52)',
-                  background:
-                    'linear-gradient(180deg, rgba(16, 27, 34, 0.94) 0%, rgba(11, 20, 26, 0.94) 100%)',
-                  clipPath:
-                    'polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px)',
-                  boxShadow: '0 20px 42px rgba(0, 0, 0, 0.44), 0 0 22px rgba(27, 128, 196, 0.36)',
+                  width: 280,
+                  height: 580,
+                  backgroundColor: '#111',
+                  borderRadius: '40px',
+                  border: '8px solid #222',
+                  overflow: 'hidden',
+                  boxShadow: `0 50px 100px rgba(0,0,0,0.8), 0 0 20px ${theme.palette.secondary.main}30`,
+                  position: 'relative',
                 }}
               >
                 <Box
                   component="img"
-                  src={heroPreview}
-                  alt="Prévia do painel Sietch Boticário"
-                  sx={{
-                    width: '100%',
-                    height: { xs: 250, sm: 300, md: 330 },
-                    objectFit: 'cover',
-                    clipPath:
-                      'polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)',
-                    border: '1px solid rgba(245, 242, 235, 0.25)',
-                    filter: 'contrast(1.08) saturate(1.04)',
-                  }}
+                  src={heroImg}
+                  sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               </Box>
-            </Box>
+              <Avatar
+                src={mascote}
+                sx={{
+                  position: 'absolute',
+                  bottom: -30,
+                  right: -30,
+                  width: 100,
+                  height: 100,
+                  border: `4px solid ${theme.palette.background.default}`,
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                }}
+              />
+            </motion.div>
           </Grid>
         </Grid>
       </Container>
 
-      <Box sx={{ py: 10, position: 'relative', zIndex: 1 }}>
+      <Box sx={{ py: 15, backgroundColor: 'rgba(0,0,0,0.3)' }}>
         <Container maxWidth="lg">
           <Typography
-            align="center"
-            sx={{
-              fontFamily: 'Rajdhani, sans-serif',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: 'text.primary',
-              mb: 5,
-              fontSize: { xs: '1.8rem', md: '2.6rem' },
-            }}
+            variant="h3"
+            textAlign="center"
+            sx={{ fontFamily: 'Rajdhani', mb: 10, fontWeight: 700 }}
           >
-            Tecnologia de Sobrevivência
+            TECNOLOGIA DE SOBREVIVÊNCIA
           </Typography>
-
           <Grid container spacing={4}>
-            {featureCards.map(({ title, description, icon: Icon, iconColor }) => (
-              <Grid key={title} size={{ xs: 12, md: 4 }}>
+            {[
+              {
+                icon: <RocketLaunchIcon color="info" />,
+                title: 'Telemetria Hídrica',
+                desc: 'Alertas táticos de umidade e rega baseados no consumo real de cada espécie.',
+              },
+              {
+                icon: <CameraAltIcon color="secondary" />,
+                title: 'Scanner de Bio-Simetria',
+                desc: 'Câmera fantasma para alinhamento perfeito de fotos e timelapses evolutivos.',
+              },
+              {
+                icon: <QrCodeScannerIcon color="success" />,
+                title: 'Rastreio de Identidade',
+                desc: 'Plaquetas com QR Code para acesso instantâneo ao prontuário no jardim físico.',
+              },
+            ].map((feature, i) => (
+              <Grid size={{ xs: 12, md: 4 }} key={i}>
                 <Card
                   sx={{
-                    minHeight: '100%',
-                    background: 'rgba(30, 58, 47, 0.4)',
+                    p: 4,
+                    height: '100%',
+                    backgroundColor: 'rgba(30, 58, 47, 0.4)',
                     backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(211, 154, 44, 0.54)',
-                    clipPath:
-                      'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)',
-                    boxShadow: '0 14px 28px rgba(0, 0, 0, 0.34)',
+                    borderRadius: 0,
+                    borderLeft: `4px solid ${theme.palette.secondary.main}`,
                   }}
                 >
-                  <CardContent sx={{ p: 3.2 }}>
-                    <Stack spacing={2}>
-                      <Icon sx={{ fontSize: '2.2rem', color: iconColor }} />
-                      <Typography
-                        sx={{
-                          fontFamily: 'Rajdhani, sans-serif',
-                          fontWeight: 800,
-                          letterSpacing: '0.05em',
-                          textTransform: 'uppercase',
-                          color: 'text.primary',
-                        }}
-                      >
-                        {title}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          color: 'rgba(245, 242, 235, 0.86)',
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        {description}
-                      </Typography>
-                    </Stack>
-                  </CardContent>
+                  <Box sx={{ mb: 2 }}>{feature.icon}</Box>
+                  <Typography variant="h5" sx={{ fontFamily: 'Rajdhani', fontWeight: 700, mb: 2 }}>
+                    {feature.title}
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    {feature.desc}
+                  </Typography>
                 </Card>
               </Grid>
             ))}
@@ -328,239 +215,36 @@ function Home() {
         </Container>
       </Box>
 
-      <Box sx={{ py: 10, position: 'relative', zIndex: 1 }}>
-        <Container maxWidth="lg">
-          <Typography
-            align="center"
-            sx={{
-              fontFamily: 'Rajdhani, sans-serif',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: 'text.primary',
-              mb: 5,
-              fontSize: { xs: '1.8rem', md: '2.6rem' },
-            }}
-          >
-            O Custo da Água
-          </Typography>
-
-          <Grid container spacing={4} justifyContent="center">
-            <Grid size={{ xs: 12, md: 5 }}>
-              <Card
-                sx={{
-                  minHeight: '100%',
-                  background: 'rgba(26, 32, 36, 0.78)',
-                  border: '1px solid rgba(186, 193, 200, 0.3)',
-                  clipPath:
-                    'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)',
-                }}
-              >
-                <CardContent sx={{ p: 3.2 }}>
-                  <Stack spacing={2.1}>
-                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.88)', fontWeight: 700 }}>
-                      Plano Forasteiro
-                    </Typography>
-                    <Typography sx={{ fontSize: '2.2rem', fontWeight: 800, color: 'text.primary' }}>
-                      Gratuito
-                    </Typography>
-                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>
-                      Até 5 plantas sob monitoramento tático.
-                    </Typography>
-                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>
-                      Acesso ao diário fotográfico e linha do tempo da saúde botânica.
-                    </Typography>
-                    <Button
-                      component={RouterLink}
-                      to="/login"
-                      variant="outlined"
-                      sx={{
-                        mt: 1,
-                        borderColor: 'rgba(190, 198, 206, 0.62)',
-                        color: 'rgba(232, 238, 244, 0.94)',
-                        '&:hover': {
-                          borderColor: 'rgba(218, 225, 232, 0.95)',
-                          backgroundColor: 'rgba(186, 193, 200, 0.1)',
-                        },
-                      }}
-                    >
-                      Começar sem custo
-                    </Button>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 5 }}>
-              <Card
-                sx={{
-                  minHeight: '100%',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  background: 'rgba(20, 42, 56, 0.72)',
-                  border: '1px solid rgba(126, 195, 241, 0.55)',
-                  clipPath:
-                    'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px)',
-                  boxShadow: '0 0 18px rgba(27, 128, 196, 0.45)',
-                  animation: 'proPulse 1900ms ease-in-out infinite',
-                  '@keyframes proPulse': {
-                    '0%': { boxShadow: '0 0 14px rgba(27, 128, 196, 0.36)' },
-                    '50%': { boxShadow: '0 0 28px rgba(27, 128, 196, 0.76)' },
-                    '100%': { boxShadow: '0 0 14px rgba(27, 128, 196, 0.36)' },
-                  },
-                }}
-              >
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 16,
-                    right: -38,
-                    px: 5,
-                    py: 0.45,
-                    transform: 'rotate(90deg)',
-                    background: 'linear-gradient(90deg, #1B80C4 0%, #62B8F0 100%)',
-                    color: '#EAF5FF',
-                    fontWeight: 800,
-                    letterSpacing: '0.06em',
-                    fontSize: '0.72rem',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Recomendado
-                </Box>
-
-                <CardContent sx={{ p: 3.2 }}>
-                  <Stack spacing={2.1}>
-                    <Typography sx={{ color: '#BFE7FF', fontWeight: 700 }}>
-                      Plano Fremen Pro
-                    </Typography>
-                    <Typography sx={{ fontSize: '2.2rem', fontWeight: 800, color: 'text.primary' }}>
-                      Em breve
-                    </Typography>
-                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.88)' }}>
-                      Plantas ilimitadas para células de cultivo avançadas.
-                    </Typography>
-                    <Typography sx={{ color: 'rgba(245, 242, 235, 0.88)' }}>
-                      Alertas no n8n via WhatsApp e integração total com sensores IoT.
-                    </Typography>
-                    <Button
-                      component={RouterLink}
-                      to="/login"
-                      variant="contained"
-                      sx={{
-                        mt: 1,
-                        background: 'linear-gradient(135deg, #0F79B6 0%, #2F6F4E 100%)',
-                        '&:hover': {
-                          background: 'linear-gradient(135deg, #1488CA 0%, #3C8A60 100%)',
-                        },
-                      }}
-                    >
-                      Entrar na lista Pro
-                    </Button>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
-
-      <Box sx={{ pb: 7, position: 'relative', zIndex: 1 }}>
-        <Container maxWidth="lg">
-          <Box
-            sx={{
-              p: { xs: 2.2, md: 3.2 },
-              background: 'rgba(22, 30, 34, 0.52)',
-              border: '1px solid rgba(211, 154, 44, 0.3)',
-              backdropFilter: 'blur(10px)',
-              clipPath:
-                'polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)',
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: 'Rajdhani, sans-serif',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.07em',
-                color: 'text.primary',
-                mb: 2,
-                fontSize: { xs: '1.35rem', md: '1.8rem' },
-              }}
-            >
-              Perguntas Frequentes
+      <Container maxWidth="md" sx={{ py: 15 }}>
+        <Typography
+          variant="h4"
+          textAlign="center"
+          sx={{ fontFamily: 'Rajdhani', mb: 6, fontWeight: 700 }}
+        >
+          MANUSCRITOS DO SIETCH (FAQ)
+        </Typography>
+        <Accordion
+          sx={{
+            backgroundColor: 'transparent',
+            backgroundImage: 'none',
+            borderBottom: '1px solid #333',
+          }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon color="secondary" />}>
+            <Typography sx={{ fontFamily: 'Rajdhani', fontWeight: 600 }}>
+              COMO FUNCIONA O MONITORAMENTO?
             </Typography>
-
-            <Stack spacing={1.1}>
-              <Accordion disableGutters sx={{ background: 'rgba(12, 19, 22, 0.7)' }}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.primary' }} />}>
-                  <Typography sx={{ fontWeight: 700, color: 'text.primary' }}>
-                    Preciso instalar sensores?
-                  </Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>
-                    Não no plano inicial. Você já opera com scanner e diário fotográfico. Sensores entram no
-                    Fremen Pro.
-                  </Typography>
-                </AccordionDetails>
-              </Accordion>
-
-              <Accordion disableGutters sx={{ background: 'rgba(12, 19, 22, 0.7)' }}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: 'text.primary' }} />}>
-                  <Typography sx={{ fontWeight: 700, color: 'text.primary' }}>
-                    A câmera fantasma funciona em qualquer celular?
-                  </Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Typography sx={{ color: 'rgba(245, 242, 235, 0.84)' }}>
-                    Funciona na maioria dos navegadores móveis modernos com permissão de câmera ativa.
-                  </Typography>
-                </AccordionDetails>
-              </Accordion>
-            </Stack>
-          </Box>
-
-          <Box
-            sx={{
-              mt: 3.2,
-              pt: 2.2,
-              borderTop: '1px solid rgba(211, 154, 44, 0.25)',
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              alignItems: { xs: 'flex-start', sm: 'center' },
-              justifyContent: 'space-between',
-              gap: 1.4,
-            }}
-          >
-            <Typography sx={{ color: 'rgba(245, 242, 235, 0.74)' }}>
-              © 2026 Sietch Boticário. Todos os direitos reservados.
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography color="text.secondary">
+              O sistema utiliza algoritmos de tempo e dados biométricos para prever a necessidade de
+              água. Em breve, suportará integração com sensores ESP32 para leitura em tempo real.
             </Typography>
-            <Stack direction="row" spacing={2}>
-              <Button
-                component="a"
-                href="mailto:suporte@sietchboticario.com"
-                variant="text"
-                sx={{ color: '#B8E5FF', p: 0, minWidth: 'auto' }}
-              >
-                Suporte
-              </Button>
-              <Button
-                component="a"
-                href="https://wa.me/34644462188"
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="text"
-                sx={{ color: '#B8E5FF', p: 0, minWidth: 'auto' }}
-              >
-                WhatsApp
-              </Button>
-            </Stack>
-          </Box>
-        </Container>
-      </Box>
+          </AccordionDetails>
+        </Accordion>
+      </Container>
     </Box>
   );
-}
+};
 
 export default Home;

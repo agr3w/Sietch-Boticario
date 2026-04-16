@@ -7,7 +7,7 @@ const theme = createTheme({
       main: "#1E3A2F",
     },
     secondary: {
-      main: "#D39A2C",
+      main: "#D35400",
     },
     success: {
       main: "#2F6F4E",
@@ -16,12 +16,12 @@ const theme = createTheme({
       main: "#1B80C4",
     },
     background: {
-      default: "#0E1316",
-      paper: "#171E21",
+      default: "#0A0A0A",
+      paper: "#141414",
     },
     text: {
       primary: "#F5F2EB",
-      secondary: "#D39A2C",
+      secondary: "rgba(245, 242, 235, 0.7)",
     },
   },
   sandGradient: "linear-gradient(135deg,#1E3A2F,#D35400,#E8E0D5)",
