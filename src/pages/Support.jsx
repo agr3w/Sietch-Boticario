@@ -15,6 +15,11 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import QrCode2Icon from '@mui/icons-material/QrCode2';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import SensorsIcon from '@mui/icons-material/Sensors';
 import { useNavigate } from 'react-router-dom';
 
 const primeirosPassos = [
@@ -106,6 +111,164 @@ function Support() {
             <Typography variant="h6" color="text.secondary">
               Guia de sobrevivencia e suporte tatico para o seu ecossistema.
             </Typography>
+          </Box>
+
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1.2}
+            sx={{ justifyContent: 'center' }}
+          >
+            <Button
+              component="a"
+              href="#manual"
+              variant="outlined"
+              sx={{ borderRadius: 0, borderColor: 'secondary.main', color: 'secondary.main' }}
+            >
+              Manual do Destilador
+            </Button>
+            <Button
+              component="a"
+              href="#guia"
+              variant="outlined"
+              sx={{ borderRadius: 0, borderColor: 'secondary.main', color: 'secondary.main' }}
+            >
+              Tratado Basico
+            </Button>
+            <Button
+              component="a"
+              href="#futuro"
+              variant="outlined"
+              sx={{ borderRadius: 0, borderColor: 'secondary.main', color: 'secondary.main' }}
+            >
+              Protocolos 1.1
+            </Button>
+          </Stack>
+
+          <Box id="manual" sx={{ scrollMarginTop: 90 }}>
+            <Typography
+              variant="overline"
+              sx={{
+                color: 'secondary.main',
+                letterSpacing: '0.12em',
+                fontWeight: 700,
+              }}
+            >
+              SECAO 1 · O MANUAL DO DESTILADOR
+            </Typography>
+            <Grid container spacing={2} sx={{ mt: 0.2 }}>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Card sx={{ height: '100%', backgroundColor: 'background.paper', border: '1px solid rgba(61, 40, 16, 0.1)' }}>
+                  <CardContent>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                      <QrCode2Icon sx={{ color: 'secondary.main' }} />
+                      <Typography sx={{ fontFamily: 'Rajdhani', fontWeight: 700 }}>QR Code</Typography>
+                    </Stack>
+                    <Typography color="text.secondary">
+                      Rastreio fisico imediato. Escaneie a plaqueta e acesse o prontuario sem navegar pelo app.
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Card sx={{ height: '100%', backgroundColor: 'background.paper', border: '1px solid rgba(61, 40, 16, 0.1)' }}>
+                  <CardContent>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                      <CameraAltIcon sx={{ color: 'secondary.main' }} />
+                      <Typography sx={{ fontFamily: 'Rajdhani', fontWeight: 700 }}>Bio-Scanner</Typography>
+                    </Stack>
+                    <Typography color="text.secondary">
+                      Alinhamento visual de fotos para comparar mudancas reais da planta ao longo das semanas.
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Card sx={{ height: '100%', backgroundColor: 'background.paper', border: '1px solid rgba(61, 40, 16, 0.1)' }}>
+                  <CardContent>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                      <WaterDropIcon sx={{ color: 'secondary.main' }} />
+                      <Typography sx={{ fontFamily: 'Rajdhani', fontWeight: 700 }}>Telemetria</Typography>
+                    </Stack>
+                    <Typography color="text.secondary">
+                      Leitura do medidor de agua com base no intervalo registrado para reduzir excesso e escassez.
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </Box>
+
+          <Box id="guia" sx={{ scrollMarginTop: 90 }}>
+            <Typography
+              variant="overline"
+              sx={{
+                color: 'secondary.main',
+                letterSpacing: '0.12em',
+                fontWeight: 700,
+              }}
+            >
+              SECAO 2 · TRATADO DE BOTANICA BASICA
+            </Typography>
+            <Stack spacing={1.2} sx={{ mt: 0.5 }}>
+              <Card sx={{ backgroundColor: 'background.paper', border: '1px solid rgba(61, 40, 16, 0.1)' }}>
+                <CardContent>
+                  <Typography sx={{ fontFamily: 'Rajdhani', fontWeight: 700, color: 'primary.main' }}>
+                    Jiboia (Epipremnum aureum)
+                  </Typography>
+                  <Typography color="text.secondary">
+                    A sobrevivente. Luz indireta, rega quando a terra secar totalmente.
+                  </Typography>
+                </CardContent>
+              </Card>
+              <Card sx={{ backgroundColor: 'background.paper', border: '1px solid rgba(61, 40, 16, 0.1)' }}>
+                <CardContent>
+                  <Typography sx={{ fontFamily: 'Rajdhani', fontWeight: 700, color: 'primary.main' }}>
+                    Espada de Sao Jorge (Sansevieria)
+                  </Typography>
+                  <Typography color="text.secondary">
+                    A guardia. Extremamente resistente a seca, ideal para cantos com pouca luz.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Stack>
+          </Box>
+
+          <Box id="futuro" sx={{ scrollMarginTop: 90 }}>
+            <Typography
+              variant="overline"
+              sx={{
+                color: 'secondary.main',
+                letterSpacing: '0.12em',
+                fontWeight: 700,
+              }}
+            >
+              SECAO 3 · PROTOCOLOS FUTUROS (VERSAO 1.1)
+            </Typography>
+            <Card sx={{ mt: 0.5, backgroundColor: 'background.paper', border: '1px solid rgba(61, 40, 16, 0.1)' }}>
+              <CardContent>
+                <Stack spacing={1.4}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <AutoAwesomeIcon sx={{ color: 'secondary.main' }} />
+                    <Typography sx={{ fontFamily: 'Rajdhani', fontWeight: 700, color: 'primary.main' }}>
+                      Catalogo Inteligente
+                    </Typography>
+                  </Stack>
+                  <Typography color="text.secondary">
+                    Recomendacoes automaticas por especie, contexto de luz e historico de resposta da planta.
+                  </Typography>
+
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <SensorsIcon sx={{ color: 'secondary.main' }} />
+                    <Typography sx={{ fontFamily: 'Rajdhani', fontWeight: 700, color: 'primary.main' }}>
+                      Sensores IoT
+                    </Typography>
+                  </Stack>
+                  <Typography color="text.secondary">
+                    Integracao com sensores de umidade e temperatura para alertas taticos em tempo quase real.
+                  </Typography>
+                </Stack>
+              </CardContent>
+            </Card>
           </Box>
 
           <Grid container spacing={3}>

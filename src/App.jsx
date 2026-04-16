@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import TopbarSietch from './components/TopbarSietch';
+import FooterSietch from './components/FooterSietch';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const PlantView = lazy(() => import('./pages/PlantView'));
@@ -99,44 +100,49 @@ function AppRoutes() {
   const { currentUser } = useAuth();
 
   return (
-    <Suspense fallback={<LoadingSietch message={routeStateText.routeSync} />}>
-      <Routes>
-        <Route
-          path="/"
-          element={currentUser ? <Navigate to="/dashboard" replace /> : <Home />}
-        />
-        <Route
-          path="/dashboard"
-          element={(
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          )}
-        />
-        <Route
-          path="/login"
-          element={currentUser ? <Navigate to="/dashboard" replace /> : <Login />}
-        />
-        <Route
-          path="/suporte"
-          element={(
-            <PrivateRoute>
-              <Support />
-            </PrivateRoute>
-          )}
-        />
-        <Route path="/support" element={<Navigate to="/suporte" replace />} />
-        <Route
-          path="/planta/:id"
-          element={(
-            <PrivateRoute>
-              <PlantView />
-            </PrivateRoute>
-          )}
-        />
-        <Route path="*" element={<Navigate to={currentUser ? '/dashboard' : '/'} replace />} />
-      </Routes>
-    </Suspense>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Box sx={{ flex: 1 }}>
+        <Suspense fallback={<LoadingSietch message={routeStateText.routeSync} />}>
+          <Routes>
+            <Route
+              path="/"
+              element={currentUser ? <Navigate to="/dashboard" replace /> : <Home />}
+            />
+            <Route
+              path="/dashboard"
+              element={(
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              )}
+            />
+            <Route
+              path="/login"
+              element={currentUser ? <Navigate to="/dashboard" replace /> : <Login />}
+            />
+            <Route
+              path="/suporte"
+              element={(
+                <PrivateRoute>
+                  <Support />
+                </PrivateRoute>
+              )}
+            />
+            <Route path="/support" element={<Navigate to="/suporte" replace />} />
+            <Route
+              path="/planta/:id"
+              element={(
+                <PrivateRoute>
+                  <PlantView />
+                </PrivateRoute>
+              )}
+            />
+            <Route path="*" element={<Navigate to={currentUser ? '/dashboard' : '/'} replace />} />
+          </Routes>
+        </Suspense>
+      </Box>
+      <FooterSietch />
+    </Box>
   );
 }
 

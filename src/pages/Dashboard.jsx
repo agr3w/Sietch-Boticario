@@ -602,7 +602,7 @@ function Dashboard() {
             component="h1"
             gutterBottom
             align="center"
-            sx={{ fontFamily: 'Rajdhani', fontWeight: 700, letterSpacing: '0.1em', color: "text.primary" }}
+            sx={{ fontFamily: 'Rajdhani', fontWeight: 700, letterSpacing: '0.1em', color: "text.main" }}
           >
             Sietch Boticário
           </Typography>
