@@ -284,7 +284,7 @@ function PlantCard({ planta, onRegar, onAtualizarPlanta, onDelete }) {
             }}
           >
             <WaterDropIcon fontSize="small" />
-            &nbsp;FORNECER ÁGUA (WATER DISPENSED)
+            &nbsp;FORNECER ÁGUA
           </Button>
           <Button
             variant="outlined"
