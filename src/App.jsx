@@ -11,6 +11,7 @@ const PlantView = lazy(() => import('./pages/PlantView'));
 const Login = lazy(() => import('./pages/Login'));
 const Home = lazy(() => import('./pages/Home'));
 const Support = lazy(() => import('./pages/Support'));
+const Terms = lazy(() => import('./pages/Terms'));
 
 const routeStateText = {
   authCheck: 'ANALISANDO SOLO...',
@@ -120,6 +121,8 @@ function AppRoutes() {
               path="/login"
               element={currentUser ? <Navigate to="/dashboard" replace /> : <Login />}
             />
+            <Route path="/termos" element={<Terms />} />
+            <Route path="/terms" element={<Navigate to="/termos" replace />} />
             <Route
               path="/suporte"
               element={(

@@ -17,7 +17,7 @@ function SietchLayout({ children, showTopbar = true, showFooter = true }) {
       <Box component="main" sx={{ flexGrow: 1 }}>
         {children}
       </Box>
-      {showFooter && <FooterSietch />}
+      {/* {showFooter && <FooterSietch />} */}
     </Box>
   );
 }
