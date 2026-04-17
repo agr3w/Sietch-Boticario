@@ -41,7 +41,7 @@ function FooterSietch() {
                 letterSpacing: '0.04em',
               }}
             >
-              v1.0.4-BETA
+              v1.0-BETA
             </Typography>
           </Stack>
 

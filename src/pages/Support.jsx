@@ -20,6 +20,7 @@ import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SensorsIcon from '@mui/icons-material/Sensors';
 import { useNavigate } from 'react-router-dom';
+import ReleaseBadge from '../components/ui/ReleaseBadge';
 import SietchCard from '../components/ui/SietchCard';
 
 const primeirosPassos = [
@@ -44,7 +45,7 @@ const faqs = [
   {
     question: 'Como o Sietch calcula o tempo de rega?',
     answer:
-      'No momento, usamos a matematica de intervalos fixos baseada no seu ultimo registro. Na V1.1, teremos inteligencia climatica.',
+      'No momento, usamos a matematica de intervalos fixos baseada no seu ultimo registro. Na V1.1, teremos inteligencia climatica e alertas externos. (Recurso em fase de testes nos destiladores - Chegando na atualizacao V1.1).',
   },
   {
     question: 'Posso compartilhar meu Prontuario QR?',
@@ -95,6 +96,7 @@ function Support() {
           </Box>
 
           <Box textAlign="center">
+            <ReleaseBadge sx={{ mb: 1.2 }} />
             <Typography
               variant="h3"
               sx={{
@@ -250,6 +252,16 @@ function Support() {
                   <Stack direction="row" spacing={1} alignItems="center">
                     <AutoAwesomeIcon sx={{ color: 'secondary.main' }} />
                     <Typography sx={{ fontFamily: 'Rajdhani', fontWeight: 700, color: 'primary.main' }}>
+                      Alerta de Rega via WhatsApp Integrado
+                    </Typography>
+                  </Stack>
+                  <Typography color="text.secondary">
+                    Notificacoes automaticas no celular quando a planta entrar em janela critica de hidratação. (Recurso em fase de testes nos destiladores - Chegando na atualizacao V1.1).
+                  </Typography>
+
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <AutoAwesomeIcon sx={{ color: 'secondary.main' }} />
+                    <Typography sx={{ fontFamily: 'Rajdhani', fontWeight: 700, color: 'primary.main' }}>
                       Catalogo Inteligente
                     </Typography>
                   </Stack>
@@ -264,7 +276,7 @@ function Support() {
                     </Typography>
                   </Stack>
                   <Typography color="text.secondary">
-                    Integracao com sensores de umidade e temperatura para alertas taticos em tempo quase real.
+                    Integracao com sensores de umidade e temperatura para alertas taticos em tempo quase real. (Recurso em fase de testes nos destiladores - Chegando na atualizacao V1.1).
                   </Typography>
                 </Stack>
               </CardContent>

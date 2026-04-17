@@ -680,7 +680,8 @@ function Dashboard() {
         </CardContent>
       </SietchCard>
 
-      <SietchCard sx={{ mb: 4 }}>
+      {/* Funcionalidade de n8n/WhatsApp desativada na V1.0 - Sera liberada na V1.1 */}
+      {/* <SietchCard sx={{ mb: 4 }}>
         <CardContent sx={{ py: 1.8, "&:last-child": { pb: 1.8 } }}>
           <Box
             sx={{
@@ -747,7 +748,7 @@ function Dashboard() {
             </Stack>
           </Box>
         </CardContent>
-      </SietchCard>
+      </SietchCard> */}
 
       <Menu
         anchorEl={notificacoesAnchorEl}

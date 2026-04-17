@@ -5,7 +5,6 @@ import {
   Typography,
   Button,
   Grid,
-  Chip,
   Stack,
   Accordion,
   AccordionSummary,
@@ -19,11 +18,11 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
-import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import mascote from '../assets/mascote.png';
 import heroImg from '../assets/hero.jpg';
+import ReleaseBadge from '../components/ui/ReleaseBadge';
 import SietchCard from '../components/ui/SietchCard';
 
 const Home = () => {
@@ -90,6 +89,7 @@ const Home = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
             >
+              <ReleaseBadge sx={{ mb: 2.2 }} />
               <Typography
                 variant="h1"
                 sx={{
@@ -135,7 +135,7 @@ const Home = () => {
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               style={{ position: 'relative' }}
             >
-              <MotionDiv
+              {/* <MotionDiv
                 initial={{ opacity: 0, y: -20, scale: 0.94 }}
                 animate={{ opacity: 1, y: [-20, 0, -8, 0], scale: 1 }}
                 transition={{ delay: 2, duration: 0.9, times: [0, 0.62, 0.82, 1], ease: 'easeOut' }}
@@ -176,7 +176,7 @@ const Home = () => {
                     </Box>
                   </Stack>
                 </Box>
-              </MotionDiv>
+              </MotionDiv> */}
 
               <Box
                 sx={{
@@ -327,8 +327,8 @@ const Home = () => {
               },
               {
                 title: 'SINCRONIA',
-                desc: 'Cérebro automatizado que envia telemetria vital e alertas de rega diretamente para o seu comunicador (WhatsApp).',
-                tags: ['n8n Automation', 'WhatsApp Gateway'],
+                desc: 'Cérebro automatizado que calcula a telemetria vital e indica o momento exato de fornecer água através do seu painel tático.',
+                tags: ['Telemetria Interna', 'Em Breve: WhatsApp V1.1'],
               },
               {
                 title: 'EVOLUÇÃO',
