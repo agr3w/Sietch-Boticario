@@ -35,6 +35,8 @@ import {
 import CheckIcon from "@mui/icons-material/Check";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import ThunderstormIcon from "@mui/icons-material/Thunderstorm";
+import WbSunnyIcon from "@mui/icons-material/WbSunny";
 import { motion } from "framer-motion";
 import {
   cadastrarPlantaComFoto,
@@ -90,6 +92,18 @@ const itemVariants = {
     transition: { type: "spring", stiffness: 300, damping: 24 },
   },
 };
+
+function obterConselhoChuva(probabilidade) {
+  if (Number(probabilidade) > 60) {
+    return "TEMPESTADE A VISTA. Evite regar plantas externas hoje.";
+  }
+
+  if (Number(probabilidade) > 30) {
+    return "CEU NUBLADO. Verifique a umidade antes de fornecer agua.";
+  }
+
+  return "CEU LIMPO. Siga o protocolo de rega normal.";
+}
 
 function Dashboard() {
   const { currentUser } = useAuth();
@@ -325,7 +339,7 @@ function Dashboard() {
       try {
         setClimaErro("");
         const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(localizacao.latitude)}&longitude=${encodeURIComponent(localizacao.longitude)}&current=temperature_2m,relative_humidity_2m`,
+          `https://api.open-meteo.com/v1/forecast?latitude=${localizacao.latitude}&longitude=${localizacao.longitude}&current=temperature_2m,relative_humidity_2m&daily=weathercode,precipitation_probability_max&timezone=auto`,
           { signal: controller.signal },
         );
 
@@ -335,14 +349,22 @@ function Dashboard() {
 
         const data = await response.json();
         const current = data.current;
+        const daily = data.daily;
 
-        if (!current) {
+        if (
+          !current ||
+          !daily ||
+          !Array.isArray(daily.precipitation_probability_max) ||
+          !Array.isArray(daily.weathercode)
+        ) {
           throw new Error("Resposta de clima inválida");
         }
 
         setClimaAtual({
           temperatura: current.temperature_2m,
           umidade: current.relative_humidity_2m,
+          probabilidadeChuva: daily.precipitation_probability_max[0],
+          codigoTempo: daily.weathercode[0],
         });
       } catch (error) {
         if (error.name !== "AbortError") {
@@ -653,6 +675,8 @@ function Dashboard() {
           : "text.secondary";
 
   const menuNotificacoesAberto = Boolean(notificacoesAnchorEl);
+  const probabilidadeChuva = Number(climaAtual?.probabilidadeChuva ?? 0);
+  const riscoChuvaAlto = probabilidadeChuva > 60;
 
   const handleLocalizacaoSalva = useCallback((novaLocalizacao) => {
     if (!novaLocalizacao) {
@@ -789,6 +813,48 @@ function Dashboard() {
               </Grid>
             </Grid>
           )}
+        </CardContent>
+      </SietchCard>
+
+      <SietchCard
+        sx={{
+          mt: 2,
+          borderLeft: riscoChuvaAlto
+            ? "4px solid #9E3D22"
+            : "4px solid #345A14",
+        }}
+      >
+        <CardContent>
+          <Stack direction="row" spacing={1.2} alignItems="center" sx={{ mb: 1.1 }}>
+            {riscoChuvaAlto ? (
+              <ThunderstormIcon sx={{ color: "#9E3D22" }} />
+            ) : (
+              <WbSunnyIcon sx={{ color: "#345A14" }} />
+            )}
+            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: "0.05em" }}>
+              ORACULO CLIMATICO
+            </Typography>
+          </Stack>
+
+          <Typography variant="body1">
+            {climaAtual
+              ? obterConselhoChuva(probabilidadeChuva)
+              : "Sincronizando previsao para gerar conselho de sobrevivencia..."}
+          </Typography>
+
+          <Typography variant="body2" sx={{ color: "text.primary", fontWeight: 600, mt: 1 }}>
+            Probabilidade de precipitacao:{" "}
+            <Box
+              component="span"
+              sx={{
+                ...mentatNumberSx,
+                color: probabilidadeChuva > 60 ? "error.main" : "primary.main",
+                fontSize: "1.1em",
+              }}
+            >
+              {climaAtual ? `${probabilidadeChuva}%` : "--%"}
+            </Box>
+          </Typography>
         </CardContent>
       </SietchCard>
 
