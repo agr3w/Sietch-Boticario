@@ -13,6 +13,7 @@ import {
   Toolbar,
   Avatar,
   useTheme,
+  Chip
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';

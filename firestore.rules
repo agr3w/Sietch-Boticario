@@ -41,6 +41,13 @@ service cloud.firestore {
         && request.resource.data.planta_id_original is string;
     }
 
+    function localizacaoSchemaValida() {
+      return request.resource.data.keys().hasAll(["userId", "latitude", "longitude", "cidade"])
+        && request.resource.data.latitude is number
+        && request.resource.data.longitude is number
+        && request.resource.data.cidade is string;
+    }
+
     match /plantas/{docId} {
       allow create: if isOwnerFromRequest() && plantaSchemaValido();
       allow read, delete: if isOwnerFromResource();
@@ -63,6 +70,16 @@ service cloud.firestore {
       allow create: if isOwnerFromRequest() && arquivoMortoSchemaValido();
       allow read, delete: if isOwnerFromResource();
       allow update: if isOwnerOnUpdate() && arquivoMortoSchemaValido();
+    }
+
+    match /configuracoes_usuario/{docId} {
+      allow create: if isOwnerFromRequest()
+        && localizacaoSchemaValida()
+        && docId == request.auth.uid;
+      allow read, delete: if isOwnerFromResource() && docId == request.auth.uid;
+      allow update: if isOwnerOnUpdate()
+        && localizacaoSchemaValida()
+        && docId == request.auth.uid;
     }
 
     match /{document=**} {
