@@ -9,9 +9,6 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  AppBar,
-  Toolbar,
-  Avatar,
   useTheme,
   Chip
 } from '@mui/material';
@@ -23,6 +20,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import mascote from '../assets/mascote.png';
 import heroImg from '../assets/hero.jpg';
+import SietchLayout from '../components/SietchLayout';
 import ReleaseBadge from '../components/ui/ReleaseBadge';
 import SietchCard from '../components/ui/SietchCard';
 
@@ -32,57 +30,17 @@ const Home = () => {
   const navigate = useNavigate();
 
   return (
-    <Box
-      sx={{
-        backgroundColor: theme.palette.background.default,
-        minHeight: '100vh',
-        backgroundImage:
-          'radial-gradient(circle at 20% 30%, rgba(52, 90, 20, 0.08) 0%, transparent 70%)',
-      }}
-    >
-      <AppBar
-        position="fixed"
+    <SietchLayout authAwareTopbar>
+      <Box
         sx={{
-          background: 'rgba(245, 236, 215, 0.7)',
-          backdropFilter: 'blur(15px)',
-          borderBottom: `1px solid ${theme.palette.divider}`,
+          backgroundColor: theme.palette.background.default,
+          minHeight: '100vh',
+          backgroundImage:
+            'radial-gradient(circle at 20% 30%, rgba(52, 90, 20, 0.08) 0%, transparent 70%)',
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar
-              src={mascote}
-              sx={{
-                width: 40,
-                height: 40,
-                border: `1px solid ${theme.palette.secondary.main}`,
-              }}
-            />
-            <Typography
-              variant="h6"
-              
-              sx={{ fontFamily: 'Rajdhani', fontWeight: 700, letterSpacing: '0.1em', color: "text.primary" }}
-            >
-              SIETCH BOTICÁRIO
-            </Typography>
-          </Stack>
-          <Stack direction="row" spacing={1}>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/login')}
-              sx={{
-                borderRadius: 0,
-                borderColor: theme.palette.secondary.main,
-                color: theme.palette.secondary.main,
-              }}
-            >
-              IDENTIFICAR-SE
-            </Button>
-          </Stack>
-        </Toolbar>
-      </AppBar>
 
-      <Container maxWidth="lg" sx={{ pt: 20, pb: 10 }}>
+      <Container maxWidth="lg" sx={{ pt: { xs: 8, md: 10 }, pb: 10 }}>
         <Grid container spacing={8} alignItems="center">
           <Grid size={{ xs: 12, md: 7 }}>
             <motion.div
@@ -582,7 +540,8 @@ const Home = () => {
           </AccordionDetails>
         </Accordion>
       </Container>
-    </Box>
+      </Box>
+    </SietchLayout>
   );
 };
 

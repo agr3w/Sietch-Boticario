@@ -1,5 +1,6 @@
 import React from 'react';
-import { CardContent, Container, Stack, Typography } from '@mui/material';
+import { Button, CardContent, Container, Stack, Typography } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import SietchLayout from '../components/SietchLayout';
 import SietchCard from '../components/ui/SietchCard';
 import SectionTitle from '../components/ui/SectionTitle';
@@ -8,23 +9,23 @@ const clausulas = [
   {
     titulo: 'A Disciplina dos Dados',
     texto:
-      'Seu Sietch e privado. As fotos, coordenadas de GPS e historicos de saude das suas plantas pertencem apenas a voce. Utilizamos regras estritas de seguranca (Firebase Security Rules) para garantir que nenhuma outra pessoa acesse o seu banco botanico.',
+      'Seu Sietch é privado. As fotos, coordenadas de GPS e históricos de saúde das suas plantas pertencem apenas a você. Utilizamos regras estritas de segurança (Firebase Security Rules) para garantir que nenhuma outra pessoa acesse o seu banco botânico.',
   },
   {
-    titulo: 'O Deserto e Implacavel',
+    titulo: 'O Deserto é Implacável',
     texto:
-      'O Sietch Boticario atua como um oraculo e conselheiro ecologico. A sobrevivencia das especies, no entanto, depende das suas acoes no mundo fisico. Nao garantimos que suas plantas nao sofrerao com pragas, clima extremo ou falhas de hardware.',
+      'O Sietch Boticário atua como um oráculo e conselheiro ecológico. A sobrevivência das espécies, no entanto, depende das suas ações no mundo físico. Não garantimos que suas plantas não sofrerão com pragas, clima extremo ou falhas de hardware.',
   },
   {
-    titulo: 'O Exilio',
+    titulo: 'O Exílio',
     texto:
-      'Voce tem o direito de purgar seus dados a qualquer momento. Ao excluir plantas ou mover para o Arquivo Morto, voce controla sua propria historia. O sistema se reserva o direito de excluir contas inativas que nao prestarem o tributo de acesso por mais de 365 dias.',
+      'Você tem o direito de purgar seus dados a qualquer momento. Ao excluir plantas ou mover para o Arquivo Morto, você controla sua própria história. O sistema se reserva o direito de excluir contas inativas que não prestarem o tributo de acesso por mais de 365 dias.',
   },
 ];
 
 function Terms() {
   return (
-    <SietchLayout>
+    <SietchLayout authAwareTopbar>
       <Container maxWidth="md" sx={{ py: 8 }}>
         <SectionTitle>O TRATADO DO SIETCH</SectionTitle>
         <Typography
@@ -36,7 +37,7 @@ function Terms() {
             letterSpacing: '0.02em',
           }}
         >
-          Termos de Uso e Privacidade Botanica
+          Termos de Uso e Privacidade Botânica
         </Typography>
 
         <Stack spacing={4}>
@@ -72,6 +73,19 @@ function Terms() {
               </CardContent>
             </SietchCard>
           ))}
+        </Stack>
+
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1.5}
+          sx={{ mt: 5, justifyContent: 'center' }}
+        >
+          <Button component={RouterLink} to="/" variant="outlined" color="secondary">
+            Voltar para Home
+          </Button>
+          <Button component={RouterLink} to="/login" variant="contained" color="primary">
+            Acessar Login
+          </Button>
         </Stack>
       </Container>
     </SietchLayout>

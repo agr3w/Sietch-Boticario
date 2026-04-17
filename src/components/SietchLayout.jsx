@@ -2,8 +2,26 @@ import React from 'react';
 import { Box } from '@mui/material';
 import TopbarSietch from './TopbarSietch';
 import FooterSietch from './FooterSietch';
+import AuthAwareTopbar from './AuthAwareTopbar';
 
-function SietchLayout({ children, showTopbar = true, showFooter = true }) {
+function SietchLayout({
+  children,
+  showTopbar = true,
+  showFooter = true,
+  authAwareTopbar = false,
+}) {
+  const renderTopbar = () => {
+    if (!showTopbar) {
+      return null;
+    }
+
+    if (!authAwareTopbar) {
+      return <TopbarSietch />;
+    }
+
+    return <AuthAwareTopbar />;
+  };
+
   return (
     <Box
       sx={{
@@ -13,7 +31,7 @@ function SietchLayout({ children, showTopbar = true, showFooter = true }) {
         backgroundColor: 'background.default',
       }}
     >
-      {showTopbar && <TopbarSietch />}
+      {renderTopbar()}
       <Box component="main" sx={{ flexGrow: 1 }}>
         {children}
       </Box>
