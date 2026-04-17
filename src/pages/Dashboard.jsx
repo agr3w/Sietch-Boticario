@@ -47,6 +47,7 @@ import PlantCard from "../components/PlantCard";
 import AddPlantModal from "../components/AddPlantModal";
 import CameraScanner from "../components/CameraScanner";
 import LocationSelectorModal from "../components/LocationSelectorModal";
+import AnimatedPlant from "../components/AnimatedPlant";
 import { climateSx, feedbackSx, globalSx, layoutSx } from "../theme/styles";
 import SietchCard from "../components/ui/SietchCard";
 
@@ -670,14 +671,23 @@ function Dashboard() {
 
   return (
     <Container maxWidth="md" sx={[layoutSx.pageContainer, globalSx.pageTexture]}>
-      <Box sx={layoutSx.hero}>
-        <Box sx={layoutSx.heroContent}>
+      <Box sx={{ ...layoutSx.hero, position: "relative", overflow: "hidden" }}>
+        <AnimatedPlant side="left" />
+        <AnimatedPlant side="right" />
+
+        <Box sx={{ ...layoutSx.heroContent, position: "relative", zIndex: 1 }}>
           <Typography
             variant="h3"
             component="h1"
             gutterBottom
             align="center"
-            sx={{ fontFamily: 'Rajdhani', fontWeight: 700, letterSpacing: '0.1em', color: "text.main" }}
+            sx={{
+              fontFamily: "Rajdhani",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              color: "text.main",
+              textShadow: "0px 0px 6px rgba(0,0,0,0.5)",
+            }}
           >
             Sietch Boticário
           </Typography>
@@ -685,7 +695,7 @@ function Dashboard() {
             variant="subtitle1"
             gutterBottom
             align="center"
-            sx={layoutSx.subtitle, {color: "text.primary"}}
+            sx={{ ...layoutSx.subtitle, color: "text.primary" }}
           >
             Painel Fremen para Gestão de Umidade e Controle Botânico
           </Typography>
