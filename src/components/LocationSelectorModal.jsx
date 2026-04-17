@@ -13,6 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import RoomIcon from "@mui/icons-material/Room";
+import MyLocationIcon from "@mui/icons-material/MyLocation";
 import { atualizarLocalizacaoUsuario } from "../firebase";
 
 function normalizarResultadoCidade(resultado) {
@@ -37,6 +38,7 @@ function LocationSelectorModal({ open, userId, fallback, onClose, onSaved }) {
   const [resultados, setResultados] = useState([]);
   const [selecao, setSelecao] = useState(null);
   const [salvando, setSalvando] = useState(false);
+  const [loadingLocalizacao, setLoadingLocalizacao] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -123,8 +125,8 @@ function LocationSelectorModal({ open, userId, fallback, onClose, onSaved }) {
     return null;
   }, [fallback, selecao]);
 
-  const handleSalvar = async () => {
-    if (!userId || !cidadeSelecionada) {
+  const salvarLocalizacao = async (dados) => {
+    if (!userId || !dados) {
       return;
     }
 
@@ -132,20 +134,87 @@ function LocationSelectorModal({ open, userId, fallback, onClose, onSaved }) {
 
     try {
       await atualizarLocalizacaoUsuario(userId, {
-        cidade: cidadeSelecionada.cidade,
-        latitude: cidadeSelecionada.latitude,
-        longitude: cidadeSelecionada.longitude,
+        cidade: dados.cidade,
+        latitude: dados.latitude,
+        longitude: dados.longitude,
       });
 
       onSaved?.({
-        cidade: cidadeSelecionada.cidade,
-        latitude: cidadeSelecionada.latitude,
-        longitude: cidadeSelecionada.longitude,
+        cidade: dados.cidade,
+        latitude: dados.latitude,
+        longitude: dados.longitude,
       });
       onClose?.();
+    } catch {
+      setErroBusca("Nao foi possivel salvar sua coordenada agora.");
     } finally {
       setSalvando(false);
     }
+  };
+
+  const handleSalvar = async () => {
+    if (!cidadeSelecionada) {
+      return;
+    }
+
+    await salvarLocalizacao(cidadeSelecionada);
+  };
+
+  const handleDetectarGPS = () => {
+    if (!navigator?.geolocation) {
+      setErroBusca("Geolocalizacao nao suportada neste dispositivo.");
+      return;
+    }
+
+    setLoadingLocalizacao(true);
+    setErroBusca("");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const latitude = Number(position.coords.latitude);
+        const longitude = Number(position.coords.longitude);
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&format=json`,
+          );
+
+          if (!response.ok) {
+            throw new Error("Falha ao resolver cidade por coordenada");
+          }
+
+          const data = await response.json();
+          const address = data?.address ?? {};
+          const cidadeDetectada =
+            String(address.city ?? address.town ?? address.village ?? address.municipality ?? "").trim() ||
+            String(data?.name ?? "").trim() ||
+            "Localizacao atual";
+
+          setCidadeBusca(cidadeDetectada);
+          const detectada = {
+            cidade: cidadeDetectada,
+            cidadeLabel: `${cidadeDetectada} • GPS`,
+            latitude,
+            longitude,
+          };
+          setSelecao(detectada);
+          await salvarLocalizacao(detectada);
+        } catch {
+          setErroBusca("Nao foi possivel detectar sua cidade pelo GPS.");
+        } finally {
+          setLoadingLocalizacao(false);
+        }
+      },
+      () => {
+        setErroBusca("Permita acesso a localizacao para detectar sua coordenada.");
+        setLoadingLocalizacao(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 0,
+      },
+    );
   };
 
   return (
@@ -168,6 +237,22 @@ function LocationSelectorModal({ open, userId, fallback, onClose, onSaved }) {
           <Typography variant="body2" color="text.secondary">
             Defina a cidade do seu Sietch para leituras climaticas mais precisas.
           </Typography>
+
+          <Button
+            variant="outlined"
+            onClick={handleDetectarGPS}
+            disabled={loadingLocalizacao || salvando}
+            startIcon={loadingLocalizacao ? <CircularProgress size={14} /> : <MyLocationIcon />}
+            sx={{
+              borderRadius: 0,
+              borderColor: "#0D3028",
+              color: "#0D3028",
+              fontWeight: 700,
+              letterSpacing: "0.05em",
+            }}
+          >
+            [ DETECTAR MINHA POSICAO ]
+          </Button>
 
           <TextField
             fullWidth

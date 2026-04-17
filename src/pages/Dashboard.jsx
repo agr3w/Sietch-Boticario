@@ -102,6 +102,7 @@ function Dashboard() {
   const [climaErro, setClimaErro] = useState("");
   const [localizacao, setLocalizacao] = useState(LOCALIZACAO_CURITIBA);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isPrimeiroAcesso, setIsPrimeiroAcesso] = useState(false);
   const [notificacoes, setNotificacoes] = useState([]);
   const [_badgeCount, setBadgeCount] = useState(0);
   const [notificacoesAnchorEl, setNotificacoesAnchorEl] = useState(null);
@@ -247,6 +248,7 @@ function Dashboard() {
       setArquivoMorto([]);
       setLocalizacao(LOCALIZACAO_CURITIBA);
       setIsLocationModalOpen(false);
+      setIsPrimeiroAcesso(false);
       return;
     }
 
@@ -278,13 +280,16 @@ function Dashboard() {
             cidade: localizacaoSalva.cidade,
           });
           setIsLocationModalOpen(false);
+          setIsPrimeiroAcesso(false);
         } else {
           setLocalizacao(LOCALIZACAO_CURITIBA);
+          setIsPrimeiroAcesso(true);
           setIsLocationModalOpen(true);
         }
       } catch {
         if (ativo) {
           setLocalizacao(LOCALIZACAO_CURITIBA);
+          setIsPrimeiroAcesso(true);
           setIsLocationModalOpen(true);
           exibirFeedback("Nao foi possivel carregar sua coordenada. Usando Curitiba por enquanto.", "warning");
         }
@@ -658,6 +663,8 @@ function Dashboard() {
       longitude: Number(novaLocalizacao.longitude),
       cidade: novaLocalizacao.cidade,
     });
+    setIsPrimeiroAcesso(false);
+    setIsLocationModalOpen(false);
     exibirFeedback("Coordenada do Sietch atualizada com sucesso.", "success");
   }, [exibirFeedback]);
 
@@ -1090,7 +1097,12 @@ function Dashboard() {
         open={isLocationModalOpen}
         userId={currentUser?.uid}
         fallback={LOCALIZACAO_CURITIBA}
-        onClose={() => setIsLocationModalOpen(false)}
+        onClose={() => {
+          if (isPrimeiroAcesso) {
+            return;
+          }
+          setIsLocationModalOpen(false);
+        }}
         onSaved={handleLocalizacaoSalva}
       />
 

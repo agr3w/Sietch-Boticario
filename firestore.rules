@@ -72,14 +72,12 @@ service cloud.firestore {
       allow update: if isOwnerOnUpdate() && arquivoMortoSchemaValido();
     }
 
-    match /configuracoes_usuario/{docId} {
-      allow create: if isOwnerFromRequest()
-        && localizacaoSchemaValida()
-        && docId == request.auth.uid;
-      allow read, delete: if isOwnerFromResource() && docId == request.auth.uid;
-      allow update: if isOwnerOnUpdate()
-        && localizacaoSchemaValida()
-        && docId == request.auth.uid;
+    match /configuracoes_usuario/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated()
+        && request.auth.uid == userId
+        && localizacaoSchemaValida();
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
 
     match /{document=**} {
