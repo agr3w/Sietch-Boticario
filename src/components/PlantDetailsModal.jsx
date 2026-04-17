@@ -1322,7 +1322,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               />
             </SietchCard>
 
-            <FormControlLabel
+            {/* <FormControlLabel
               control={
                 <Switch
                   checked={notificarWhatsapp}
@@ -1330,7 +1330,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                 />
               }
               label="Notificar via WhatsApp"
-            />
+            /> */}
 
             <Stack spacing={1.4}>
               <Button
