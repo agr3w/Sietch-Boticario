@@ -6,6 +6,7 @@ import {
   Button,
   Grid,
   Stack,
+  Avatar,
   Accordion,
   AccordionSummary,
   AccordionDetails,
