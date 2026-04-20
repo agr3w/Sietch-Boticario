@@ -33,18 +33,31 @@ import {
   Typography,
 } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import ThunderstormIcon from "@mui/icons-material/Thunderstorm";
+import WbSunnyIcon from "@mui/icons-material/WbSunny";
+import { motion } from "framer-motion";
 import {
   cadastrarPlantaComFoto,
   db,
-  getNotificacoesNaoLidas,
+  getLocalizacaoUsuario,
   marcarMensagemComoLida,
 } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import PlantCard from "../components/PlantCard";
 import AddPlantModal from "../components/AddPlantModal";
 import CameraScanner from "../components/CameraScanner";
+import LocationSelectorModal from "../components/LocationSelectorModal";
+import AnimatedPlant from "../components/AnimatedPlant";
 import { climateSx, feedbackSx, globalSx, layoutSx } from "../theme/styles";
+import SietchCard from "../components/ui/SietchCard";
+
+const LOCALIZACAO_CURITIBA = {
+  latitude: -25.4284,
+  longitude: -49.2733,
+  cidade: "Curitiba",
+};
 
 function gerarDataHoraLocalBr() {
   return new Date().toLocaleString("pt-BR", {
@@ -63,6 +76,35 @@ function obterUltimaFotoReferenciaPlanta(planta) {
   return galeria[galeria.length - 1]?.url ?? "";
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 },
+  },
+};
+
+function obterConselhoChuva(probabilidade) {
+  if (Number(probabilidade) > 60) {
+    return "TEMPESTADE A VISTA. Evite regar plantas externas hoje.";
+  }
+
+  if (Number(probabilidade) > 30) {
+    return "CEU NUBLADO. Verifique a umidade antes de fornecer agua.";
+  }
+
+  return "CEU LIMPO. Siga o protocolo de rega normal.";
+}
+
 function Dashboard() {
   const { currentUser } = useAuth();
   const mentatNumberSx = {
@@ -73,12 +115,15 @@ function Dashboard() {
   const [arquivoMorto, setArquivoMorto] = useState([]);
   const [climaAtual, setClimaAtual] = useState(null);
   const [climaErro, setClimaErro] = useState("");
+  const [localizacao, setLocalizacao] = useState(LOCALIZACAO_CURITIBA);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isPrimeiroAcesso, setIsPrimeiroAcesso] = useState(false);
   const [notificacoes, setNotificacoes] = useState([]);
-  const [badgeCount, setBadgeCount] = useState(0);
+  const [_badgeCount, setBadgeCount] = useState(0);
   const [notificacoesAnchorEl, setNotificacoesAnchorEl] = useState(null);
   const [marcandoMensagemId, setMarcandoMensagemId] = useState(null);
-  const [n8nStatus, setN8nStatus] = useState("nao-validada");
-  const [validandoN8n, setValidandoN8n] = useState(false);
+  const [_n8nStatus, _setN8nStatus] = useState("nao-validada");
+  const [_validandoN8n, _setValidandoN8n] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [abaPainel, setAbaPainel] = useState(0);
   const [scannerMemorialOpen, setScannerMemorialOpen] = useState(false);
@@ -91,7 +136,7 @@ function Dashboard() {
     message: "",
     severity: "success",
   });
-  const n8nHealthcheckUrl = import.meta.env.VITE_N8N_HEALTHCHECK_URL;
+  const _n8nHealthcheckUrl = import.meta.env.VITE_N8N_HEALTHCHECK_URL;
 
   const exibirFeedback = useCallback((message, severity = "success") => {
     setSnackbar({
@@ -142,25 +187,25 @@ function Dashboard() {
     };
   };
 
-  const carregarNotificacoesNaoLidas = useCallback(async () => {
-    if (!currentUser?.uid) {
-      setNotificacoes([]);
-      setBadgeCount(0);
-      return;
-    }
+  // const carregarNotificacoesNaoLidas = useCallback(async () => {
+  //   if (!currentUser?.uid) {
+  //     setNotificacoes([]);
+  //     setBadgeCount(0);
+  //     return;
+  //   }
 
-    try {
-      const notificacoesNaoLidas = await getNotificacoesNaoLidas(currentUser.uid);
-      setNotificacoes(notificacoesNaoLidas);
-      setBadgeCount(notificacoesNaoLidas.length);
-    } catch {
-      setNotificacoes([]);
-      setBadgeCount(0);
-      exibirFeedback("Não foi possível carregar as notificações.", "error");
-    }
-  }, [currentUser?.uid, exibirFeedback]);
+  //   try {
+  //     const notificacoesNaoLidas = await getNotificacoesNaoLidas(currentUser.uid);
+  //     setNotificacoes(notificacoesNaoLidas);
+  //     setBadgeCount(notificacoesNaoLidas.length);
+  //   } catch {
+  //     setNotificacoes([]);
+  //     setBadgeCount(0);
+  //     exibirFeedback("Não foi possível carregar as notificações.", "error");
+  //   }
+  // }, [currentUser?.uid, exibirFeedback]);
 
-  const carregarPlantas = async () => {
+  const carregarPlantas = useCallback(async () => {
     if (!currentUser?.uid) {
       setPlantas([]);
       return;
@@ -178,9 +223,9 @@ function Dashboard() {
     });
 
     setPlantas(listaPlantas);
-  };
+  }, [currentUser?.uid]);
 
-  const carregarArquivoMorto = async () => {
+  const carregarArquivoMorto = useCallback(async () => {
     if (!currentUser?.uid) {
       setArquivoMorto([]);
       return;
@@ -210,12 +255,15 @@ function Dashboard() {
     });
 
     setArquivoMorto(listaArquivo);
-  };
+  }, [currentUser?.uid]);
 
   useEffect(() => {
     if (!currentUser?.uid) {
       setPlantas([]);
       setArquivoMorto([]);
+      setLocalizacao(LOCALIZACAO_CURITIBA);
+      setIsLocationModalOpen(false);
+      setIsPrimeiroAcesso(false);
       return;
     }
 
@@ -223,21 +271,66 @@ function Dashboard() {
       await carregarPlantas();
       await carregarArquivoMorto();
     })();
-  }, [currentUser?.uid]);
+  }, [carregarArquivoMorto, carregarPlantas, currentUser?.uid]);
 
   useEffect(() => {
-    void carregarNotificacoesNaoLidas();
-  }, [carregarNotificacoesNaoLidas]);
+    if (!currentUser?.uid) {
+      return;
+    }
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      void carregarNotificacoesNaoLidas();
-    }, 20000);
+    let ativo = true;
+
+    const carregarLocalizacao = async () => {
+      try {
+        const localizacaoSalva = await getLocalizacaoUsuario(currentUser.uid);
+
+        if (!ativo) {
+          return;
+        }
+
+        if (localizacaoSalva) {
+          setLocalizacao({
+            latitude: Number(localizacaoSalva.latitude),
+            longitude: Number(localizacaoSalva.longitude),
+            cidade: localizacaoSalva.cidade,
+          });
+          setIsLocationModalOpen(false);
+          setIsPrimeiroAcesso(false);
+        } else {
+          setLocalizacao(LOCALIZACAO_CURITIBA);
+          setIsPrimeiroAcesso(true);
+          setIsLocationModalOpen(true);
+        }
+      } catch {
+        if (ativo) {
+          setLocalizacao(LOCALIZACAO_CURITIBA);
+          setIsPrimeiroAcesso(true);
+          setIsLocationModalOpen(true);
+          exibirFeedback("Nao foi possivel carregar sua coordenada. Usando Curitiba por enquanto.", "warning");
+        }
+      }
+    };
+
+    void carregarLocalizacao();
 
     return () => {
-      clearInterval(intervalId);
+      ativo = false;
     };
-  }, [carregarNotificacoesNaoLidas]);
+  }, [currentUser?.uid, exibirFeedback]);
+
+  // useEffect(() => {
+  //   void carregarNotificacoesNaoLidas();
+  // }, [carregarNotificacoesNaoLidas]);
+
+  // useEffect(() => {
+  //   const intervalId = setInterval(() => {
+  //     void carregarNotificacoesNaoLidas();
+  //   }, 20000);
+
+  //   return () => {
+  //     clearInterval(intervalId);
+  //   };
+  // }, [carregarNotificacoesNaoLidas]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -246,7 +339,7 @@ function Dashboard() {
       try {
         setClimaErro("");
         const response = await fetch(
-          "https://api.open-meteo.com/v1/forecast?latitude=-25.4284&longitude=-49.2733&current=temperature_2m,relative_humidity_2m",
+          `https://api.open-meteo.com/v1/forecast?latitude=${localizacao.latitude}&longitude=${localizacao.longitude}&current=temperature_2m,relative_humidity_2m&daily=weathercode,precipitation_probability_max&timezone=auto`,
           { signal: controller.signal },
         );
 
@@ -256,14 +349,22 @@ function Dashboard() {
 
         const data = await response.json();
         const current = data.current;
+        const daily = data.daily;
 
-        if (!current) {
+        if (
+          !current ||
+          !daily ||
+          !Array.isArray(daily.precipitation_probability_max) ||
+          !Array.isArray(daily.weathercode)
+        ) {
           throw new Error("Resposta de clima inválida");
         }
 
         setClimaAtual({
           temperatura: current.temperature_2m,
           umidade: current.relative_humidity_2m,
+          probabilidadeChuva: daily.precipitation_probability_max[0],
+          codigoTempo: daily.weathercode[0],
         });
       } catch (error) {
         if (error.name !== "AbortError") {
@@ -279,7 +380,7 @@ function Dashboard() {
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [localizacao.latitude, localizacao.longitude]);
 
   const regarPlanta = async (id) => {
     try {
@@ -498,101 +599,127 @@ function Dashboard() {
     }
   };
 
-  const validarIntegracaoN8n = useCallback(async ({ silencioso = false } = {}) => {
-    if (!n8nHealthcheckUrl) {
-      setN8nStatus("inativa");
-      if (!silencioso) {
-        exibirFeedback(
-          "Configure VITE_N8N_HEALTHCHECK_URL para validar a integração.",
-          "warning",
-        );
-      }
-      return;
-    }
+  // const validarIntegracaoN8n = useCallback(async ({ silencioso = false } = {}) => {
+  //   if (!n8nHealthcheckUrl) {
+  //     setN8nStatus("inativa");
+  //     if (!silencioso) {
+  //       exibirFeedback(
+  //         "Configure VITE_N8N_HEALTHCHECK_URL para validar a integração.",
+  //         "warning",
+  //       );
+  //     }
+  //     return;
+  //   }
 
-    setValidandoN8n(true);
-    setN8nStatus("verificando");
+  //   setValidandoN8n(true);
+  //   setN8nStatus("verificando");
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+  //   const controller = new AbortController();
+  //   const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-    try {
-      const response = await fetch(n8nHealthcheckUrl, {
-        method: "GET",
-        signal: controller.signal,
-      });
+  //   try {
+  //     const response = await fetch(n8nHealthcheckUrl, {
+  //       method: "GET",
+  //       signal: controller.signal,
+  //     });
 
-      if (!response.ok) {
-        throw new Error("N8N_OFFLINE");
-      }
+  //     if (!response.ok) {
+  //       throw new Error("N8N_OFFLINE");
+  //     }
 
-      setN8nStatus("ativa");
-      if (!silencioso) {
-        exibirFeedback("Integração n8n validada com sucesso.", "success");
-      }
-    } catch {
-      setN8nStatus("inativa");
-      if (!silencioso) {
-        exibirFeedback("Integração n8n indisponível no momento.", "error");
-      }
-    } finally {
-      clearTimeout(timeoutId);
-      setValidandoN8n(false);
-    }
-  }, [exibirFeedback, n8nHealthcheckUrl]);
+  //     setN8nStatus("ativa");
+  //     if (!silencioso) {
+  //       exibirFeedback("Integração n8n validada com sucesso.", "success");
+  //     }
+  //   } catch {
+  //     setN8nStatus("inativa");
+  //     if (!silencioso) {
+  //       exibirFeedback("Integração n8n indisponível no momento.", "error");
+  //     }
+  //   } finally {
+  //     clearTimeout(timeoutId);
+  //     setValidandoN8n(false);
+  //   }
+  // }, [exibirFeedback, n8nHealthcheckUrl]);
 
-  useEffect(() => {
-    if (!n8nHealthcheckUrl) {
-      return;
-    }
+  // useEffect(() => {
+  //   if (!n8nHealthcheckUrl) {
+  //     return;
+  //   }
 
-    const debounceId = setTimeout(() => {
-      void validarIntegracaoN8n({ silencioso: true });
-    }, 900);
+  //   const debounceId = setTimeout(() => {
+  //     void validarIntegracaoN8n({ silencioso: true });
+  //   }, 900);
 
-    return () => {
-      clearTimeout(debounceId);
-    };
-  }, [n8nHealthcheckUrl, validarIntegracaoN8n]);
+  //   return () => {
+  //     clearTimeout(debounceId);
+  //   };
+  // }, [n8nHealthcheckUrl, validarIntegracaoN8n]);
 
-  const n8nStatusTexto =
-    n8nStatus === "ativa"
+  const _n8nStatusTexto =
+    _n8nStatus === "ativa"
       ? "Ativa"
-      : n8nStatus === "inativa"
+      : _n8nStatus === "inativa"
         ? "Inativa"
-        : n8nStatus === "verificando"
+        : _n8nStatus === "verificando"
           ? "Sincronizando..."
           : "Não validada";
 
-  const n8nStatusCor =
-    n8nStatus === "ativa"
+  const _n8nStatusCor =
+    _n8nStatus === "ativa"
       ? "success.main"
-      : n8nStatus === "inativa"
+      : _n8nStatus === "inativa"
         ? "error.main"
-        : n8nStatus === "verificando"
+        : _n8nStatus === "verificando"
           ? "warning.main"
           : "text.secondary";
 
   const menuNotificacoesAberto = Boolean(notificacoesAnchorEl);
+  const probabilidadeChuva = Number(climaAtual?.probabilidadeChuva ?? 0);
+  const riscoChuvaAlto = probabilidadeChuva > 60;
+
+  const handleLocalizacaoSalva = useCallback((novaLocalizacao) => {
+    if (!novaLocalizacao) {
+      return;
+    }
+
+    setLocalizacao({
+      latitude: Number(novaLocalizacao.latitude),
+      longitude: Number(novaLocalizacao.longitude),
+      cidade: novaLocalizacao.cidade,
+    });
+    setIsPrimeiroAcesso(false);
+    setIsLocationModalOpen(false);
+    exibirFeedback("Coordenada do Sietch atualizada com sucesso.", "success");
+  }, [exibirFeedback]);
 
   return (
     <Container maxWidth="md" sx={[layoutSx.pageContainer, globalSx.pageTexture]}>
-      <Box sx={layoutSx.hero}>
-        <Box sx={layoutSx.heroContent}>
+      <Box sx={{ ...layoutSx.hero, position: "relative", overflow: "hidden" }}>
+        <AnimatedPlant side="left" />
+        <AnimatedPlant side="right" />
+
+        <Box sx={{ ...layoutSx.heroContent, position: "relative", zIndex: 1 }}>
           <Typography
             variant="h3"
             component="h1"
             gutterBottom
             align="center"
-            sx={{ color: "#E8E0D5" }}
+            sx={{
+              fontFamily: "Rajdhani",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              color: "text.main",
+              textShadow: "0px 0px 6px rgba(0,0,0,0.5)",
+            }}
           >
-            Sietch Boticário 🌿
+            Sietch Boticário
           </Typography>
           <Typography
             variant="subtitle1"
             gutterBottom
             align="center"
-            sx={layoutSx.subtitle}
+            sx={{ ...layoutSx.subtitle, color: "text.primary" }}
           >
             Painel Fremen para Gestão de Umidade e Controle Botânico
           </Typography>
@@ -616,11 +743,39 @@ function Dashboard() {
         </Button>
       </Stack>
 
-      <Card elevation={4} sx={climateSx.card}>
+      <SietchCard sx={climateSx.card}>
         <CardContent>
-          <Typography variant="h6" sx={climateSx.title}>
-            Painel Climático • Curitiba
-          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 1,
+              flexWrap: "wrap",
+              mb: 0.6,
+            }}
+          >
+            <Typography variant="h6" sx={climateSx.title}>
+              Painel Climático • {localizacao.cidade}
+            </Typography>
+            <Button
+              variant="text"
+              size="small"
+              startIcon={<LocationOnOutlinedIcon sx={{ fontSize: 16 }} />}
+              onClick={() => setIsLocationModalOpen(true)}
+              sx={{
+                borderRadius: 0,
+                color: "primary.main",
+                fontWeight: 700,
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+                minHeight: 32,
+                px: 1,
+              }}
+            >
+              Alterar Coordenada
+            </Button>
+          </Box>
 
           {climaErro && <Alert severity="warning">{climaErro}</Alert>}
 
@@ -659,9 +814,52 @@ function Dashboard() {
             </Grid>
           )}
         </CardContent>
-      </Card>
+      </SietchCard>
 
-      <Card elevation={3} sx={{ mb: 4 }}>
+      <SietchCard
+        sx={{
+          mt: 2,
+          borderLeft: riscoChuvaAlto
+            ? "4px solid #9E3D22"
+            : "4px solid #345A14",
+        }}
+      >
+        <CardContent>
+          <Stack direction="row" spacing={1.2} alignItems="center" sx={{ mb: 1.1 }}>
+            {riscoChuvaAlto ? (
+              <ThunderstormIcon sx={{ color: "#9E3D22" }} />
+            ) : (
+              <WbSunnyIcon sx={{ color: "#345A14" }} />
+            )}
+            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: "0.05em" }}>
+              ORACULO CLIMATICO
+            </Typography>
+          </Stack>
+
+          <Typography variant="body1">
+            {climaAtual
+              ? obterConselhoChuva(probabilidadeChuva)
+              : "Sincronizando previsao para gerar conselho de sobrevivencia..."}
+          </Typography>
+
+          <Typography variant="body2" sx={{ color: "text.primary", fontWeight: 600, mt: 1 }}>
+            Probabilidade de precipitacao:{" "}
+            <Box
+              component="span"
+              sx={{
+                ...mentatNumberSx,
+                color: probabilidadeChuva > 60 ? "error.main" : "primary.main",
+                fontSize: "1.1em",
+              }}
+            >
+              {climaAtual ? `${probabilidadeChuva}%` : "--%"}
+            </Box>
+          </Typography>
+        </CardContent>
+      </SietchCard>
+
+      {/* Funcionalidade de n8n/WhatsApp desativada na V1.0 - Sera liberada na V1.1 */}
+      {/* <SietchCard sx={{ mb: 4 }}>
         <CardContent sx={{ py: 1.8, "&:last-child": { pb: 1.8 } }}>
           <Box
             sx={{
@@ -728,7 +926,7 @@ function Dashboard() {
             </Stack>
           </Box>
         </CardContent>
-      </Card>
+      </SietchCard> */}
 
       <Menu
         anchorEl={notificacoesAnchorEl}
@@ -821,7 +1019,7 @@ function Dashboard() {
         ))}
       </Box>
 
-      <Card elevation={3} sx={{ mb: 3 }}>
+      <SietchCard sx={{ mb: 3 }}>
         <CardContent sx={{ py: 1.4, "&:last-child": { pb: 1.4 } }}>
           <Tabs
             value={abaPainel}
@@ -832,7 +1030,7 @@ function Dashboard() {
             sx={{
               "& .MuiTabs-indicator": { backgroundColor: "#7EC3F1", height: 3 },
               "& .MuiTab-root": {
-                color: "rgba(245,242,235,0.88)",
+                color: "color.primary",
                 fontWeight: 700,
                 letterSpacing: "0.05em",
                 textTransform: "uppercase",
@@ -850,12 +1048,19 @@ function Dashboard() {
             <Tab label={`Arquivo Morto (${arquivoMorto.length})`} />
           </Tabs>
         </CardContent>
-      </Card>
+      </SietchCard>
 
       {abaPainel === 0 && (
-        <Grid container spacing={3}>
+        <Grid
+          component={motion.div}
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          container
+          spacing={3}
+        >
           {plantas.map((planta) => (
-            <Grid size={{ xs: 12, sm: 6 }} key={planta.id}>
+            <Grid component={motion.div} variants={itemVariants} size={{ xs: 12, sm: 6 }} key={planta.id}>
               <PlantCard
                 planta={planta}
                 onRegar={regarPlanta}
@@ -962,6 +1167,19 @@ function Dashboard() {
         open={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAdd={adicionarPlanta}
+      />
+
+      <LocationSelectorModal
+        open={isLocationModalOpen}
+        userId={currentUser?.uid}
+        fallback={LOCALIZACAO_CURITIBA}
+        onClose={() => {
+          if (isPrimeiroAcesso) {
+            return;
+          }
+          setIsLocationModalOpen(false);
+        }}
+        onSaved={handleLocalizacaoSalva}
       />
 
       <CameraScanner

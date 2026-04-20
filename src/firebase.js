@@ -40,7 +40,7 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
+// Initialize Firebasef
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -56,6 +56,62 @@ export {
   signOut,
   onAuthStateChanged,
 };
+
+export async function atualizarLocalizacaoUsuario(userId, dadosLocalizacao) {
+  if (!userId) {
+    throw new Error("userId e obrigatorio para atualizar localizacao");
+  }
+
+  const latitude = Number(dadosLocalizacao?.latitude);
+  const longitude = Number(dadosLocalizacao?.longitude);
+  const cidade = String(dadosLocalizacao?.cidade ?? "").trim();
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !cidade) {
+    throw new Error("Dados de localizacao invalidos");
+  }
+
+  const configuracaoRef = doc(db, "configuracoes_usuario", userId);
+  await setDoc(
+    configuracaoRef,
+    {
+      userId,
+      latitude,
+      longitude,
+      cidade,
+      data_atualizacao: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+export async function getLocalizacaoUsuario(userId) {
+  if (!userId) {
+    return null;
+  }
+
+  const configuracaoRef = doc(db, "configuracoes_usuario", userId);
+  const configuracaoSnapshot = await getDoc(configuracaoRef);
+
+  if (!configuracaoSnapshot.exists()) {
+    return null;
+  }
+
+  const dados = configuracaoSnapshot.data();
+  const latitude = Number(dados?.latitude);
+  const longitude = Number(dados?.longitude);
+  const cidade = String(dados?.cidade ?? "").trim();
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !cidade) {
+    return null;
+  }
+
+  return {
+    latitude,
+    longitude,
+    cidade,
+    data_atualizacao: dados?.data_atualizacao ?? null,
+  };
+}
 
 function gerarDataHoraLocalBr() {
   return new Date().toLocaleString("pt-BR", {

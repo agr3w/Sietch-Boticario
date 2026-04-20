@@ -12,9 +12,8 @@ export const globalSx = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    borderBottom: "1px solid rgba(211, 154, 44, 0.42)",
-    background:
-      "linear-gradient(180deg, rgba(8, 13, 15, 0.96) 0%, rgba(13, 21, 24, 0.88) 100%)",
+    borderBottom: "1px solid rgba(61, 40, 16, 0.1)",
+    background: "rgba(245, 236, 215, 0.85)",
     backdropFilter: "blur(10px)",
     boxShadow: "0 10px 26px rgba(0,0,0,0.34)",
   },
@@ -67,9 +66,9 @@ export const layoutSx = {
     mb: 4,
     px: { xs: 2, sm: 3 },
     py: 3,
-    borderBottom: "4px solid #D35400",
-    color: "#E8E0D5",
-    background: "radial-gradient(circle at 50% 0%, #2A363B 0%, #171E21 100%)",
+    borderBottom: "4px solid #A64D13",
+    color: "#0D3028",
+    background: "linear-gradient(to right, #E0EDF5, #E8F4F0)",
   },
   heroContent: {
     position: "relative",
@@ -91,11 +90,10 @@ export const layoutSx = {
 export const climateSx = {
   card: {
     mb: 4,
-    color: "#E8E0D5",
-    backgroundColor: "rgba(23, 30, 33, 0.86)",
-    borderLeft: "4px solid rgba(211, 84, 0, 0.82)",
-    border: "1px solid rgba(211, 84, 0, 0.22)",
-    backdropFilter: "blur(6px)",
+    color: "#0D3028",
+    backgroundColor: "#E0EDF5",
+    borderLeft: "4px solid rgba(13, 48, 40, 0.65)",
+    border: "1px solid rgba(13, 48, 40, 0.16)",
   },
   metricBox: {
     p: 2.2,
@@ -130,19 +128,24 @@ export const climateSx = {
 
 export const plantCardSx = {
   card: {
-    backgroundColor: "#EFE4D6",
+    backgroundColor: "#E8EDE4",
     boxShadow: "0 14px 26px rgba(118, 82, 43, 0.2)",
     border: "1px solid rgba(100,70,40,0.2)",
   },
   cardNeedWater: {
-    border: "2px solid #D94841",
-    boxShadow: "0 14px 30px rgba(217, 72, 65, 0.25)",
-    background: "linear-gradient(180deg, #F5DFD8 0%, #EFE4D6 100%)",
+    border: "2px solid #9E3D22",
+    boxShadow: "0 14px 30px rgba(158, 61, 34, 0.22)",
+    background: "linear-gradient(180deg, #F3DFD8 0%, #E8EDE4 100%)",
   },
   cardNearWater: {
-    border: "2px solid #D39A2C",
-    boxShadow: "0 14px 30px rgba(211, 154, 44, 0.23)",
-    background: "linear-gradient(180deg, #F5ECCE 0%, #EFE4D6 100%)",
+    border: "2px solid #C48A31",
+    boxShadow: "0 14px 30px rgba(196, 138, 49, 0.22)",
+    background: "linear-gradient(180deg, #F7EACF 0%, #E8EDE4 100%)",
+  },
+  cardHydrated: {
+    border: "2px solid #1B80C4",
+    boxShadow: "0 14px 30px rgba(27, 128, 196, 0.2)",
+    background: "linear-gradient(180deg, #E1EEF7 0%, #E8EDE4 100%)",
   },
   content: {
     p: 3,
@@ -161,14 +164,19 @@ export const plantCardSx = {
     border: "1px solid transparent",
   },
   statusBadgeNeedWater: {
-    color: "#7B1E1E",
-    backgroundColor: "rgba(217, 72, 65, 0.16)",
-    borderColor: "rgba(217, 72, 65, 0.45)",
+    color: "#9E3D22",
+    backgroundColor: "rgba(158, 61, 34, 0.1)",
+    borderColor: "rgba(158, 61, 34, 0.36)",
   },
   statusBadgeNearWater: {
-    color: "#6B4A00",
-    backgroundColor: "rgba(211, 154, 44, 0.18)",
-    borderColor: "rgba(211, 154, 44, 0.42)",
+    color: "#7A551C",
+    backgroundColor: "rgba(196, 138, 49, 0.16)",
+    borderColor: "rgba(196, 138, 49, 0.38)",
+  },
+  statusBadgeHydrated: {
+    color: "#0D3028",
+    backgroundColor: "rgba(27, 128, 196, 0.14)",
+    borderColor: "rgba(27, 128, 196, 0.36)",
   },
   actionRow: {
     mt: 2,
@@ -191,20 +199,30 @@ export const plantCardSx = {
     px: 1.2,
     py: 0.7,
     borderRadius: 1,
-    color: "#7B1E1E",
+    color: "#9E3D22",
     fontWeight: 700,
-    backgroundColor: "rgba(217, 72, 65, 0.14)",
-    border: "1px solid rgba(217, 72, 65, 0.35)",
+    backgroundColor: "rgba(158, 61, 34, 0.1)",
+    border: "1px solid rgba(158, 61, 34, 0.35)",
   },
   nearAlertText: {
     mb: 2,
     px: 1.2,
     py: 0.7,
     borderRadius: 1,
-    color: "#6B4A00",
+    color: "#7A551C",
     fontWeight: 700,
-    backgroundColor: "rgba(211, 154, 44, 0.16)",
-    border: "1px solid rgba(211, 154, 44, 0.36)",
+    backgroundColor: "rgba(196, 138, 49, 0.16)",
+    border: "1px solid rgba(196, 138, 49, 0.36)",
+  },
+  hydratedAlertText: {
+    mb: 2,
+    px: 1.2,
+    py: 0.7,
+    borderRadius: 1,
+    color: "#0D3028",
+    fontWeight: 700,
+    backgroundColor: "rgba(27, 128, 196, 0.12)",
+    border: "1px solid rgba(27, 128, 196, 0.34)",
   },
   waterButton: {
     py: 1.2,
@@ -222,47 +240,46 @@ export const plantCardSx = {
 export const addPlantModalSx = {
   dialogPaper: {
     borderRadius: 0,
-    background:
-      "linear-gradient(180deg, rgba(14, 22, 26, 0.98) 0%, rgba(11, 18, 22, 0.98) 100%)",
-    border: "1px solid rgba(211, 154, 44, 0.42)",
-    boxShadow: "0 22px 44px rgba(0, 0, 0, 0.48)",
-    color: "#F5F2EB",
+    background: "#EEF0E8",
+    border: "1px solid rgba(166, 77, 19, 0.2)",
+    boxShadow: "0 12px 28px rgba(61, 40, 16, 0.12)",
+    color: "#3D2810",
   },
   title: {
     pb: 1.1,
-    color: "#F5F2EB",
+    color: "#0D3028",
     fontFamily: '"Rajdhani", sans-serif',
     textTransform: "uppercase",
     fontWeight: 700,
     letterSpacing: "0.06em",
-    borderBottom: "1px solid rgba(126, 195, 241, 0.3)",
-    backgroundColor: "rgba(17, 29, 34, 0.56)",
+    borderBottom: "1px solid rgba(13, 48, 40, 0.16)",
+    backgroundColor: "#E0EDF5",
   },
   form: {
     display: "grid",
     gap: 2,
     pt: "10px !important",
     "& .MuiTextField-root .MuiInputBase-root": {
-      backgroundColor: "rgba(6, 14, 18, 0.72)",
-      color: "#F5F2EB",
+      backgroundColor: "rgba(255, 255, 255, 0.6)",
+      color: "#3D2810",
     },
     "& .MuiTextField-root .MuiInputLabel-root": {
-      color: "rgba(211, 154, 44, 0.92)",
+      color: "#6E553B",
     },
     "& .MuiTextField-root .MuiInputLabel-root.Mui-focused": {
-      color: "#F5F2EB",
+      color: "#345A14",
     },
     "& .MuiTextField-root .MuiOutlinedInput-notchedOutline": {
-      borderColor: "rgba(245, 242, 235, 0.32)",
+      borderColor: "rgba(61, 40, 16, 0.2)",
     },
     "& .MuiTextField-root .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
-      borderColor: "rgba(245, 242, 235, 0.62)",
+      borderColor: "rgba(61, 40, 16, 0.32)",
     },
     "& .MuiTextField-root .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-      borderColor: "#7EC3F1",
+      borderColor: "#345A14",
     },
     "& .MuiInputBase-input::placeholder": {
-      color: "rgba(245, 242, 235, 0.65)",
+      color: "rgba(61, 40, 16, 0.55)",
       opacity: 1,
     },
   },
@@ -302,10 +319,10 @@ export const addPlantModalSx = {
     },
   },
   submitButton: {
-    background: "linear-gradient(135deg, #1E3A2F 0%, #2F6F4E 100%)",
+    background: "linear-gradient(135deg, #345A14 0%, #4A7A1F 100%)",
     color: "#F5F2EB",
     "&:hover": {
-      background: "linear-gradient(135deg, #254A3B 0%, #38855D 100%)",
+      background: "linear-gradient(135deg, #2C4D11 0%, #3F691A 100%)",
     },
   },
 };

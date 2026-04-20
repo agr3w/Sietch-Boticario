@@ -5,26 +5,24 @@ import {
   Typography,
   Button,
   Grid,
-  Card,
-  Chip,
   Stack,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  AppBar,
-  Toolbar,
-  Avatar,
   useTheme,
+  Chip
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
-import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import mascote from '../assets/mascote.png';
 import heroImg from '../assets/hero.jpg';
+import SietchLayout from '../components/SietchLayout';
+import ReleaseBadge from '../components/ui/ReleaseBadge';
+import SietchCard from '../components/ui/SietchCard';
 
 const Home = () => {
   const MotionDiv = motion.div;
@@ -32,54 +30,17 @@ const Home = () => {
   const navigate = useNavigate();
 
   return (
-    <Box
-      sx={{
-        backgroundColor: theme.palette.background.default,
-        minHeight: '100vh',
-        backgroundImage:
-          'radial-gradient(circle at 20% 30%, rgba(30, 58, 47, 0.15) 0%, transparent 70%)',
-      }}
-    >
-      <AppBar
-        position="fixed"
+    <SietchLayout authAwareTopbar>
+      <Box
         sx={{
-          background: 'rgba(10, 10, 10, 0.7)',
-          backdropFilter: 'blur(15px)',
-          borderBottom: `1px solid ${theme.palette.divider}`,
+          backgroundColor: theme.palette.background.default,
+          minHeight: '100vh',
+          backgroundImage:
+            'radial-gradient(circle at 20% 30%, rgba(52, 90, 20, 0.08) 0%, transparent 70%)',
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar
-              src={mascote}
-              sx={{
-                width: 40,
-                height: 40,
-                border: `1px solid ${theme.palette.secondary.main}`,
-              }}
-            />
-            <Typography
-              variant="h6"
-              sx={{ fontFamily: 'Rajdhani', fontWeight: 700, letterSpacing: '0.1em' }}
-            >
-              SIETCH BOTICÁRIO
-            </Typography>
-          </Stack>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/login')}
-            sx={{
-              borderRadius: 0,
-              borderColor: theme.palette.secondary.main,
-              color: theme.palette.secondary.main,
-            }}
-          >
-            IDENTIFICAR-SE
-          </Button>
-        </Toolbar>
-      </AppBar>
 
-      <Container maxWidth="lg" sx={{ pt: 20, pb: 10 }}>
+      <Container maxWidth="lg" sx={{ pt: { xs: 8, md: 10 }, pb: 10 }}>
         <Grid container spacing={8} alignItems="center">
           <Grid size={{ xs: 12, md: 7 }}>
             <motion.div
@@ -87,11 +48,13 @@ const Home = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
             >
+              <ReleaseBadge sx={{ mb: 2.2 }} />
               <Typography
                 variant="h1"
                 sx={{
                   fontFamily: 'Rajdhani',
                   fontWeight: 900,
+                  color: 'text.primary',
                   fontSize: { xs: '3.5rem', md: '5rem' },
                   lineHeight: 0.9,
                   mb: 3,
@@ -131,7 +94,7 @@ const Home = () => {
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               style={{ position: 'relative' }}
             >
-              <MotionDiv
+              {/* <MotionDiv
                 initial={{ opacity: 0, y: -20, scale: 0.94 }}
                 animate={{ opacity: 1, y: [-20, 0, -8, 0], scale: 1 }}
                 transition={{ delay: 2, duration: 0.9, times: [0, 0.62, 0.82, 1], ease: 'easeOut' }}
@@ -172,17 +135,18 @@ const Home = () => {
                     </Box>
                   </Stack>
                 </Box>
-              </MotionDiv>
+              </MotionDiv> */}
 
               <Box
                 sx={{
                   width: 280,
                   height: 580,
-                  backgroundColor: '#111',
+                  backgroundColor: '#E9E3D3',
                   borderRadius: '40px',
-                  border: '8px solid #222',
+                  border: '8px solid rgba(61, 40, 16, 0.22)',
                   overflow: 'hidden',
-                  boxShadow: `0 50px 100px rgba(0,0,0,0.8), 0 0 20px ${theme.palette.secondary.main}30`,
+                  boxShadow:
+                    '0 28px 60px rgba(61, 40, 16, 0.24), 0 0 14px rgba(166, 77, 19, 0.16)',
                   position: 'relative',
                 }}
               >
@@ -252,7 +216,7 @@ const Home = () => {
         </Container>
       </Box>
 
-      <Box sx={{ py: 15, backgroundColor: 'rgba(0,0,0,0.3)' }}>
+      <Box sx={{ py: 15, backgroundColor: '#EEF0E8' }}>
         <Container maxWidth="lg">
           <Typography
             variant="h3"
@@ -280,14 +244,13 @@ const Home = () => {
               },
             ].map((feature, i) => (
               <Grid size={{ xs: 12, md: 4 }} key={i}>
-                <Card
+                <SietchCard
+                  highlightColor={theme.palette.secondary.main}
                   sx={{
                     p: 4,
                     height: '100%',
-                    backgroundColor: 'rgba(30, 58, 47, 0.4)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.4)',
                     backdropFilter: 'blur(10px)',
-                    borderRadius: 0,
-                    borderLeft: `4px solid ${theme.palette.secondary.main}`,
                   }}
                 >
                   <Box sx={{ mb: 2 }}>{feature.icon}</Box>
@@ -297,14 +260,14 @@ const Home = () => {
                   <Typography variant="body1" color="text.secondary">
                     {feature.desc}
                   </Typography>
-                </Card>
+                </SietchCard>
               </Grid>
             ))}
           </Grid>
         </Container>
       </Box>
 
-      <Box sx={{ py: 15, backgroundColor: 'rgba(255,255,255,0.02)' }}>
+      <Box sx={{ py: 15, backgroundColor: 'rgba(61, 40, 16, 0.03)' }}>
         <Container maxWidth="md">
           <Typography
             variant="h3"
@@ -323,8 +286,8 @@ const Home = () => {
               },
               {
                 title: 'SINCRONIA',
-                desc: 'Cérebro automatizado que envia telemetria vital e alertas de rega diretamente para o seu comunicador (WhatsApp).',
-                tags: ['n8n Automation', 'WhatsApp Gateway'],
+                desc: 'Cérebro automatizado que calcula a telemetria vital e indica o momento exato de fornecer água através do seu painel tático.',
+                tags: ['Telemetria Interna', 'Em Breve: WhatsApp V1.1'],
               },
               {
                 title: 'EVOLUÇÃO',
@@ -420,7 +383,7 @@ const Home = () => {
                 width: '4px',
                 borderRadius: 999,
                 background:
-                  'linear-gradient(to top, rgba(28,28,28,0.95) 0%, rgba(30,58,47,0.9) 58%, rgba(98,193,154,0.95) 100%)',
+                  'linear-gradient(to top, rgba(61,40,16,0.18) 0%, rgba(52,90,20,0.38) 58%, rgba(98,193,154,0.92) 100%)',
               }}
             />
 
@@ -455,21 +418,21 @@ const Home = () => {
                         width: 18,
                         height: 18,
                         borderRadius: '50%',
-                        backgroundColor: index === 0 ? '#2A2A2A' : index === 1 ? '#2E5443' : '#62C19A',
+                        backgroundColor: index === 0 ? '#8B6F4E' : index === 1 ? '#4F7A49' : '#62C19A',
                         boxShadow:
                           index === 2
                             ? '0 0 14px rgba(98,193,154,0.75)'
-                            : '0 0 8px rgba(30,58,47,0.35)',
+                            : '0 0 8px rgba(61,40,16,0.24)',
                       }}
                     />
 
-                    <Card
+                    <SietchCard
+                      highlightColor={index === 2 ? '#62C19A' : theme.palette.secondary.main}
                       sx={{
                         flex: 1,
                         p: 3.5,
-                        borderRadius: 0,
-                        backgroundColor: 'rgba(17,17,17,0.75)',
-                        borderLeft: `3px solid ${index === 2 ? '#62C19A' : theme.palette.secondary.main}`,
+                        backgroundColor: 'rgba(255, 255, 255, 0.45)',
+                        borderLeftWidth: '3px',
                       }}
                     >
                       <Typography
@@ -486,7 +449,7 @@ const Home = () => {
                       <Typography variant="h6" color="text.secondary" sx={{ lineHeight: 1.5 }}>
                         {item.desc}
                       </Typography>
-                    </Card>
+                    </SietchCard>
                   </Stack>
                 </MotionDiv>
               ))}
@@ -502,15 +465,15 @@ const Home = () => {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <Card
+          <SietchCard
             sx={{
               p: { xs: 5, md: 8 },
               borderRadius: 0,
               textAlign: 'center',
-              background: 'radial-gradient(circle at center, #1E3A2F 0%, #0A0A0A 100%)',
+              background: 'radial-gradient(circle at center, #DCEBDD 0%, #EEF0E8 55%, #E6DCC4 100%)',
               borderTop: `2px solid ${theme.palette.secondary.main}`,
               borderBottom: `2px solid ${theme.palette.secondary.main}`,
-              boxShadow: '0 24px 60px rgba(0,0,0,0.45)',
+              boxShadow: '0 20px 44px rgba(61, 40, 16, 0.16)',
             }}
           >
             <Stack spacing={4} alignItems="center">
@@ -545,7 +508,7 @@ const Home = () => {
                 ESTABELECER MEU SIETCH
               </Button>
             </Stack>
-          </Card>
+          </SietchCard>
         </MotionDiv>
       </Container>
 
@@ -561,7 +524,7 @@ const Home = () => {
           sx={{
             backgroundColor: 'transparent',
             backgroundImage: 'none',
-            borderBottom: '1px solid #333',
+            borderBottom: '1px solid rgba(61, 40, 16, 0.2)',
           }}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon color="secondary" />}>
@@ -577,7 +540,8 @@ const Home = () => {
           </AccordionDetails>
         </Accordion>
       </Container>
-    </Box>
+      </Box>
+    </SietchLayout>
   );
 };
 

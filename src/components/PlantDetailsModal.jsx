@@ -15,6 +15,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  LinearProgress,
   MenuItem,
   Select,
   Stack,
@@ -41,6 +42,16 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 import CameraScanner from "./CameraScanner";
 import {
   adicionarFotoGaleriaPlanta,
@@ -49,15 +60,17 @@ import {
   getHistoricoPlanta,
   setMarcoFoto,
 } from "../firebase";
+import { calcularHP } from "../utils/telemetria";
+import SietchCard from "./ui/SietchCard";
 
 const placeholderFantasma =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Epipremnum_aureum_31082012.jpg/800px-Epipremnum_aureum_31082012.jpg";
 
 const vitalidadeConfig = {
-  prosperando: { cor: "#2F6F4E", label: "Prosperando" },
+  prosperando: { cor: "#345A14", label: "Prosperando" },
   estavel: { cor: "#1B80C4", label: "Estavel" },
-  recuperacao: { cor: "#D39A2C", label: "Em Recuperacao" },
-  critico: { cor: "#D94841", label: "Critico" },
+  recuperacao: { cor: "#C48A31", label: "Em Recuperacao" },
+  critico: { cor: "#9E3D22", label: "Critico" },
 };
 
 function formatarDataBr(dataEnvio) {
@@ -246,31 +259,6 @@ function getVitalidadeFrameConfig(vitalidadeAtual) {
   };
 }
 
-function getMarcoFrameConfig(marcoAtual) {
-  if (marcoAtual === "nascimento") {
-    return {
-      borderColor: "#7EC3F1",
-      glow: "rgba(126, 195, 241, 0.56)",
-    };
-  }
-
-  if (marcoAtual === "crescimento") {
-    return {
-      borderColor: "#5FC88A",
-      glow: "rgba(95, 200, 138, 0.56)",
-    };
-  }
-
-  if (marcoAtual === "memorial") {
-    return {
-      borderColor: "#D39A2C",
-      glow: "rgba(211, 154, 44, 0.56)",
-    };
-  }
-
-  return null;
-}
-
 function FotoMiniaturaHud({ foto, ativa, onSelecionar }) {
   const marcoFoto = normalizarTipoMarco(foto?.marco);
   const ehNascimento = marcoFoto === "nascimento";
@@ -417,6 +405,35 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
     const badges = fotosTimelapse.flatMap((foto) => obterBadgesFoto(foto));
     return [...new Set(badges)].sort((a, b) => a.localeCompare(b));
   }, [fotosTimelapse]);
+  const fotos = useMemo(() => ordenarFotosPorDataAsc(fotosTimelapse), [fotosTimelapse]);
+  const hpAtual = useMemo(() => calcularHP(planta, fotos), [planta, fotos]);
+  const hpProgressColor = hpAtual >= 75 ? "success.main" : hpAtual >= 40 ? "warning.main" : "error.main";
+  const dadosGrafico = useMemo(
+    () =>
+      fotos.map((foto, index) => {
+        const dataRegistro = extrairDataRegistro(foto?.data_registro ?? foto?.data_captura);
+        const dataFormatada = dataRegistro
+          ? dataRegistro.toLocaleDateString("pt-BR", {
+              timeZone: "America/Sao_Paulo",
+              day: "2-digit",
+              month: "2-digit",
+            })
+          : "--/--";
+        const plantaSimulada = {
+          ...planta,
+          vitalidade: foto?.vitalidade,
+          ultima_rega: foto?.data_registro,
+        };
+        const valorCalculado = calcularHP(plantaSimulada, fotos.slice(0, index + 1));
+
+        return {
+          data: dataFormatada,
+          saude: valorCalculado,
+          status: foto?.vitalidade ?? "estavel",
+        };
+      }),
+    [fotos, planta],
+  );
   const fotosTimelapseVisiveis = useMemo(() => {
     if (filtroBadgeAtivo === "todas") {
       return fotosTimelapse;
@@ -890,7 +907,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
           pb: 1.2,
           borderBottom: "4px solid",
           borderColor: vitalidadeAtualConfig.cor,
-          boxShadow: `inset 0 -15px 30px -15px ${vitalidadeAtualConfig.cor}60`,
+          boxShadow: `inset 0 -10px 22px -16px ${hexParaRgba(vitalidadeAtualConfig.cor, 0.2)}`,
           textTransform: "uppercase",
           fontFamily: '"Rajdhani", sans-serif',
           letterSpacing: "0.1em",
@@ -957,85 +974,105 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
         />
       </DialogTitle>
 
-      {!isMobile && (
-        <Tabs
-          value={abaAtiva}
-          onChange={(_event, novaAba) => setAbaAtiva(novaAba)}
-          aria-label="Abas do prontuário da planta"
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      >
+        {!isMobile && (
+          <Tabs
+            value={abaAtiva}
+            onChange={(_event, novaAba) => setAbaAtiva(novaAba)}
+            aria-label="Abas do prontuário da planta"
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{
+              px: { xs: 1, sm: 3 },
+              position: "sticky",
+              top: 0,
+              zIndex: 2,
+              backgroundColor: "#E8EDE4",
+              borderBottom: "1px solid rgba(61, 40, 16, 0.14)",
+              "& .MuiTabs-indicator": {
+                height: 3,
+                backgroundColor: "primary.main",
+              },
+              "& .MuiTab-root": {
+                minWidth: { xs: 126, sm: 140 },
+                fontSize: { xs: "0.74rem", sm: "0.82rem" },
+                px: { xs: 1.1, sm: 1.8 },
+                whiteSpace: "nowrap",
+                fontFamily: '"Rajdhani", sans-serif',
+                fontWeight: 700,
+                letterSpacing: "0.03em",
+                color: "text.secondary",
+                "&:hover": {
+                  color: "primary.main",
+                  backgroundColor: "rgba(13, 48, 40, 0.08)",
+                },
+                "&:focus-visible": {
+                  outline: "3px solid #1B80C4",
+                  outlineOffset: -2,
+                  backgroundColor: "rgba(27, 128, 196, 0.12)",
+                },
+              },
+              "& .Mui-selected": {
+                color: "#0D3028 !important",
+              },
+            }}
+          >
+            <Tab label="Visão Geral" />
+            <Tab label="Diário de Bordo" />
+            <Tab label="Identificação" />
+            <Tab label="Galeria" />
+          </Tabs>
+        )}
+
+        <DialogContent
+          dividers
           sx={{
-            px: { xs: 1, sm: 3 },
-            position: "sticky",
-            top: 0,
-            zIndex: 2,
-            backgroundColor: "background.paper",
-            borderBottom: "1px solid rgba(120, 120, 120, 0.22)",
-            "& .MuiTab-root": {
-              minWidth: { xs: 126, sm: 140 },
-              fontSize: { xs: "0.74rem", sm: "0.82rem" },
-              px: { xs: 1.1, sm: 1.8 },
-              whiteSpace: "nowrap",
-              color: "rgba(245, 242, 235, 0.9)",
-              "&:hover": {
-                color: "#F5F2EB",
-                backgroundColor: "rgba(126, 195, 241, 0.12)",
-              },
-              "&:focus-visible": {
-                outline: "3px solid #7EC3F1",
-                outlineOffset: -2,
-                backgroundColor: "rgba(126, 195, 241, 0.16)",
-              },
+            position: "relative",
+            px: { xs: 1.25, sm: 3 },
+            py: { xs: 1.25, sm: 2.2 },
+            pb: { xs: 10, sm: 2.2 },
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: 20,
+              height: 20,
+              borderTop: "2px solid",
+              borderLeft: "2px solid",
+              borderColor: "secondary.main",
+              opacity: 0.7,
+              pointerEvents: "none",
             },
-            "& .Mui-selected": {
-              color: "#7EC3F1 !important",
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              right: 0,
+              bottom: 0,
+              width: 20,
+              height: 20,
+              borderBottom: "2px solid",
+              borderRight: "2px solid",
+              borderColor: "info.main",
+              opacity: 0.7,
+              pointerEvents: "none",
             },
           }}
         >
-          <Tab label="Visão Geral" />
-          <Tab label="Diário de Bordo" />
-          <Tab label="Identificação" />
-          <Tab label="Galeria" />
-        </Tabs>
-      )}
-
-      <DialogContent
-        dividers
-        sx={{
-          position: "relative",
-          px: { xs: 1.25, sm: 3 },
-          py: { xs: 1.25, sm: 2.2 },
-          pb: { xs: 10, sm: 2.2 },
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: 20,
-            height: 20,
-            borderTop: "2px solid",
-            borderLeft: "2px solid",
-            borderColor: "secondary.main",
-            opacity: 0.7,
-            pointerEvents: "none",
-          },
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            right: 0,
-            bottom: 0,
-            width: 20,
-            height: 20,
-            borderBottom: "2px solid",
-            borderRight: "2px solid",
-            borderColor: "info.main",
-            opacity: 0.7,
-            pointerEvents: "none",
-          },
-        }}
-      >
+        <AnimatePresence mode="wait">
         {abaAtiva === 0 && (
+          <motion.div
+            key={0}
+            initial={{ opacity: 0, x: 15 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -15 }}
+            transition={{ duration: 0.2 }}
+          >
           <Stack spacing={2.2}>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 5 }}>
@@ -1087,6 +1124,77 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                 </Box>
               </Grid>
             </Grid>
+
+            <Box
+              sx={{
+                width: "100%",
+                height: 300,
+                mt: 4,
+                p: 2,
+                backgroundColor: "#EEF0E8",
+                border: "1px solid rgba(61, 40, 16, 0.2)",
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  mb: 1.5,
+                  color: "#3D2810",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                }}
+              >
+                HISTORICO DE VITALIDADE
+              </Typography>
+
+              {dadosGrafico.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dadosGrafico}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="rgba(61, 40, 16, 0.15)"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="data"
+                      stroke="#6E553B"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis domain={[0, 100]} hide />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#EEF0E8",
+                        borderColor: "rgba(61, 40, 16, 0.2)",
+                        borderRadius: "4px",
+                        color: "#3D2810",
+                      }}
+                      formatter={(value) => {
+                        const hp = Number.isFinite(Number(value))
+                          ? Math.round(Number(value))
+                          : 0;
+                        return [`Saúde: ${hp}/100`];
+                      }}
+                      labelFormatter={(label) => `Registro: ${label}`}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="saude"
+                      stroke="#0D3028"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: "#A64D13", strokeWidth: 2, stroke: "#EEF0E8" }}
+                      activeDot={{ r: 6, fill: "#345A14" }}
+                      animationDuration={1500}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={mentatMonoSx}>
+                  Sem dados historicos para o grafico.
+                </Typography>
+              )}
+            </Box>
 
             <TextField
               label="Intervalo de rega (dias)"
@@ -1172,7 +1280,49 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </Stack>
             </Stack>
 
-            <FormControlLabel
+            <SietchCard
+              highlightColor={hpAtual >= 75 ? "#345A14" : hpAtual >= 40 ? "#C48A31" : "#9E3D22"}
+              sx={{ p: 1.5 }}
+            >
+              <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 1.2 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: "text.primary",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  NIVEL DE SOBREVIVENCIA (HP)
+                </Typography>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontFamily: '"Share Tech Mono", monospace',
+                    color: "text.primary",
+                    lineHeight: 1,
+                  }}
+                >
+                  {hpAtual} / 100
+                </Typography>
+              </Stack>
+
+              <LinearProgress
+                variant="determinate"
+                value={hpAtual}
+                sx={{
+                  height: 12,
+                  borderRadius: 0,
+                  backgroundColor: "rgba(61, 40, 16, 0.12)",
+                  border: "1px solid rgba(61, 40, 16, 0.2)",
+                  "& .MuiLinearProgress-bar": {
+                    backgroundColor: hpProgressColor,
+                  },
+                }}
+              />
+            </SietchCard>
+
+            {/* <FormControlLabel
               control={
                 <Switch
                   checked={notificarWhatsapp}
@@ -1180,7 +1330,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
                 />
               }
               label="Notificar via WhatsApp"
-            />
+            /> */}
 
             <Stack spacing={1.4}>
               <Button
@@ -1224,9 +1374,17 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </Box>
             </Stack>
           </Stack>
+          </motion.div>
         )}
 
         {abaAtiva === 1 && (
+          <motion.div
+            key={1}
+            initial={{ opacity: 0, x: 15 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -15 }}
+            transition={{ duration: 0.2 }}
+          >
           <Stack spacing={2}>
             <TextField
               label="Adicionar nota manual"
@@ -1347,9 +1505,17 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </List>
             )}
           </Stack>
+          </motion.div>
         )}
 
         {abaAtiva === 2 && (
+          <motion.div
+            key={2}
+            initial={{ opacity: 0, x: 15 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -15 }}
+            transition={{ duration: 0.2 }}
+          >
           <Stack spacing={2} alignItems="center">
             <Box
               sx={{
@@ -1411,9 +1577,17 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </Alert>
             )}
           </Stack>
+          </motion.div>
         )}
 
         {abaAtiva === 3 && (
+          <motion.div
+            key={3}
+            initial={{ opacity: 0, x: 15 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -15 }}
+            transition={{ duration: 0.2 }}
+          >
           <Box>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ mb: 2 }}>
               <Box
@@ -1441,7 +1615,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               >
                 {salvandoFoto
                   ? "Processando captura..."
-                  : "[ 📷 INICIAR SCANNER MORFOLÓGICO ]"}
+                  : "[ INICIAR SCANNER MORFOLÓGICO ]"}
               </Button>
             </Stack>
 
@@ -1824,25 +1998,27 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               </Stack>
             )}
           </Box>
+          </motion.div>
         )}
-      </DialogContent>
+        </AnimatePresence>
+        </DialogContent>
 
-      {isMobile && (
-        <Box
-          sx={{
-            position: "sticky",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 3,
-            px: 1,
-            py: 0.9,
-            borderTop: "1px solid rgba(126, 166, 194, 0.36)",
-            background:
-              "linear-gradient(180deg, rgba(13, 19, 24, 0.9) 0%, rgba(13, 19, 24, 0.96) 100%)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
+        {isMobile && (
+          <Box
+            sx={{
+              position: "sticky",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 3,
+              px: 1,
+              py: 0.9,
+              borderTop: "1px solid rgba(126, 166, 194, 0.36)",
+              background:
+                "linear-gradient(180deg, rgba(13, 19, 24, 0.9) 0%, rgba(13, 19, 24, 0.96) 100%)",
+              backdropFilter: "blur(8px)",
+            }}
+          >
           <Stack direction="row" spacing={0.8} justifyContent="space-between">
             <Button
               fullWidth
@@ -1957,8 +2133,9 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               Galeria
             </Button>
           </Stack>
-        </Box>
-      )}
+          </Box>
+        )}
+      </motion.div>
 
       <CameraScanner
         open={scannerOpen}

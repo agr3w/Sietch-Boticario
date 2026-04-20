@@ -14,6 +14,16 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import WbSunnyIcon from "@mui/icons-material/WbSunny";
@@ -26,7 +36,9 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import CameraScanner from "../components/CameraScanner";
+import SietchCard from "../components/ui/SietchCard";
 import { adicionarFotoGaleriaPlanta, db, getHistoricoFotos } from "../firebase";
+import { calcularHP } from "../utils/telemetria";
 
 function parseUltimaRegaDate(ultimaRega) {
   if (!ultimaRega) {
@@ -99,6 +111,7 @@ function ordenarFotosPorDataAsc(fotos) {
 
 function PlantView() {
   const { id } = useParams();
+  const theme = useTheme();
   const [planta, setPlanta] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
@@ -203,7 +216,7 @@ function PlantView() {
     return () => {
       ativo = false;
     };
-  }, [planta?.id, planta?.galeria_fotos, planta?.galeriaFotos]);
+  }, [planta?.id, planta?.userId, planta?.galeria_fotos, planta?.galeriaFotos]);
 
   useEffect(() => {
     setIndexFoto((valorAtual) => {
@@ -285,9 +298,9 @@ function PlantView() {
 
     const corTelemetria =
       porcentagemAgua === 0
-        ? "#D94841"
+        ? "#9E3D22"
         : porcentagemAgua <= 25
-          ? "#D39A2C"
+          ? "#C48A31"
           : "#1B80C4";
 
     return {
@@ -301,8 +314,8 @@ function PlantView() {
   const vitalidadeConfig = {
     prosperando: {
       label: "Prosperando",
-      cor: "#2F6F4E",
-      icon: <WaterDropIcon sx={{ fontSize: 32, color: "#2F6F4E" }} />,
+      cor: "#345A14",
+      icon: <WaterDropIcon sx={{ fontSize: 32, color: "#345A14" }} />,
     },
     estavel: {
       label: "Estavel",
@@ -311,13 +324,13 @@ function PlantView() {
     },
     recuperacao: {
       label: "Em Recuperacao",
-      cor: "#D39A2C",
-      icon: <WarningAmberIcon sx={{ fontSize: 32, color: "#D39A2C" }} />,
+      cor: "#C48A31",
+      icon: <WarningAmberIcon sx={{ fontSize: 32, color: "#C48A31" }} />,
     },
     critico: {
       label: "Critico",
-      cor: "#D94841",
-      icon: <WarningAmberIcon sx={{ fontSize: 32, color: "#D94841" }} />,
+      cor: "#9E3D22",
+      icon: <WarningAmberIcon sx={{ fontSize: 32, color: "#9E3D22" }} />,
     },
   };
   const estadoVisual = vitalidadeConfig[vitalidadeAtual] ?? vitalidadeConfig.estavel;
@@ -349,47 +362,44 @@ function PlantView() {
     };
   }, [necessidadeLuz]);
 
-  const tendencia24h = useMemo(() => {
-    const clamp = (valor, min, max) => Math.min(max, Math.max(min, valor));
-    const assinatura = String(planta?.id ?? "")
-      .split("")
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const ajusteVitalidade =
-      vitalidadeAtual === "prosperando"
-        ? 6
-        : vitalidadeAtual === "estavel"
-          ? 2
-          : vitalidadeAtual === "recuperacao"
-            ? -4
-            : -8;
+  const dadosGraficoVitalidade = useMemo(() => {
+    const fotosOrdenadas = ordenarFotosPorDataAsc(fotos);
+    const dados = fotosOrdenadas.map((foto, index) => {
+      const dataRegistro = extrairDataRegistro(foto?.data_registro ?? foto?.data_captura);
+      const dataFormatada = dataRegistro
+        ? dataRegistro.toLocaleDateString("pt-BR", {
+            timeZone: "America/Sao_Paulo",
+            day: "2-digit",
+            month: "2-digit",
+          })
+        : "--/--";
+      const plantaSimulada = {
+        ...planta,
+        vitalidade: foto?.vitalidade ?? planta?.vitalidade,
+        ultima_rega: foto?.data_registro ?? foto?.data_captura ?? planta?.ultima_rega,
+      };
 
-    const base = clamp(Math.round(sinaisVitais.porcentagemAgua) + ajusteVitalidade, 6, 96);
-
-    const pontos = Array.from({ length: 8 }, (_, index) => {
-      const oscilacao = ((assinatura + index * 7) % 9) - 4;
-      const tendencia = (index - 3.5) * (vitalidadeAtual === "critico" ? -2.1 : -1.1);
-      return clamp(Math.round(base + oscilacao + tendencia), 3, 99);
+      return {
+        data: dataFormatada,
+        saude: calcularHP(plantaSimulada, fotosOrdenadas.slice(0, index + 1)),
+      };
     });
 
-    const largura = 196;
-    const altura = 58;
-    const pontosSvg = pontos
-      .map((valor, index) => {
-        const x = (index / (pontos.length - 1)) * largura;
-        const y = altura - (valor / 100) * altura;
-        return `${x},${y}`;
-      })
-      .join(" ");
+    if (dados.length === 0) {
+      return [{ data: "Agora", saude: calcularHP(planta ?? {}, fotosOrdenadas) }];
+    }
 
-    return { pontos, pontosSvg, largura, altura };
-  }, [planta?.id, sinaisVitais.porcentagemAgua, vitalidadeAtual]);
+    return dados.slice(-6);
+  }, [fotos, planta]);
+  const hpAtual = useMemo(() => calcularHP(planta ?? {}, fotos), [planta, fotos]);
+  const hpCorAtual = hpAtual >= 75 ? "#345A14" : hpAtual >= 40 ? "#C48A31" : "#9E3D22";
 
   const auraColor =
     sinaisVitais.statusTelemetrico === "Seca Critica"
-      ? "rgba(217, 72, 65, 0.34)"
+      ? "rgba(158, 61, 34, 0.2)"
       : sinaisVitais.statusTelemetrico === "Reserva Baixa"
-        ? "rgba(211, 154, 44, 0.3)"
-        : "rgba(47, 111, 78, 0.34)";
+        ? "rgba(196, 138, 49, 0.2)"
+        : "rgba(52, 90, 20, 0.2)";
 
   const ultimaFoto = fotos.length > 0 ? fotos[fotos.length - 1] : null;
   const dataUltimoRegistro = useMemo(
@@ -482,15 +492,16 @@ function PlantView() {
         display: "flex",
         alignItems: "center",
         py: 5,
-        background: "radial-gradient(circle at 50% 0%, #1E2428 0%, #0E1316 100%)",
+        color: "text.primary",
+        backgroundColor: theme.palette.background.default,
         "&::before": {
           content: '""',
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          opacity: 0.12,
+          opacity: 0.1,
           backgroundImage:
-            "radial-gradient(rgba(232,224,213,0.16) 0.7px, transparent 0.7px), radial-gradient(rgba(211,84,0,0.14) 0.8px, transparent 0.8px)",
+            "radial-gradient(rgba(61,40,16,0.08) 0.7px, transparent 0.7px), radial-gradient(rgba(27,128,196,0.08) 0.8px, transparent 0.8px)",
           backgroundPosition: "0 0, 10px 10px",
           backgroundSize: "18px 18px, 24px 24px",
         },
@@ -520,18 +531,18 @@ function PlantView() {
             minHeight: 50,
             px: 2,
             borderRadius: 0,
-            border: "1px solid rgba(232,224,213,0.32)",
-            backgroundColor: "info.main",
-            color: "#EAF5FF",
-            boxShadow: "0 0 16px rgba(27,128,196,0.48)",
+            border: "1px solid rgba(61, 40, 16, 0.12)",
+            backgroundColor: "secondary.main",
+            color: "#F5ECD7",
+            boxShadow: "0 4px 12px rgba(166, 77, 19, 0.24)",
             animation: "missaoPulse 1.3s ease-in-out infinite",
             "@keyframes missaoPulse": {
-              "0%": { boxShadow: "0 0 8px rgba(27,128,196,0.35)" },
-              "50%": { boxShadow: "0 0 20px rgba(27,128,196,0.8)" },
-              "100%": { boxShadow: "0 0 8px rgba(27,128,196,0.35)" },
+              "0%": { boxShadow: "0 3px 10px rgba(166, 77, 19, 0.2)" },
+              "50%": { boxShadow: "0 7px 18px rgba(166, 77, 19, 0.34)" },
+              "100%": { boxShadow: "0 3px 10px rgba(166, 77, 19, 0.2)" },
             },
             "&:hover": {
-              backgroundColor: "#2A96DD",
+              backgroundColor: "#8F3F10",
             },
           }}
         >
@@ -565,7 +576,7 @@ function PlantView() {
       <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
         <Stack spacing={2.4} sx={{ textAlign: "center" }}>
           {carregando && (
-            <Typography sx={{ color: "#E8E0D5", fontFamily: '"Share Tech Mono", monospace' }}>
+            <Typography sx={{ color: "text.primary", fontFamily: '"Share Tech Mono", monospace' }}>
               Sincronizando sinais do Sietch...
             </Typography>
           )}
@@ -581,7 +592,7 @@ function PlantView() {
               <Typography
                 variant="h3"
                 sx={{
-                  color: "#E8E0D5",
+                  color: "text.primary",
                   fontFamily: '"Rajdhani", sans-serif',
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
@@ -592,15 +603,14 @@ function PlantView() {
 
               <Grid container spacing={1.6} sx={{ textAlign: "left" }}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <Box
+                  <SietchCard
+                    highlightColor={estadoVisual.cor}
                     sx={{
                       minHeight: 192,
                       p: 2,
-                      border: "1px solid rgba(232, 224, 213, 0.2)",
+                      backgroundColor: theme.palette.background.paper,
                       borderTop: `2px solid ${estadoVisual.cor}`,
-                      background: "rgba(12, 16, 20, 0.58)",
-                      backdropFilter: "blur(6px)",
-                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25)",
+                      borderLeftWidth: "1px",
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
@@ -609,7 +619,7 @@ function PlantView() {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "rgba(232,224,213,0.82)",
+                        color: "text.secondary",
                         fontFamily: '"Share Tech Mono", monospace',
                         letterSpacing: "0.08em",
                       }}
@@ -624,7 +634,7 @@ function PlantView() {
                           height: 56,
                           borderRadius: 1,
                           border: `1px solid ${estadoVisual.cor}`,
-                          backgroundColor: "rgba(0,0,0,0.22)",
+                          backgroundColor: "rgba(255,255,255,0.45)",
                           display: "grid",
                           placeItems: "center",
                         }}
@@ -644,45 +654,115 @@ function PlantView() {
                       </Typography>
                     </Stack>
 
+                    <Box sx={{ mt: 1.1 }}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="baseline">
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "text.secondary",
+                            fontFamily: '"Share Tech Mono", monospace',
+                            letterSpacing: "0.06em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Nivel de sobrevivencia (HP)
+                        </Typography>
+                        <Typography
+                          sx={{
+                            color: hpCorAtual,
+                            fontFamily: '"Share Tech Mono", monospace',
+                            fontSize: "1.12rem",
+                            fontWeight: 700,
+                            lineHeight: 1,
+                          }}
+                        >
+                          {hpAtual}/100
+                        </Typography>
+                      </Stack>
+                      <LinearProgress
+                        variant="determinate"
+                        value={hpAtual}
+                        sx={{
+                          mt: 0.7,
+                          height: 10,
+                          borderRadius: 0,
+                          backgroundColor: "rgba(61, 40, 16, 0.12)",
+                          border: "1px solid rgba(61, 40, 16, 0.2)",
+                          "& .MuiLinearProgress-bar": {
+                            backgroundColor: hpCorAtual,
+                          },
+                        }}
+                      />
+                    </Box>
+
                     <Box sx={{ mt: 1.2 }}>
                       <Typography
                         variant="caption"
                         sx={{
-                          color: "rgba(232,224,213,0.75)",
+                          color: "text.secondary",
                           fontFamily: '"Share Tech Mono", monospace',
                           letterSpacing: "0.06em",
                           textTransform: "uppercase",
                         }}
                       >
-                        Evolucao nas ultimas 24h (simulada)
+                        Historico de vitalidade (compacto)
                       </Typography>
-                      <Box
-                        component="svg"
-                        viewBox={`0 0 ${tendencia24h.largura} ${tendencia24h.altura}`}
-                        sx={{ width: "100%", mt: 0.7 }}
-                      >
-                        <polyline
-                          points={tendencia24h.pontosSvg}
-                          fill="none"
-                          stroke={estadoVisual.cor}
-                          strokeWidth="2.2"
-                          strokeLinecap="square"
-                        />
+                      <Box sx={{ width: "100%", height: 78, mt: 0.7 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={dadosGraficoVitalidade} margin={{ top: 4, right: 2, left: 2, bottom: 0 }}>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              stroke="rgba(61, 40, 16, 0.12)"
+                              vertical={false}
+                            />
+                            <XAxis
+                              dataKey="data"
+                              stroke="#6E553B"
+                              fontSize={10}
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <YAxis domain={[0, 100]} hide />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "#EEF0E8",
+                                borderColor: "rgba(61, 40, 16, 0.2)",
+                                borderRadius: "4px",
+                                color: "#3D2810",
+                              }}
+                              formatter={(value) => {
+                                const hp = Number.isFinite(Number(value))
+                                  ? Math.round(Number(value))
+                                  : 0;
+                                return [`Nivel de Sobrevivencia: ${hp}/100`];
+                              }}
+                              labelFormatter={(label) => `Registro: ${label}`}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="saude"
+                              stroke="#0D3028"
+                              strokeWidth={2.2}
+                              dot={{ r: 2.8, fill: "#A64D13", strokeWidth: 1.5, stroke: "#EEF0E8" }}
+                              activeDot={{ r: 4.5, fill: "#345A14" }}
+                              animationDuration={900}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
                       </Box>
                     </Box>
-                  </Box>
+                  </SietchCard>
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <Box
+                  <SietchCard
+                    highlightColor={sinaisVitais.corTelemetria}
                     sx={{
                       minHeight: 192,
                       p: 2,
-                      border: "1px solid rgba(232, 224, 213, 0.2)",
+                      backgroundColor: theme.palette.background.paper,
                       borderTop: `2px solid ${sinaisVitais.corTelemetria}`,
-                      background: "rgba(12, 16, 20, 0.58)",
-                      backdropFilter: "blur(6px)",
-                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25)",
+                      borderLeftWidth: "1px",
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
@@ -691,7 +771,7 @@ function PlantView() {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "rgba(232,224,213,0.82)",
+                        color: "text.secondary",
                         fontFamily: '"Share Tech Mono", monospace',
                         letterSpacing: "0.08em",
                       }}
@@ -706,14 +786,10 @@ function PlantView() {
                         sx={{
                           height: 16,
                           borderRadius: 0,
-                          backgroundColor: "rgba(0, 0, 0, 0.5)",
-                          border: "1px solid rgba(232, 224, 213, 0.2)",
+                          backgroundColor: "rgba(27, 128, 196, 0.2)",
+                          border: "1px solid rgba(61, 40, 16, 0.1)",
                           "& .MuiLinearProgress-bar": {
-                            backgroundColor: sinaisVitais.corTelemetria,
-                            backgroundImage:
-                              sinaisVitais.statusTelemetrico === "Seca Critica"
-                                ? "repeating-linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.2) 8px, transparent 8px, transparent 16px)"
-                                : "none",
+                            backgroundColor: "#1B80C4",
                           },
                         }}
                       />
@@ -731,7 +807,7 @@ function PlantView() {
                       <Typography
                         sx={{
                           mt: 0.4,
-                          color: "rgba(232,224,213,0.9)",
+                          color: "text.primary",
                           fontFamily: '"Share Tech Mono", monospace',
                           textTransform: "uppercase",
                         }}
@@ -739,7 +815,7 @@ function PlantView() {
                         {sinaisVitais.statusTelemetrico}
                       </Typography>
                     </Box>
-                  </Box>
+                  </SietchCard>
                 </Grid>
               </Grid>
 
@@ -758,8 +834,8 @@ function PlantView() {
                     minWidth: 164,
                     px: 1.4,
                     py: 1.1,
-                    border: "1px solid rgba(232,224,213,0.2)",
-                    backgroundColor: "rgba(0,0,0,0.4)",
+                    border: "1px solid rgba(61, 40, 16, 0.2)",
+                    backgroundColor: "rgba(255, 255, 255, 0.5)",
                     display: "flex",
                     alignItems: "center",
                     gap: 1,
@@ -767,10 +843,10 @@ function PlantView() {
                 >
                   {luzVisual.icon}
                   <Box>
-                    <Typography sx={{ color: "rgba(232,224,213,0.78)", fontSize: "0.72rem" }}>
+                    <Typography sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                       LUZ
                     </Typography>
-                    <Typography sx={{ color: "#E8E0D5", fontSize: "0.9rem" }}>{luzVisual.label}</Typography>
+                    <Typography sx={{ color: "#3D2810", fontSize: "0.9rem" }}>{luzVisual.label}</Typography>
                   </Box>
                 </Box>
 
@@ -780,8 +856,8 @@ function PlantView() {
                     minWidth: 164,
                     px: 1.4,
                     py: 1.1,
-                    border: "1px solid rgba(232,224,213,0.2)",
-                    backgroundColor: "rgba(0,0,0,0.4)",
+                    border: "1px solid rgba(61, 40, 16, 0.2)",
+                    backgroundColor: "rgba(255, 255, 255, 0.5)",
                     display: "flex",
                     alignItems: "center",
                     gap: 1,
@@ -789,10 +865,10 @@ function PlantView() {
                 >
                   <TerrainIcon sx={{ color: "#8E6A48", fontSize: 26 }} />
                   <Box>
-                    <Typography sx={{ color: "rgba(232,224,213,0.78)", fontSize: "0.72rem" }}>
+                    <Typography sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                       SUBSTRATO
                     </Typography>
-                    <Typography sx={{ color: "#E8E0D5", fontSize: "0.9rem" }}>{tipoSubstrato}</Typography>
+                    <Typography sx={{ color: "#3D2810", fontSize: "0.9rem" }}>{tipoSubstrato}</Typography>
                   </Box>
                 </Box>
 
@@ -803,16 +879,16 @@ function PlantView() {
                       minWidth: 184,
                       px: 1.4,
                       py: 1.1,
-                      border: "1px solid rgba(217,72,65,0.82)",
-                      backgroundColor: "rgba(0,0,0,0.4)",
+                      border: "1px solid rgba(158, 61, 34, 0.5)",
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
                       display: "flex",
                       alignItems: "center",
                       gap: 0.8,
                     }}
                   >
-                    <WarningIcon sx={{ color: "#D94841", fontSize: 24 }} />
-                    <PetsIcon sx={{ color: "#D94841", fontSize: 23 }} />
-                    <Typography sx={{ color: "#E8E0D5", fontWeight: 700, fontSize: "0.9rem" }}>
+                    <WarningIcon sx={{ color: "#9E3D22", fontSize: 24 }} />
+                    <PetsIcon sx={{ color: "#9E3D22", fontSize: 23 }} />
+                    <Typography sx={{ color: "#3D2810", fontWeight: 700, fontSize: "0.9rem" }}>
                       TOXICA
                     </Typography>
                   </Box>
@@ -823,15 +899,15 @@ function PlantView() {
                       minWidth: 184,
                       px: 1.4,
                       py: 1.1,
-                      border: "1px solid rgba(89,166,107,0.62)",
-                      backgroundColor: "rgba(0,0,0,0.4)",
+                      border: "1px solid rgba(52, 90, 20, 0.45)",
+                      backgroundColor: "rgba(255, 255, 255, 0.5)",
                       display: "flex",
                       alignItems: "center",
                       gap: 1,
                     }}
                   >
                     <PetsIcon sx={{ color: "#59A66B", fontSize: 24 }} />
-                    <Typography sx={{ color: "#E8E0D5", fontSize: "0.9rem" }}>
+                    <Typography sx={{ color: "#3D2810", fontSize: "0.9rem" }}>
                       Segura para Pets
                     </Typography>
                   </Box>
@@ -841,7 +917,7 @@ function PlantView() {
               {carregandoFotos && (
                 <Typography
                   sx={{
-                    color: "rgba(232,224,213,0.75)",
+                    color: "text.secondary",
                     fontFamily: '"Share Tech Mono", monospace',
                   }}
                 >
@@ -854,8 +930,8 @@ function PlantView() {
                   <Box
                     sx={{
                       position: "relative",
-                      border: "1px solid rgba(100, 70, 40, 0.3)",
-                      backgroundColor: "rgba(0, 0, 0, 0.42)",
+                      border: "1px solid rgba(61, 40, 16, 0.2)",
+                      backgroundColor: "rgba(255, 255, 255, 0.45)",
                       overflow: "hidden",
                     }}
                   >
@@ -867,9 +943,9 @@ function PlantView() {
                         zIndex: 1,
                         px: 1,
                         py: 0.45,
-                        border: "1px solid rgba(232,224,213,0.36)",
-                        backgroundColor: "rgba(7, 11, 15, 0.72)",
-                        color: "#E8E0D5",
+                        border: "1px solid rgba(61, 40, 16, 0.2)",
+                        backgroundColor: "rgba(255, 255, 255, 0.75)",
+                        color: "#3D2810",
                         fontFamily: '"Share Tech Mono", monospace',
                         fontSize: "0.74rem",
                         letterSpacing: "0.04em",
@@ -896,7 +972,7 @@ function PlantView() {
 
                   <Typography
                     sx={{
-                      color: "rgba(232,224,213,0.88)",
+                      color: "text.primary",
                       fontFamily: '"Share Tech Mono", monospace',
                       fontSize: "0.88rem",
                     }}
@@ -973,14 +1049,73 @@ function PlantView() {
                 </Stack>
               )}
 
-              <Typography
+              <SietchCard
+                highlightColor="#1B80C4"
                 sx={{
-                  color: "#E8E0D5",
-                  fontFamily: '"Share Tech Mono", monospace',
+                  p: 1.2,
+                  borderLeftWidth: "2px",
+                  backgroundColor: "rgba(255, 255, 255, 0.5)",
                 }}
               >
-                Clima: {climaAtual ? `${climaAtual.temperatura}°C / ${climaAtual.umidade}%` : "Sinal indisponível"}
-              </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                    fontFamily: '"Share Tech Mono", monospace',
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Condicoes climaticas locais
+                </Typography>
+
+                {climaAtual ? (
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1}
+                    sx={{ mt: 1, justifyContent: "space-between" }}
+                  >
+                    <Stack direction="row" spacing={0.8} alignItems="center">
+                      <WbSunnyIcon sx={{ color: "#C48A31", fontSize: 20 }} />
+                      <Typography
+                        sx={{
+                          color: "#3D2810",
+                          fontFamily: '"Share Tech Mono", monospace',
+                          fontWeight: 700,
+                          fontSize: "1rem",
+                        }}
+                      >
+                        {Number(climaAtual.temperatura).toFixed(1)} C
+                      </Typography>
+                    </Stack>
+
+                    <Stack direction="row" spacing={0.8} alignItems="center">
+                      <WaterDropIcon sx={{ color: "#1B80C4", fontSize: 20 }} />
+                      <Typography
+                        sx={{
+                          color: "#3D2810",
+                          fontFamily: '"Share Tech Mono", monospace',
+                          fontWeight: 700,
+                          fontSize: "1rem",
+                        }}
+                      >
+                        {Math.round(Number(climaAtual.umidade))}% UR
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                ) : (
+                  <Typography
+                    sx={{
+                      mt: 1,
+                      color: "text.secondary",
+                      fontFamily: '"Share Tech Mono", monospace',
+                      fontSize: "0.88rem",
+                    }}
+                  >
+                    Sinal climatico indisponivel
+                  </Typography>
+                )}
+              </SietchCard>
 
               {erroFoto && (
                 <Alert severity="error" sx={{ textAlign: "left" }}>
@@ -994,7 +1129,7 @@ function PlantView() {
             variant="caption"
             sx={{
               mt: 1,
-              color: "rgba(232,224,213,0.7)",
+              color: "text.secondary",
               fontFamily: '"Share Tech Mono", monospace',
               letterSpacing: "0.06em",
             }}

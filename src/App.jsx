@@ -2,47 +2,50 @@ import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import WaterDropOutlinedIcon from '@mui/icons-material/WaterDropOutlined';
+import { useTheme } from '@mui/material/styles';
 import TopbarSietch from './components/TopbarSietch';
+import FooterSietch from './components/FooterSietch';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const PlantView = lazy(() => import('./pages/PlantView'));
 const Login = lazy(() => import('./pages/Login'));
 const Home = lazy(() => import('./pages/Home'));
+const Support = lazy(() => import('./pages/Support'));
+const Terms = lazy(() => import('./pages/Terms'));
 
 const routeStateText = {
-  authCheck: 'VERIFICANDO CREDENCIAIS BIOMETRICAS...',
-  routeSync: 'SINCRONIZANDO NUCLEO DO SIETCH...',
+  authCheck: 'ANALISANDO SOLO...',
+  routeSync: 'LENDO MANUSCRITOS DE KYNES...',
+  calibrate: 'CALIBRANDO DESTILADORES...',
 };
 
-function LoadingSietch({ message = routeStateText.authCheck }) {
+function LoadingSietch({ message = routeStateText.calibrate }) {
+  const theme = useTheme();
+
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        height: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#05090A',
-        backgroundImage:
-          'radial-gradient(circle at 20% 15%, rgba(31, 58, 44, 0.28), transparent 42%), radial-gradient(circle at 82% 85%, rgba(0, 150, 214, 0.18), transparent 46%), repeating-linear-gradient(135deg, rgba(220, 232, 240, 0.03) 0px, rgba(220, 232, 240, 0.03) 1px, transparent 1px, transparent 12px)',
+        backgroundColor: theme.palette.background.default,
         px: 2,
       }}
     >
       <Box
         sx={{
-          width: 'min(92vw, 560px)',
-          border: '1px solid rgba(140, 180, 160, 0.45)',
-          bgcolor: 'rgba(6, 18, 16, 0.78)',
-          backdropFilter: 'blur(8px)',
+          width: 'min(92vw, 520px)',
+          border: '1px solid rgba(61, 40, 16, 0.12)',
+          bgcolor: theme.palette.background.paper,
           py: 5,
           px: 3,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'column',
-          gap: 2,
-          boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.35) inset, 0 16px 38px rgba(0, 0, 0, 0.42)',
+          gap: 1.8,
+          boxShadow: '0 10px 28px rgba(61, 40, 16, 0.1)',
           animation: 'loadingFadeIn 260ms ease-out',
           '@keyframes loadingFadeIn': {
             from: { opacity: 0, transform: 'translateY(8px)' },
@@ -50,22 +53,16 @@ function LoadingSietch({ message = routeStateText.authCheck }) {
           },
         }}
       >
-        <WaterDropOutlinedIcon
+        <CircularProgress
+          size={26}
+          thickness={4.8}
           sx={{
-            color: 'info.main',
-            fontSize: 44,
-            animation: 'loadingPulse 1300ms ease-in-out infinite',
-            '@keyframes loadingPulse': {
-              '0%': { opacity: 0.65, transform: 'scale(0.9)' },
-              '50%': { opacity: 1, transform: 'scale(1.08)' },
-              '100%': { opacity: 0.65, transform: 'scale(0.9)' },
-            },
+            color: 'success.main',
           }}
         />
-        <CircularProgress size={22} color="info" thickness={5} />
         <Typography
           sx={{
-            color: '#DCE8F0',
+            color: 'text.primary',
             fontFamily: 'Rajdhani, sans-serif',
             fontWeight: 700,
             textTransform: 'uppercase',
@@ -104,35 +101,51 @@ function AppRoutes() {
   const { currentUser } = useAuth();
 
   return (
-    <Suspense fallback={<LoadingSietch message={routeStateText.routeSync} />}>
-      <Routes>
-        <Route
-          path="/"
-          element={currentUser ? <Navigate to="/dashboard" replace /> : <Home />}
-        />
-        <Route
-          path="/dashboard"
-          element={(
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          )}
-        />
-        <Route
-          path="/login"
-          element={currentUser ? <Navigate to="/dashboard" replace /> : <Login />}
-        />
-        <Route
-          path="/planta/:id"
-          element={(
-            <PrivateRoute>
-              <PlantView />
-            </PrivateRoute>
-          )}
-        />
-        <Route path="*" element={<Navigate to={currentUser ? '/dashboard' : '/'} replace />} />
-      </Routes>
-    </Suspense>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Box sx={{ flex: 1 }}>
+        <Suspense fallback={<LoadingSietch message={routeStateText.routeSync} />}>
+          <Routes>
+            <Route
+              path="/"
+              element={currentUser ? <Navigate to="/dashboard" replace /> : <Home />}
+            />
+            <Route
+              path="/dashboard"
+              element={(
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              )}
+            />
+            <Route
+              path="/login"
+              element={currentUser ? <Navigate to="/dashboard" replace /> : <Login />}
+            />
+            <Route path="/termos" element={<Terms />} />
+            <Route path="/terms" element={<Navigate to="/termos" replace />} />
+            <Route
+              path="/suporte"
+              element={(
+                <PrivateRoute>
+                  <Support />
+                </PrivateRoute>
+              )}
+            />
+            <Route path="/support" element={<Navigate to="/suporte" replace />} />
+            <Route
+              path="/planta/:id"
+              element={(
+                <PrivateRoute>
+                  <PlantView />
+                </PrivateRoute>
+              )}
+            />
+            <Route path="*" element={<Navigate to={currentUser ? '/dashboard' : '/'} replace />} />
+          </Routes>
+        </Suspense>
+      </Box>
+      <FooterSietch />
+    </Box>
   );
 }
 
