@@ -1615,7 +1615,7 @@ function PlantDetailsModal({ planta, open, onClose, onUpdate, onDelete }) {
               >
                 {salvandoFoto
                   ? "Processando captura..."
-                  : "[ 📷 INICIAR SCANNER MORFOLÓGICO ]"}
+                  : "[ INICIAR SCANNER MORFOLÓGICO ]"}
               </Button>
             </Stack>
 
